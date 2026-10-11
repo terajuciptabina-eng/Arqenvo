@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 150" role="img" aria-labelledby="title">
+<title id="title">ARQENVO BIM/CAD Software</title>
+<defs><linearGradient id="blue" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#16c9f5"/><stop offset=".55" stop-color="#0878d8"/><stop offset="1" stop-color="#0649a2"/></linearGradient><linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#344354"/><stop offset="1" stop-color="#101923"/></linearGradient></defs>
+<g transform="translate(5 4)"><path d="M62 5 112 93 93 93 62 39 31 93 12 93Z" fill="url(#blue)"/><path d="M62 5 78 5 126 93 106 93 78 43Z" fill="url(#steel)"/><path d="M83 55 111 93 130 93 101 55Z" fill="url(#steel)"/><path d="M118 42 135 59 135 93 118 93Z" fill="url(#steel)"/><path d="M141 58 157 72 157 93 141 93Z" fill="url(#steel)"/></g>
+<text x="174" y="92" font-family="Arial,Helvetica,sans-serif" font-size="57" font-weight="600" letter-spacing="2" fill="url(#steel)">ARQENVO</text>
+<text x="178" y="122" font-family="Arial,Helvetica,sans-serif" font-size="14" letter-spacing="8" fill="#526170">BIM / CAD SOFTWARE</text>
+</svg>
