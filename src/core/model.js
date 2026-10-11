@@ -110,7 +110,8 @@ export function validateProject(data) {
   const errors = [];
   if (!data || data.format !== MODEL_FORMAT) errors.push("Unsupported project format");
   if (![1, MODEL_VERSION].includes(data?.version)) errors.push("Unsupported project schema version");
-  if (!Array.isArray(data?.stories) || !Array.isArray(data?.elements)) errors.push("Project must contain stories and elements arrays");
+  if (data?.version === MODEL_VERSION && (!Array.isArray(data?.stories) || !Array.isArray(data?.elements))) errors.push("Project must contain stories and elements arrays");
+  if (data?.version === 1 && !["walls", "slabs", "columns", "beams", "dimensions"].some(k => Array.isArray(data?.[k]))) errors.push("Legacy project has no recognized element collections");
   const ids = new Set();
   for (const el of data?.elements ?? []) {
     if (!el.id || ids.has(el.id)) errors.push(`Missing or duplicate element id: ${el.id ?? "(missing)"}`);
