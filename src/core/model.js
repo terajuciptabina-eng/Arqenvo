@@ -116,7 +116,7 @@ export function validateProject(data) {
   for (const el of data?.elements ?? []) {
     if (!el.id || ids.has(el.id)) errors.push(`Missing or duplicate element id: ${el.id ?? "(missing)"}`);
     ids.add(el.id);
-    if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
+    if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "room"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
   }
   return { valid: errors.length === 0, errors };
 }
