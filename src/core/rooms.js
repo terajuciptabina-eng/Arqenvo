@@ -51,8 +51,8 @@ export function detectRooms(walls, options = {}) {
             const area = polygonArea(boundary);
             if (area > tolerance * tolerance) found.set(key, {
               id: `room-${found.size + 1}`, type: "room", boundary, area,
-              perimeter: pathEdges.reduce((sum, e) => sum + distance(e.a.position, e.b.position), 0),
-              boundaryWallIds: pathEdges.map(e => e.id),
+              perimeter: [...pathEdges, edge].reduce((sum, e) => sum + distance(e.a.position, e.b.position), 0),
+              boundaryWallIds: [...pathEdges, edge].map(e => e.id),
               center: boundary.reduce((c, p) => ({x:c.x+p.x/boundary.length,y:c.y+p.y/boundary.length}),{x:0,y:0}),
             });
           }
