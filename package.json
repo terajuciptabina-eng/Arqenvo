@@ -1,0 +1,11 @@
+{
+  "name": "arqenvo",
+  "private": true,
+  "version": "0.3.0",
+  "type": "module",
+  "description": "Independent browser-based architectural CAD/BIM engine prototype",
+  "scripts": {
+    "test": "node --test",
+    "check": "node --check src/core/model.js"
+  }
+}
