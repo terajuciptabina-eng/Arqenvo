@@ -7,7 +7,7 @@ https://terajuciptabina-eng.github.io/Arqenvo/
 
 ## Development status
 
-**Active staged development — not yet equivalent to Archicad.** The current public UI is still the original prototype; new core modules are being built and tested before integration into the authoring interface.
+**Active staged development — not yet equivalent to Archicad.** The public UI now imports the schema-v2 model module. This is an early integration milestone, not a production BIM authoring system.
 
 ### Existing browser UI
 - 2D floor-plan canvas, connected wall-chain tool, grid and axis constraint.
@@ -25,7 +25,7 @@ https://terajuciptabina-eng.github.io/Arqenvo/
 - Node test suite and GitHub Actions checks.
 
 ### Known limitations
-The new model and room detector are **not yet connected to the public UI**. Room detection currently supports endpoint-connected loops; intersections in the middle of a wall are not automatically split. The existing UI still stores legacy arrays and its slab/door/window/beam tools are incomplete. Production-quality parametric 3D, actual wall joins and opening voids, roofs, stairs, object libraries, sections/elevations, layouts, publishing, IFC, desktop packaging and full parity are not implemented.
+The UI is connected to the schema-v2 model for its current drawing operations, but broad BIM capabilities remain incomplete. Room detection currently supports endpoint-connected loops; intersections in the middle of a wall are not automatically split. Door/window placement currently records hosted opening data and plan markers only; it does not cut real voids into 3D walls. Robust wall joins, multi-selection, complete property editing, parametric 3D, roofs, stairs, object libraries, true sections/elevations, layouts, publishing, IFC/DWG interoperability, desktop packaging and full parity are not implemented.
 
 ## Planned development order
 1. Integrate the core model and schema migration with the current UI.
