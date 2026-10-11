@@ -3,7 +3,7 @@
  * This first-pass detector supports closed, endpoint-connected wall loops.
  * Intersections through the middle of a wall are intentionally not split yet.
  */
-import { wallLength, polygonArea, point } from "./model.js";
+import { wallLength, polygonArea, point, distance } from "./model.js";
 
 function nodeKey(p, tolerance) {
   return `${Math.round(p.x / tolerance)},${Math.round(p.y / tolerance)}`;
@@ -51,7 +51,7 @@ export function detectRooms(walls, options = {}) {
             const area = polygonArea(boundary);
             if (area > tolerance * tolerance) found.set(key, {
               id: `room-${found.size + 1}`, type: "room", boundary, area,
-              perimeter: pathEdges.reduce((sum, e) => sum + wallLength(edges.find(w => w.id === e.id) ? walls.find(w => w.id === e.id) : {start:e.a.position,end:e.b.position}), 0),
+              perimeter: pathEdges.reduce((sum, e) => sum + distance(e.a.position, e.b.position), 0),
               boundaryWallIds: pathEdges.map(e => e.id),
               center: boundary.reduce((c, p) => ({x:c.x+p.x/boundary.length,y:c.y+p.y/boundary.length}),{x:0,y:0}),
             });
