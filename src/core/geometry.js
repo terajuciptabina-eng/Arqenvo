@@ -102,3 +102,34 @@ export function wallSolidIntervals(hostLength,openings,{tolerance=1e-8}={}) {
   if(cursor<hostLength-tolerance) solids.push({start:cursor,end:hostLength});
   return solids;
 }
+
+
+/**
+ * Resolve the end join between two centre-line walls sharing a junction.
+ * wallA runs into the junction; wallB runs away from it. Each side is
+ * intersected independently. Acute joins beyond the miter limit are bevelled
+ * instead of creating long spikes. This returns plan geometry only.
+ */
+export function wallEndJoin(wallA, wallB, thicknessA, thicknessB=thicknessA, {miterLimit=10,tolerance=1e-7}={}) {
+  const validSegment=w=>w&&finitePoint(w.start)&&finitePoint(w.end);
+  if(!validSegment(wallA)||!validSegment(wallB)) throw new TypeError("Wall join needs two finite wall segments");
+  if(!Number.isFinite(thicknessA)||thicknessA<=0||!Number.isFinite(thicknessB)||thicknessB<=0) throw new RangeError("Wall thicknesses must be positive");
+  if(!Number.isFinite(miterLimit)||miterLimit<1) throw new RangeError("Miter limit must be at least 1");
+  if(!Number.isFinite(tolerance)||tolerance<0) throw new RangeError("Tolerance must be non-negative");
+  const jointA=wallA.end,jointB=wallB.start;
+  if(norm(sub(jointA,jointB))>tolerance) throw new RangeError("Wall endpoints do not share a junction");
+  const joint=mul(add(jointA,jointB),.5);
+  const u1=unit(sub(wallA.end,wallA.start)),u2=unit(sub(wallB.end,wallB.start));
+  const n1={x:-u1.y,y:u1.x},n2={x:-u2.y,y:u2.x};
+  const halfA=thicknessA/2,halfB=thicknessB/2;
+  const resolveSide=sign=>{
+    const a=add(joint,mul(n1,halfA*sign)),b=add(joint,mul(n2,halfB*sign));
+    const hit=lineIntersection(a,u1,b,u2);
+    if(!hit) return {type:"parallel",points:[a,b],miter:null};
+    const miterLength=norm(sub(hit.point,joint)),limit=Math.max(halfA,halfB)*miterLimit;
+    if(!Number.isFinite(miterLength)||miterLength>limit) return {type:"bevel",points:[a,b],miterLength};
+    return {type:"miter",points:[hit.point],miterLength};
+  };
+  const left=resolveSide(1),right=resolveSide(-1);
+  return {junction:joint,left,right,type:left.type==="miter"&&right.type==="miter"?"miter":"bevel"};
+}

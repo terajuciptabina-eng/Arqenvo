@@ -6,6 +6,6 @@
   "description": "Independent browser-based Building Information Modeling software",
   "scripts": {
     "test": "node --test",
-    "check": "node --check src/app.js && node --check src/core/model.js && node --check src/core/rooms.js && node --check src/core/transactions.js && node --check src/core/geometry.js && node --check src/core/csv.js && node --check src/core/section.js && node --check src/core/dxf.js && node --check src/core/authoring.js"
+    "check": "node --check src/app.js && node --check src/core/model.js && node --check src/core/rooms.js && node --check src/core/transactions.js && node --check src/core/geometry.js && node --check src/core/csv.js && node --check src/core/section.js && node --check src/core/dxf.js && node --check src/core/authoring.js && node --check src/core/geometry.js"
   }
 }
