@@ -145,6 +145,9 @@ function panBy(dx,dy){
 // macOS trackpad: two-finger pan emits deltaX/deltaY; pinch emits ctrlKey+wheel in Safari/Chromium.
 c.addEventListener("wheel",e=>{
  e.preventDefault();
+ // Keep the screen-to-world transform fixed while a drawing is in progress.
+ // Trackpad pan/zoom here used to change origin/scale between the first and second wall points.
+ if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before panning/zooming";return}
  if(e.ctrlKey||e.metaKey){zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.012));return}
  const trackpadPan=Math.abs(e.deltaX)>0||Math.abs(e.deltaY)<45;
  if(trackpadPan){panBy(-e.deltaX,-e.deltaY);return}
