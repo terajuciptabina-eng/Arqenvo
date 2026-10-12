@@ -49,3 +49,7 @@ The UI is connected to the schema-v2 model for its current drawing operations, b
 npm test
 npm run check
 ```
+
+## Architecture audit
+
+The detailed Archicad capability comparison, current ARQENVO gap analysis, integrated target architecture, delivery gates and definition of done are documented in [ARCHICAD-COMPARISON-AND-ARQENVO-ROADMAP.md](./ARCHICAD-COMPARISON-AND-ARQENVO-ROADMAP.md).
