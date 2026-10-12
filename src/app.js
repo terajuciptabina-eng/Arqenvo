@@ -207,7 +207,9 @@ $("contextHeight").addEventListener("input",e=>{$("height").value=e.target.value
 $("contextThickness").addEventListener("input",e=>{$("thickness").value=e.target.value});
 $("trackerDistance").addEventListener("input",e=>{trackerDistanceOverride=e.target.value===""?null:Math.max(0,Number(e.target.value)||0);redraw()});
 $("trackerAngle").addEventListener("input",e=>{trackerAngleOverride=e.target.value===""?null:Number(e.target.value)||0;redraw()});
-for(const id of ["trackerDistance","trackerAngle"]){$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();confirmTrackerAndDraw();e.target.blur()}});$(id).addEventListener("focus",()=>{$(id).select()})}
+for(const id of ["trackerDistance","trackerAngle"]){$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();const created=confirmTrackerAndDraw();if(created)e.target.blur()} });$(id).addEventListener("focus",()=>{$(id).select()})}
+// Keep keyboard navigation inside the Dynamic Tracker while drawing.
+document.addEventListener("keydown",e=>{const distance=$("trackerDistance"),angle=$("trackerAngle"),tracker=$("dynamicTracker");if(tracker.hidden||view!=="floor"||!draft.length||!["wall","beam","dimension","slab"].includes(tool))return;const inTracker=e.target===distance||e.target===angle;if(e.key==="Tab"&&e.shiftKey&&!inTracker){e.preventDefault();e.stopPropagation();distance.focus();return}if(e.key==="Tab"&&inTracker){e.preventDefault();e.stopPropagation();(e.shiftKey?(e.target===angle?distance:angle):(e.target===distance?angle:distance)).focus()}},true);
 $("wallGeometryMethod").addEventListener("change",e=>{wallGeometryMethod=e.target.value;updateContextUI();redraw();$("status").textContent="Wall geometry method: "+e.target.options[e.target.selectedIndex].text});
 $("height").addEventListener("input",()=>{if(document.activeElement!==$("contextHeight"))$("contextHeight").value=$("height").value});
 $("thickness").addEventListener("input",()=>{if(document.activeElement!==$("contextThickness"))$("contextThickness").value=$("thickness").value});
