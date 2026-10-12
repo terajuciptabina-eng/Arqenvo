@@ -143,9 +143,10 @@ function panBy(dx,dy){
 // macOS trackpad: two-finger pan emits deltaX/deltaY; pinch emits ctrlKey+wheel in Safari/Chromium.
 c.addEventListener("wheel",e=>{
  e.preventDefault();
+ if(draft.length){$("status").textContent="Finish the active element or press Esc before panning/zooming";return}
  if(e.ctrlKey||e.metaKey){zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.012));return}
  const trackpadPan=Math.abs(e.deltaX)>0||Math.abs(e.deltaY)<45;
- if(trackpadPan){if(view==="floor"&&draft.length){$("status").textContent="Trackpad pan paused while drawing — finish the wall or press Esc first";return}panBy(-e.deltaX,-e.deltaY);return}
+ if(trackpadPan){panBy(-e.deltaX,-e.deltaY);return}
  zoomAt(e.clientX,e.clientY,e.deltaY<0?1.1:.9);
 },{passive:false});
 // Do not bind Safari gesture events to the drawing canvas: they can turn trackpad input into unintended zoom while drawing. Pinch zoom remains available through ctrl/meta+wheel.
