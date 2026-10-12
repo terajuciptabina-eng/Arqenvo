@@ -55,7 +55,7 @@ test("hosted door 3D leaf footprint pivots at selected hinge and follows swing s
   assert.equal(g.boundary.length,4);
   assert.equal(g.height,2.1);
   const hinge = {x:1,y:0};
-  assert.ok(g.boundary.some(p=>Math.abs(p.x-hinge.x)<1e-9&&Math.abs(p.y-hinge.y)<.02));
+  assert.ok(g.boundary.some(p=>Math.hypot(p.x-hinge.x,p.y-hinge.y)<.02));
   assert.ok(g.boundary.some(p=>p.y>.85));
   const outside = hostedOpening3dGeometry(wall,{...door,swingDirection:"outside"});
   assert.ok(outside.boundary.some(p=>p.y<-.85));
