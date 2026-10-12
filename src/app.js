@@ -200,8 +200,8 @@ $("gridQuick").addEventListener("change",e=>{$("grid").value=e.target.value;redr
 $("grid").addEventListener("change",syncGridOptions);
 $("snapToggle").addEventListener("click",e=>{p.settings=p.settings||{};p.settings.snap=p.settings.snap===false;const on=p.settings.snap!==false;e.currentTarget.classList.toggle("active",on);e.currentTarget.setAttribute("aria-pressed",String(on));$("status").textContent=on?"Endpoint snapping enabled":"Endpoint snapping disabled"});
 $("gridToggle").addEventListener("click",e=>{gridVisible=!gridVisible;e.currentTarget.classList.toggle("active",gridVisible);e.currentTarget.setAttribute("aria-pressed",String(gridVisible));redraw()});
-$("zoomIn").addEventListener("click",()=>{if(view==="3d")camera3d.zoom=Math.min(5,camera3d.zoom*1.15);else scale=Math.min(180,scale*1.15);redraw();updateZoomReadout()});
-$("zoomOut").addEventListener("click",()=>{if(view==="3d")camera3d.zoom=Math.max(.2,camera3d.zoom/1.15);else scale=Math.max(1,scale/1.15);redraw();updateZoomReadout()});
+$("zoomIn").addEventListener("click",()=>{if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before zooming";return}if(view==="3d")camera3d.zoom=Math.min(5,camera3d.zoom*1.15);else scale=Math.min(180,scale*1.15);redraw();updateZoomReadout()});
+$("zoomOut").addEventListener("click",()=>{if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before zooming";return}if(view==="3d")camera3d.zoom=Math.max(.2,camera3d.zoom/1.15);else scale=Math.max(1,scale/1.15);redraw();updateZoomReadout()});
 $("zoomFit").addEventListener("click",fitFloorPlan);
 $("scaleSelect").value=String(scale);syncGridOptions();updateZoomReadout();
 window.addEventListener("beforeunload",()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch{}});
