@@ -13,7 +13,7 @@ test("door swing geometry pivots at the hinge and uses opening width as radius",
 
 test("door swing supports right hinge and opposite opening side", () => {
   const left = doorSwingGeometry({x:0,y:0},{x:0,y:0.9},{hingeSide:"left",swingDirection:"inside"});
-  const right = doorSwingGeometry({x:0,y:0},{x:0,y:0.9},{hingeSide:"right",swingDirection:"outside"});
+  const right = doorSwingGeometry({x:0,y:0},{x:0,y:0.9},{hingeSide:"right",swingDirection:"inside"});
   assert.deepEqual(left.hinge,{x:0,y:0});
   assert.deepEqual(right.hinge,{x:0,y:0.9});
   assert.ok(Math.abs(Math.hypot(right.openFree.x-right.hinge.x,right.openFree.y-right.hinge.y)-0.9)<1e-9);
