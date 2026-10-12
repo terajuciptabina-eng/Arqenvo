@@ -89,7 +89,7 @@ scheduleAutoSave();redraw();renderProperties();$("status").textContent=mode==="c
 }
 
 function updateZoomReadout(){const el=$("zoomReadout");if(el)el.textContent=Math.round((view==="3d"?camera3d.zoom:scale/36)*100)+"%"}
-function fitFloorPlan(){if(view==="3d"){$("fitModel").click();updateZoomReadout();return}const visible=els().filter(e=>e.storyId===story().id&&["wall","beam","column","slab","room","dimension"].includes(e.type));if(!visible.length){origin={x:0,y:0};scale=36;redraw();updateZoomReadout();return}const pts=[];for(const e of visible){if(e.start)pts.push(e.start);if(e.end)pts.push(e.end);if(e.position)pts.push(e.position);if(e.boundary)pts.push(...e.boundary)}if(!pts.length)return;const minX=Math.min(...pts.map(v=>v.x)),maxX=Math.max(...pts.map(v=>v.x)),minY=Math.min(...pts.map(v=>v.y)),maxY=Math.max(...pts.map(v=>v.y));const availW=Math.max(100,c.clientWidth-100),availH=Math.max(100,c.clientHeight-100);scale=Math.max(8,Math.min(180,Math.min(availW/Math.max(1,maxX-minX),availH/Math.max(1,maxY-minY))));origin.x=-((minX+maxX)/2)*scale;origin.y=((minY+maxY)/2)*scale;redraw();updateZoomReadout()}
+function fitFloorPlan(){if(view==="3d"){$("fitModel").click();updateZoomReadout();return}const visible=els().filter(e=>e.storyId===story().id&&["wall","beam","column","slab","room","dimension"].includes(e.type));if(!visible.length){origin={x:0,y:0};scale=36;redraw();updateZoomReadout();return}const pts=[];for(const e of visible){if(e.start)pts.push(e.start);if(e.end)pts.push(e.end);if(e.position)pts.push(e.position);if(e.boundary)pts.push(...e.boundary)}if(!pts.length)return;const minX=Math.min(...pts.map(v=>v.x)),maxX=Math.max(...pts.map(v=>v.x)),minY=Math.min(...pts.map(v=>v.y)),maxY=Math.max(...pts.map(v=>v.y));const availW=Math.max(100,c.clientWidth-100),availH=Math.max(100,c.clientHeight-100);scale=Math.max(1,Math.min(180,Math.min(availW/Math.max(1,maxX-minX),availH/Math.max(1,maxY-minY))));origin.x=-((minX+maxX)/2)*scale;origin.y=((minY+maxY)/2)*scale;redraw();updateZoomReadout()}
 function syncGridOptions(){const a=$("grid"),b=$("gridQuick");if(a&&b){if([...b.options].some(o=>o.value===a.value))b.value=a.value;else b.value="0.5"}}
 function renderLayerPanel(){
  const host=$("layerPanel");if(!host)return;
@@ -132,7 +132,7 @@ c.addEventListener("contextmenu",e=>{e.preventDefault();finish()});
 function zoomAt(clientX,clientY,factor){
  const rect=c.getBoundingClientRect(),mx=clientX-rect.left,my=clientY-rect.top;
  if(view==="3d"){camera3d.zoom=Math.max(.2,Math.min(5,camera3d.zoom*factor))}
- else{const next=Math.max(8,Math.min(180,scale*factor)),actual=next/scale;origin.x=mx-(mx-origin.x)*actual;origin.y=my-(my-origin.y)*actual;scale=next}
+ else{const next=Math.max(1,Math.min(180,scale*factor)),actual=next/scale;origin.x=mx-(mx-origin.x)*actual;origin.y=my-(my-origin.y)*actual;scale=next}
  redraw();
 }
 function panBy(dx,dy){
@@ -190,13 +190,13 @@ $("contextHeight").addEventListener("input",e=>{$("height").value=e.target.value
 $("contextThickness").addEventListener("input",e=>{$("thickness").value=e.target.value});
 $("height").addEventListener("input",()=>{if(document.activeElement!==$("contextHeight"))$("contextHeight").value=$("height").value});
 $("thickness").addEventListener("input",()=>{if(document.activeElement!==$("contextThickness"))$("contextThickness").value=$("thickness").value});
-$("scaleSelect").addEventListener("change",e=>{scale=Number(e.target.value)||36;redraw();updateZoomReadout()});
+$("scaleSelect").addEventListener("change",e=>{scale=Math.max(1,Math.min(180,Number(e.target.value)||36));redraw();updateZoomReadout()});
 $("gridQuick").addEventListener("change",e=>{$("grid").value=e.target.value;redraw()});
 $("grid").addEventListener("change",syncGridOptions);
 $("snapToggle").addEventListener("click",e=>{p.settings=p.settings||{};p.settings.snap=p.settings.snap===false;const on=p.settings.snap!==false;e.currentTarget.classList.toggle("active",on);e.currentTarget.setAttribute("aria-pressed",String(on));$("status").textContent=on?"Endpoint snapping enabled":"Endpoint snapping disabled"});
 $("gridToggle").addEventListener("click",e=>{gridVisible=!gridVisible;e.currentTarget.classList.toggle("active",gridVisible);e.currentTarget.setAttribute("aria-pressed",String(gridVisible));redraw()});
 $("zoomIn").addEventListener("click",()=>{if(view==="3d")camera3d.zoom=Math.min(5,camera3d.zoom*1.15);else scale=Math.min(180,scale*1.15);redraw();updateZoomReadout()});
-$("zoomOut").addEventListener("click",()=>{if(view==="3d")camera3d.zoom=Math.max(.2,camera3d.zoom/1.15);else scale=Math.max(8,scale/1.15);redraw();updateZoomReadout()});
+$("zoomOut").addEventListener("click",()=>{if(view==="3d")camera3d.zoom=Math.max(.2,camera3d.zoom/1.15);else scale=Math.max(1,scale/1.15);redraw();updateZoomReadout()});
 $("zoomFit").addEventListener("click",fitFloorPlan);
 $("scaleSelect").value=String(scale);syncGridOptions();updateZoomReadout();
 window.addEventListener("beforeunload",()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch{}});
