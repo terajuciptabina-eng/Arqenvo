@@ -151,6 +151,7 @@ document.querySelectorAll("[data-tool-command]").forEach(b=>b.addEventListener("
 document.querySelectorAll("[data-panel-command]").forEach(b=>b.addEventListener("click",()=>{const target=$(b.dataset.panelCommand);if(target){target.style.display=target.style.display==="none"?"block":"none"}document.querySelectorAll(".menu-group[open]").forEach(m=>m.open=false)}));
 document.querySelectorAll("[data-navtab]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-navtab]").forEach(t=>t.classList.toggle("active",t===b));document.querySelectorAll("[data-navpanel]").forEach(p=>p.hidden=p.dataset.navpanel!==b.dataset.navtab)}));
 
+$("newProjectRibbon").addEventListener("click",()=>$("new").click());
 $("contextHeight").addEventListener("input",e=>{$("height").value=e.target.value});
 $("contextThickness").addEventListener("input",e=>{$("thickness").value=e.target.value});
 $("height").addEventListener("input",()=>{if(document.activeElement!==$("contextHeight"))$("contextHeight").value=$("height").value});
