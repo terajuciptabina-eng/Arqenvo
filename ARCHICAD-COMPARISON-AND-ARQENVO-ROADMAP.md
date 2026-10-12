@@ -34,7 +34,7 @@ Status key: **Basic** = early implementation; **Partial** = limited workflow; **
 | Wall geometry | Profiles/composites, top/base constraints, joins and intersections | Partial: straight walls with thickness and height | Wall bodies, joins, intersection cleanup and constraints |
 | Doors/windows/openings | Host-linked components, true model cuts, symbols and schedules | Partial: hosted data and plan markers; no true 3D cuts | Host-relative geometry, validation, real cuts and coordinated display |
 | 3D | Editable parametric geometry, materials, stories and navigation | Partial: conceptual projection, not a solid engine | Geometry kernel and 3D generated from the authoritative model |
-| Rooms/zones | Boundaries, area/volume, labels, criteria and schedules | Partial: endpoint-connected closed loops only | Topology-aware boundaries, net/gross area, volume and labels |
+| Rooms/zones | Boundaries, area/volume, labels, criteria and schedules | Partial: endpoint-connected loops plus mid-wall segment splitting; complex topology still needs hardening | Topology-aware boundaries, net/gross area, volume and labels |
 | Properties/classifications | IDs, typed properties, classification, IFC data and materials | Partial: basic dimensions/material field | Typed schema, classifications, custom properties and validation |
 | Libraries/attributes | Building materials, composites, profiles, surfaces, objects and favorites | Missing/basic only | Attribute registry, object library, versioning/licensing |
 | Multi-storey | Linked heights, home story and vertical relationships | Missing beyond default story | Story-aware geometry, base/top links and cross-story display |
@@ -57,10 +57,10 @@ Status key: **Basic** = early implementation; **Partial** = limited workflow; **
 - `index.html`: browser shell, canvas, toolbar, navigator and properties panel.
 - `src/app.js`: drawing interactions, multi-selection, undo/redo, basic parameter editing, opening placement, room detection and conceptual 3D.
 - `src/core/model.js`: schema-v2 constructors, area calculations, serialization/migration and validation.
-- `src/core/rooms.js`: first-pass room detection for endpoint-connected loops.
+- `src/core/rooms.js`: room detection now splits walls at proper segment intersections before cycle detection; collinear overlaps, tolerance edge cases and complex networks still need broader regression coverage.
 - `tests/core.test.js`, `tests/rooms.test.js`: initial model/room tests; GitHub Actions runs CI.
 
-Known gaps: no real solid geometry; openings do not cut 3D wall bodies; mid-wall intersections are not split for room detection; common parameter editing for multiple selected items is absent; only first story is active in UI; no real sections/elevations, layout book, publishing, IFC/DWG, object library or collaboration server. New opening-property synchronization needs regression tests for all edge cases.
+Known gaps: no real solid geometry; openings do not cut 3D wall bodies; near-tolerance junction handling and complex wall-network topology still need broader validation; common parameter editing for multiple selected items is absent; only first story is active in UI; no real sections/elevations, layout book, publishing, IFC/DWG, object library or collaboration server. New opening-property synchronization needs regression tests for all edge cases.
 
 ## Integrated architecture required
 
