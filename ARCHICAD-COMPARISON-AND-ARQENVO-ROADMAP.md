@@ -181,3 +181,17 @@ Automated checks and GitHub Pages deployment run on each push. Verify the latest
 - Core checks caught an initial JavaScript line-break issue during this increment; the source was corrected and the latest workflow must pass before release.
 
 **Still not Archicad parity:** menus only expose implemented commands; the geometry viewport remains a lightweight canvas projection; there is no full Info Box option system, saved view/map system, layout book, true orthographic section/elevation renderer, or production solid geometry engine. Continue with screenshot-based desktop acceptance and tool-by-tool workflows rather than adding fake controls.
+
+
+### Archicad-oriented workspace and macOS trackpad pass — 12 October 2026
+
+- Re-docked Navigator and Info Box as stacked palettes on the right, keeping the Toolbox at the left and the drawing workspace central. This is a deliberate move away from the prior left-Navigator/right-Inspector arrangement that felt closer to Revit.
+- Added macOS/Safari trackpad navigation to the drawing canvas:
+  - two-finger trackpad scroll pans the floor plan or 3D view when reported as pixel deltas;
+  - horizontal trackpad scroll pans;
+  - Ctrl/Command + wheel pinch zooms around the cursor;
+  - Safari gesture events support pinch zoom with incremental scaling;
+  - ordinary mouse-wheel zoom remains supported.
+- Floor-plan zoom now anchors around the pointer rather than zooming only toward the viewport centre.
+- Core Checks passed on the docking change commit `38b7e70d` and gesture implementation commit `4c612c6c`. A follow-up corrected Safari gesture scaling and is awaiting its own CI/Pages result.
+- **Important limitation:** these changes improve docking and navigation only. They do not make ARQENVO a full Archicad replacement. Native Archicad-like tool settings, navigator view maps/layout book, true perspective/orthographic navigation, wall joins, solid openings, and IFC authoring still need separate implementation and acceptance testing.
