@@ -31,3 +31,22 @@ test("legacy v1 project migrates to schema v2", () => {
 test("element schedule reports quantities by story", () => {
  const p=createProject(); p.elements.push(createWall({x:0,y:0},{x:2,y:0})); const rows=elementSchedule(p); assert.equal(rows[0].story,"Ground Floor"); assert.equal(rows[0].length,2); assert.equal(rows[0].area,6);
 });
+
+test("project validation rejects duplicate stories and invalid story geometry", () => {
+ const p=createProject();
+ p.stories.push({id:p.stories[0].id,name:"First Floor",elevation:3,height:3});
+ assert.equal(validateProject(p).valid,false);
+ const q=createProject();
+ q.stories[0].height=0;
+ assert.equal(validateProject(q).valid,false);
+});
+test("project validation rejects elements assigned to unknown stories", () => {
+ const p=createProject();
+ p.elements.push(createWall({x:0,y:0},{x:2,y:0},{storyId:"missing-story"}));
+ assert.ok(validateProject(p).errors.some(error=>error.includes("unknown story")));
+});
+test("project validation rejects duplicate story names ignoring case", () => {
+ const p=createProject();
+ p.stories.push({id:"story-first",name:"ground floor",elevation:3,height:3});
+ assert.ok(validateProject(p).errors.some(error=>error.includes("Duplicate story name")));
+});
