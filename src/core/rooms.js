@@ -136,5 +136,26 @@ export function detectRooms(walls, options = {}) {
     };
     visit(start, null, [start], []);
   }
-  return [...found.values()].sort((a,b) => a.area - b.area);
+  const candidates = [...found.values()].sort((a,b) => a.area - b.area);
+  // A closed outer perimeter is not a room when smaller closed faces partition it.
+  // Suppress a containing cycle only when the non-overlapping smaller faces account
+  // for its full area; this preserves legitimate nested spaces with unfilled area.
+  const containsPoint = (poly, p) => {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const a = poly[i], b = poly[j];
+      const crosses = ((a.y > p.y) !== (b.y > p.y)) &&
+        (p.x < (b.x - a.x) * (p.y - a.y) / ((b.y - a.y) || Number.EPSILON) + a.x);
+      if (crosses) inside = !inside;
+    }
+    return inside;
+  };
+  return candidates.filter(room => {
+    const contained = candidates.filter(other =>
+      other.area < room.area - tolerance * tolerance &&
+      containsPoint(room.boundary, other.center)
+    );
+    const coveredArea = contained.reduce((sum, other) => sum + other.area, 0);
+    return coveredArea < room.area - tolerance * tolerance;
+  });
 }
