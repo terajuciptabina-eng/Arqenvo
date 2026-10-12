@@ -165,6 +165,12 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .navigator{display:none!important}
  .inspector{display:none!important}
 }
+
+/* Stop the browser from allowing several application menus to overlap */
+.menu{z-index:1000;position:relative}
+.menu-group{flex:0 0 auto}
+.menu-pop{z-index:1100;max-height:min(70vh,560px);overflow-y:auto}
+.canvaswrap{min-width:0;min-height:0}
 </style></head>
 <body><div class="app">
 <nav class="menu" aria-label="Application menu">
@@ -176,6 +182,25 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 <details class="menu-group"><summary>Window</summary><div class="menu-pop"><button data-panel-command="toolbox">Toolbox</button><button data-panel-command="navigator">Navigator panel</button><button data-panel-command="inspector">Info Box / Properties</button></div></details>
 <details class="menu-group"><summary>Help</summary><div class="menu-pop help-menu"><strong>ARQENVO BIM Workspace</strong><span>F2 Floor Plan · F3 3D Window</span><span>Space-drag / middle mouse: Pan</span><span>3D left-drag: Orbit · Wheel: Zoom</span><span>Esc: Finish / cancel command</span></div></details>
 </nav>
+<script>
+/* Keep the application menu mutually exclusive, like a desktop menu bar. */
+document.querySelectorAll(".menu-group").forEach(group=>{
+ group.addEventListener("toggle",()=>{
+  if(group.open)document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
+ });
+ group.querySelector("summary")?.addEventListener("click",event=>{
+  const wasOpen=group.open;
+  document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
+  if(wasOpen){event.preventDefault();group.open=false}
+ });
+});
+document.addEventListener("pointerdown",event=>{
+ if(!event.target.closest(".menu"))document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);
+});
+document.addEventListener("keydown",event=>{
+ if(event.key==="Escape")document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);
+});
+</script>
 <header class="top" aria-label="Main ribbon">
 <div class="ribbon-brand"><img class="brand-logo" src="./assets/assets/arqenvo-logo.png" alt="ARQENVO"></div>
 <div class="ribbon-group project-group"><div class="ribbon-buttons"><button id="newProjectRibbon" title="New Project">▧<span>New</span></button><button id="open" title="Open Project">▱<span>Open</span></button><button id="save" title="Save Project">▣<span>Save</span></button><input id="file" type="file" accept=".arq,.json,application/json" hidden></div><small>PROJECT</small></div>
