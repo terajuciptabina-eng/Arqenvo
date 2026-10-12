@@ -44,6 +44,48 @@ export function doorSwingGeometry(p1, p2, { hingeSide = "left", swingDirection =
 }
 
 /**
+ * Plan footprint and vertical range for a hosted opening's 3D component.
+ * The wall body is cut independently from its host opening interval.
+ * Door leaf is shown in its selected open position; a window is a thin pane
+ * centred in the host wall thickness.
+ */
+export function hostedOpening3dGeometry(wall, opening, { leafThickness = 0.035, paneThickness = 0.025 } = {}) {
+  if (!wall?.start || !wall?.end || !opening) throw new TypeError("A host wall and opening are required");
+  const dx = wall.end.x - wall.start.x, dy = wall.end.y - wall.start.y;
+  const length = Math.hypot(dx, dy);
+  if (length <= 1e-9) throw new RangeError("Host wall length must be positive");
+  if (!(opening.width > 0) || !(opening.height > 0) || opening.offset < 0 || opening.offset + opening.width > length + 1e-8) {
+    throw new RangeError("Opening must fit within the host wall");
+  }
+  const ux = dx / length, uy = dy / length, nx = -uy, ny = ux;
+  const a = { x: wall.start.x + ux * opening.offset, y: wall.start.y + uy * opening.offset };
+  const b = { x: a.x + ux * opening.width, y: a.y + uy * opening.width };
+  let boundary;
+  if (opening.type === "door") {
+    const hinge = opening.hingeSide === "right" ? b : a;
+    const side = opening.swingDirection === "outside" ? -1 : 1;
+    const free = { x: hinge.x + nx * side * opening.width, y: hinge.y + ny * side * opening.width };
+    const tx = free.x - hinge.x, ty = free.y - hinge.y, n = Math.hypot(tx, ty);
+    const px = -ty / n * leafThickness / 2, py = tx / n * leafThickness / 2;
+    boundary = [
+      { x: hinge.x + px, y: hinge.y + py },
+      { x: free.x + px, y: free.y + py },
+      { x: free.x - px, y: free.y - py },
+      { x: hinge.x - px, y: hinge.y - py },
+    ];
+  } else {
+    const half = (wall.thickness || 0.15) / 2 + paneThickness / 2;
+    boundary = [
+      { x: a.x + nx * half, y: a.y + ny * half },
+      { x: b.x + nx * half, y: b.y + ny * half },
+      { x: b.x - nx * half, y: b.y - ny * half },
+      { x: a.x - nx * half, y: a.y - ny * half },
+    ];
+  }
+  return { type: opening.type, boundary, zOffset: opening.sill || 0, height: opening.height, thickness: opening.type === "door" ? leafThickness : paneThickness };
+}
+
+/**
  * Small placement state machine. No model mutation occurs until confirm().
  * The caller owns host lookup and commits the returned payload in one transaction.
  */
