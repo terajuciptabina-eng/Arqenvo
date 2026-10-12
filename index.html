@@ -141,31 +141,88 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .layer-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .layer-row small{color:#7b858e;font-size:9px;font-variant-numeric:tabular-nums}
 
-/* Archicad-oriented palette docking: Toolbox left, Navigator dock right, Info Box above workspace */
-.work{display:grid!important;grid-template-columns:58px minmax(0,1fr) 260px!important;grid-template-rows:minmax(150px,.82fr) minmax(210px,1.18fr)!important;min-height:0}
-#toolbox{grid-column:1!important;grid-row:1 / span 2!important}
-.workspace{grid-column:2!important;grid-row:1 / span 2!important;min-width:0;min-height:0}
-.navigator{display:block!important;grid-column:3!important;grid-row:1!important;min-height:0;overflow:auto;border-left:1px solid #b9c1c8;border-right:0;border-bottom:1px solid #b9c1c8;padding:9px}
-.inspector{display:block!important;grid-column:3!important;grid-row:2!important;min-height:0;overflow:auto;border-left:1px solid #b9c1c8;border-right:0;padding:9px}
-.navigator .nav-note{font-size:10px}
-.navigator .tree{font-size:10px}
-.inspector .section,.navigator .section{letter-spacing:.09em}
-.context-toolbar{border-bottom:1px solid #9da8b1;background:#e6e9ec}
-.top{background:#e6e9ec}
-.canvaswrap{touch-action:none}
+/* Docked BIM workspace: left Toolbox, central model canvas, right Navigator + Properties */
+.work{display:grid;grid-template-columns:156px minmax(0,1fr) 238px;grid-template-rows:minmax(0,1fr) minmax(170px,.58fr);min-height:0;background:#25262d}
+#toolbox{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:stretch;gap:1px;min-width:0;overflow:auto;padding:0 0 10px;background:#292a31;color:#f0f0f2;border-right:1px solid #17181c;scrollbar-width:thin}
+.toolbox-title{position:sticky;top:0;z-index:2;text-align:left;padding:9px 12px 8px;background:#24252b;color:#aeb0b8;border-bottom:1px solid #3c3d45;font-size:9px;letter-spacing:.12em}
+.tool-group-label{flex:0 0 auto;text-align:left;padding:7px 11px 5px;background:#202126;color:#bfc0c6;border-top:1px solid #3c3d44;border-bottom:1px solid #18191d;font-size:11px;letter-spacing:.02em;font-weight:700}
+.tool{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:11px;min-height:36px;width:calc(100% - 6px);margin:0 3px;padding:5px 9px;border:1px solid transparent;border-radius:5px;background:transparent;color:#f0f0f2;text-align:left;font-size:12px;white-space:nowrap}
+.tool b{display:grid;place-items:center;flex:0 0 29px;width:29px;font-size:22px;line-height:1.15;color:#d2d0cd;font-weight:400}
+.tool:hover{background:#373840;border-color:#41424a}
+.tool.active{background:#898a8e;border-color:#999a9e;color:#fff;box-shadow:none}
+.tool.active b{color:#fff}
+.tool-note{padding:7px 11px;color:#9c9ea7;text-align:left;font-size:10px;line-height:1.45}
+.workspace{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-rows:34px minmax(0,1fr) 30px;min-width:0;min-height:0;background:#fff}
+.navigator{display:block;grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;padding:9px;background:#303139;color:#e6e6e9;border-left:1px solid #1d1e23;border-right:0;border-bottom:1px solid #17181c;scrollbar-width:thin}
+.inspector{display:block;grid-column:3;grid-row:2;min-width:0;min-height:0;overflow:auto;padding:9px;background:#303139;color:#e6e6e9;border-left:1px solid #1d1e23;border-right:0;scrollbar-width:thin}
+.navigator .section,.inspector .section{color:#d1d2d7;border-bottom-color:#494a53}
+.navigator .nav-tabs{border-bottom-color:#4b4c55}
+.navigator .nav-tab{color:#b5b6bf}
+.navigator .nav-tab.active{color:#fff;border-bottom-color:#64b9c0}
+.navigator .tree{color:#e2e2e6;border-color:transparent;background:transparent}
+.navigator .tree:hover,.navigator .tree.active{background:#44454e;color:#fff;border-color:#555660}
+.navigator .nav-subtitle,.navigator .nav-note{color:#aaabb4}
+.navigator hr,.inspector hr{border-top-color:#4a4b54!important}
+.inspector .field label{color:#b9bac2}
+.inspector .field input,.inspector .field select{background:#25262d;border-color:#555660;color:#f0f0f2}
+.inspector #delete{background:#4a302e;border-color:#87524b;color:#ffe4df}
+.inspector #elementProperties{color:#ededf0}
+.context-toolbar{background:#36373f;color:#ededf0;border-bottom:1px solid #1f2025;box-shadow:none}
+.context-identity b,.context-summary b{color:#f1f1f3}
+.context-identity small,.context-eyebrow,.context-control label,.context-brand{color:#b4b5be}
+.context-identity>strong{background:#4b4c56;border-color:#6b6d78;color:#fff}
+.context-divider{background:#5a5b64}
+.context-input{background:#24252b;border-color:#62636d}
+.context-input input,.context-input span{color:#f0f0f2}
+.context-control select{font-size:11px;padding:4px 6px;background:#25262d;border:1px solid #62636d;border-radius:3px;color:#f0f0f2}
+.quick-options{background:#303139;border-top-color:#1d1e23;color:#e1e1e5}
+.quick-label{color:#b7b8c0;border-right-color:#50515a}
+.quick-options select,.quick-options button{background:#25262d;border-color:#555660;color:#ededf0}
+.quick-options .quick-toggle.active{background:#46575b;border-color:#6d9fa4;color:#fff}
+.tabs{background:#303139;border-bottom-color:#1b1c20}
+.tabs button{color:#e2e2e6}
+.tabs button.active{background:#fff;color:#252d35;border-color:#c8cdd2}
+#viewLabel{color:#d1d2d7!important}
+.status{background:#25262d;color:#c8c9d0;border-top-color:#111216}
+.hint{background:#fffffff2;color:#434952;border-color:#b8bdc3}
 @media(max-width:1050px){
- .work{grid-template-columns:50px minmax(0,1fr) 220px!important}
- .navigator{padding:7px}
- .inspector{padding:7px}
+ .work{grid-template-columns:142px minmax(0,1fr) 218px;grid-template-rows:minmax(0,1fr) minmax(160px,.5fr)}
+ .tool{gap:8px;padding-left:7px}
+ .navigator,.inspector{padding:7px}
 }
-@media(max-width:780px){
- .work{grid-template-columns:45px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) auto!important}
- #toolbox{grid-column:1!important;grid-row:1!important}
- .workspace{grid-column:2!important;grid-row:1!important}
- .navigator{display:none!important}
- .inspector{display:none!important}
+@media(max-width:760px){
+ .app{grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}
+ .work{grid-template-columns:124px minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+ #toolbox{grid-column:1;grid-row:1;display:flex!important}
+ .workspace{grid-column:2;grid-row:1;grid-template-rows:34px minmax(0,1fr) 30px}
+ .navigator,.inspector{display:none!important}
+ .tool{min-height:39px;font-size:11px;gap:6px;padding:4px 5px}
+ .tool b{flex-basis:23px;width:23px;font-size:18px}
+ .toolbox-title{padding:7px 8px}
+ .tool-group-label{padding:6px 8px;font-size:10px}
+ .context-toolbar{height:43px;gap:8px;padding:4px 6px}
+ .context-identity{min-width:135px;gap:5px}
+ .context-identity>strong{width:27px;height:27px;font-size:17px}
+ .context-identity small{display:none}
+ .context-control{min-width:88px}
+ .context-input input{width:50px}
+ .context-summary,.context-brand{display:none}
+ .quick-options{gap:5px;padding:3px 5px}
+ .quick-label{display:none}
+ .quick-options label{gap:2px}
+ .quick-options select{max-width:68px}
+ .menu-group summary{padding:0 7px;font-size:10px}
+ .menu-pop{min-width:190px}
+ .ribbon-brand{min-width:60px;padding:0 4px;margin-right:3px}
+ .ribbon-brand .brand-logo{max-width:56px;height:38px}
+ .ribbon-group{padding:2px 3px 0}
+ .ribbon-group>small{font-size:7px}
+ .ribbon-buttons{height:46px;gap:1px}
+ .ribbon-buttons button{height:43px;min-width:35px;font-size:16px;padding:2px}
+ .ribbon-buttons button span{font-size:8px}
+ .status{gap:8px}
+ .status .right{display:none}
 }
-
 /* Stop the browser from allowing several application menus to overlap */
 .menu{z-index:1000;position:relative}
 .menu-group{flex:0 0 auto}
@@ -223,7 +280,11 @@ document.addEventListener("keydown",event=>{
 </div>
 <div class="work">
 <aside class="tools" id="toolbox" aria-label="Toolbox">
-<button class="tool active" data-tool="select"><b>↖</b>Select</button><button class="tool" data-tool="wall"><b>╱</b>Wall</button><button class="tool" data-tool="slab"><b>▱</b>Slab</button><button class="tool" data-tool="column"><b>▣</b>Column</button><button class="tool" data-tool="beam"><b>━</b>Beam</button><button class="tool" data-tool="door"><b>▯</b>Door</button><button class="tool" data-tool="window"><b>▤</b>Window</button><button class="tool" data-tool="dimension"><b>↔</b>Dimension</button>
+<div class="toolbox-title">TOOLBOX</div>
+<div class="tool-group-label">Arrow</div><button class="tool active" data-tool="select"><b>↖</b><span>Select</span></button>
+<div class="tool-group-label">Design</div><button class="tool" data-tool="wall"><b>▱</b><span>Wall</span></button><button class="tool" data-tool="slab"><b>▱</b><span>Slab</span></button><button class="tool" data-tool="column"><b>▯</b><span>Column</span></button><button class="tool" data-tool="beam"><b>━</b><span>Beam</span></button><button class="tool" data-tool="door"><b>▯</b><span>Door</span></button><button class="tool" data-tool="window"><b>▦</b><span>Window</span></button>
+<div class="tool-group-label">Document</div><button class="tool" data-tool="dimension"><b>↔</b><span>Dimension</span></button>
+<div class="tool-note">ARQENVO · BIM authoring</div>
 </aside>
 <aside class="navigator"><div class="section">NAVIGATOR</div><div class="nav-tabs"><button class="nav-tab active" data-navtab="project">Project Map</button><button class="nav-tab" data-navtab="views">Views</button><button class="nav-tab" data-navtab="layers">Layers</button></div><div data-navpanel="project"><div class="nav-subtitle">PROJECT MAP</div><button class="tree active" data-view="floor">▱ Project Map / Floor Plan</button><button class="tree" data-view="3d">◇ 3D Window</button><hr style="border:0;border-top:1px solid var(--line);margin:15px 0"><div class="section">PROJECT</div><button class="tree" id="new">＋ New Project</button><button class="tree" id="clear">⌫ Clear Drawing</button></div><div data-navpanel="views" hidden><div class="nav-subtitle">SAVED / DERIVED VIEWS</div><button class="tree" data-view="floor">Floor Plan · Active Story</button><button class="tree" data-view="3d">3D Window</button><button class="tree" data-command="exportSection">Extract Section CSV</button><p class="nav-note">Section/elevation drawing views and layout publishing are not implemented yet.</p></div><div data-navpanel="layers" hidden><div class="nav-subtitle">LAYER COMBINATIONS</div><div id="layerPanel"></div><p class="nav-note">Toggle a layer to show or hide its elements in plan and 3D. This visibility setting applies to the current workspace session.</p></div><p class="nav-note">Project data is saved locally in this browser. Use Save Project to export a portable .arq file.</p></aside>
 <main class="workspace"><div class="tabs"><button id="floorTab" class="active">Floor Plan</button><button id="threeTab">3D Window</button><span id="cameraControls" style="display:none;align-items:center;gap:3px"><button id="orbitLeft" title="Orbit left">↶</button><button id="orbitRight" title="Orbit right">↷</button><button id="viewTop" title="Top view">Top</button><button id="viewFront" title="Front view">Front</button><button id="viewHome" title="Reset 3D camera">Home view</button><button id="fitModel" title="Fit model in view">Fit</button></span><select id="storySelect" aria-label="Active story" style="max-width:150px;padding:4px;border:1px solid var(--line);background:#fff;border-radius:3px"></select><button id="addStory" title="Add a new storey">＋ Story</button><button class="mobile-nav" id="propsToggle">Properties</button><span style="flex:1"></span><span id="viewLabel" style="font-size:11px;color:#64717b">Ground Floor · 1:100</span></div><div class="canvaswrap"><canvas id="canvas"></canvas><div class="hint" id="hint">Select a tool · 3D: drag to orbit, middle/space-drag to pan, scroll to zoom · Esc to finish</div></div><div class="quick-options" aria-label="Quick Options"><span class="quick-label">QUICK OPTIONS</span><label>Scale <select id="scaleSelect" aria-label="Plan scale"><option value="18">1:200</option><option value="36" selected>1:100</option><option value="72">1:50</option></select></label><label>Grid <select id="gridQuick" aria-label="Grid spacing"><option value="0.1">0.1 m</option><option value="0.25">0.25 m</option><option value="0.5" selected>0.5 m</option><option value="1">1.0 m</option></select></label><button id="snapToggle" class="quick-toggle active" aria-pressed="true">⌖ Snap</button><button id="gridToggle" class="quick-toggle active" aria-pressed="true">▦ Grid</button><span class="quick-spacer"></span><button id="zoomOut" title="Zoom out">−</button><span id="zoomReadout">100%</span><button id="zoomIn" title="Zoom in">＋</button><button id="zoomFit" title="Fit drawing in window">Fit</button></div></main>
