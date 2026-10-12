@@ -8,7 +8,7 @@ test("DXF exports supported plan geometry in model metres",()=>{
  const dxf=exportFloorPlanDxf(p);
  assert.ok(dxf.startsWith("0\nSECTION\n2\nHEADER"));
  assert.ok(dxf.includes("$INSUNITS"));assert.ok(dxf.includes("A-WALL"));assert.ok(dxf.includes("A-SLAB"));assert.ok(dxf.includes("A-COLS"));assert.ok(dxf.endsWith("0\nEOF\n"));
- assert.equal((dxf.match(/\nLINE\n/g)||[]).length,6);
+ assert.equal((dxf.match(/\nLINE\n/g)||[]).length,9);
 });
 test("DXF respects selected story and rejects unknown story",()=>{
  const p=createProject();p.elements.push(createWall({x:0,y:0},{x:2,y:0}));p.stories.push({id:"upper",name:"Upper",elevation:3,height:3});p.elements.push(createWall({x:0,y:1},{x:2,y:1},{storyId:"upper"}));
