@@ -85,6 +85,31 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px solid #07818c;outline-offset:2px}
 @media(max-width:1100px){.work{grid-template-columns:58px minmax(0,1fr) 240px}.navigator{display:none}}
 @media(max-width:760px){.app{grid-template-rows:27px 55px minmax(0,1fr) 23px}.work{grid-template-columns:48px minmax(0,1fr)}.tools{padding:5px 2px}.tool{min-height:44px}.toolbox-title,.tool-group-label,.tool-note{display:none}.workspace{grid-template-rows:34px minmax(0,1fr) 30px}.quick-options{gap:5px;padding:3px 5px}.quick-label{display:none}.quick-options label{gap:2px}.quick-options select{max-width:68px}.menu-group summary{padding:0 7px;font-size:10px}.menu-pop{min-width:190px}.brand{min-width:80px}.brand-logo{max-width:100px}}
+
+/* Prominent Archicad-inspired contextual Info Box ribbon */
+.app{grid-template-rows:29px 64px 48px minmax(0,1fr) 23px}
+.context-toolbar{display:flex;align-items:center;gap:14px;padding:5px 12px;background:linear-gradient(#f9fafb,#e8ebee);border-bottom:1px solid #b7c0c7;box-shadow:0 1px 2px #0000000a;min-width:0;overflow-x:auto;white-space:nowrap}
+.context-identity{display:flex;align-items:center;gap:9px;min-width:245px}
+.context-identity>strong{display:grid;place-items:center;width:32px;height:32px;border:1px solid #a8cbd0;border-radius:4px;background:#d8ecee;color:#176a72;font-size:21px;font-weight:500}
+.context-identity>div{display:flex;flex-direction:column;gap:1px}
+.context-identity b{font-size:12px;color:#293640}
+.context-identity small{font-size:10px;color:#6c7780}
+.context-eyebrow{display:block;font-size:8px;letter-spacing:.1em;font-weight:700;color:#75818b}
+.context-identity .context-eyebrow{display:none}
+.context-divider{height:30px;width:1px;background:#c6cdd3;flex:0 0 1px}
+.context-control{display:flex;flex-direction:column;gap:3px;min-width:112px}
+.context-control label{font-size:9px;font-weight:700;color:#5e6a74;text-transform:uppercase;letter-spacing:.035em}
+.context-input{display:flex;align-items:center;gap:5px;border:1px solid #c3cbd1;background:#fff;border-radius:3px;padding:2px 6px}
+.context-input input{width:68px;border:0;outline:none;padding:2px 0;font-size:12px;background:transparent}
+.context-input span{font-size:10px;color:#7a858e}
+.context-summary{display:flex;flex-direction:column;gap:3px;min-width:94px}
+.context-summary b{font-size:11px;color:#3b4852;font-weight:600}
+.context-fill{flex:1;min-width:8px}
+.context-brand{font-size:9px;letter-spacing:.08em;color:#6e7982}
+.toolbox-title{font-size:9px;font-weight:700;letter-spacing:.1em;color:#6a7680;text-align:center;padding:4px 0 7px;border-bottom:1px solid #d2d8dd}
+.tool-group-label{font-size:8px;letter-spacing:.1em;font-weight:700;color:#89939b;text-align:center;padding:7px 0 2px}
+.tool-note{font-size:9px;color:#7b858e;line-height:1.35;text-align:center;padding:4px 2px}
+@media(max-width:760px){.app{grid-template-rows:27px 55px 43px minmax(0,1fr) 23px}.context-toolbar{gap:8px;padding:4px 6px}.context-identity{min-width:150px;gap:5px}.context-identity>strong{width:27px;height:27px;font-size:17px}.context-identity small{display:none}.context-control{min-width:88px}.context-input input{width:50px}.context-summary,.context-brand{display:none}.toolbox-title,.tool-group-label,.tool-note{display:none}}
 </style></head>
 <body><div class="app">
 <nav class="menu" aria-label="Application menu">
@@ -97,6 +122,16 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 <details class="menu-group"><summary>Help</summary><div class="menu-pop help-menu"><strong>ARQENVO BIM Workspace</strong><span>F2 Floor Plan · F3 3D Window</span><span>Space-drag / middle mouse: Pan</span><span>3D left-drag: Orbit · Wheel: Zoom</span><span>Esc: Finish / cancel command</span></div></details>
 </nav>
 <header class="top"><div class="brand"><img class="brand-logo" src="./assets/assets/arqenvo-logo.png" alt="ARQENVO Building Information Modeling Software"></div><div class="spacer"></div><button id="undo" title="Undo (Cmd/Ctrl+Z)">↶ Undo</button><button id="redo" title="Redo (Cmd/Ctrl+Shift+Z)">↷ Redo</button><button id="moveSelection" title="Move selected elements">Move</button><button id="rotateSelection" title="Rotate selected elements">Rotate</button><button id="mirrorSelection" title="Mirror selected elements">Mirror</button><button id="copySelection" title="Duplicate selected elements">Multiply / Copy</button><button id="save">Save Project</button><button id="exportSchedule">Export Schedule CSV</button><button id="validateModel">Validate Model</button><button id="exportSection">Extract Section CSV</button><button id="exportDxf">Export Floor Plan DXF</button><button id="open">Open Project</button><input id="file" type="file" accept=".arq,.json,application/json" hidden></header>
+<div class="context-toolbar" id="contextToolbar" aria-label="Contextual tool settings">
+  <div class="context-identity"><span class="context-eyebrow">TOOL SETTINGS</span><strong id="contextToolIcon">↖</strong><div><b id="contextToolName">Arrow / Select</b><small id="contextToolHint">Select, inspect and edit model elements</small></div></div>
+  <div class="context-divider"></div>
+  <div class="context-control" id="wallHeightControl"><label for="contextHeight">Wall Height</label><div class="context-input"><input id="contextHeight" type="number" min="0.1" step="0.1" value="3.0"><span>m</span></div></div>
+  <div class="context-control" id="wallThicknessControl"><label for="contextThickness">Wall Thickness</label><div class="context-input"><input id="contextThickness" type="number" min="0.05" step="0.01" value="0.15"><span>m</span></div></div>
+  <div class="context-divider"></div>
+  <div class="context-summary"><span class="context-eyebrow">ACTIVE STORY</span><b id="contextStoryName">Ground Floor</b></div>
+  <div class="context-summary"><span class="context-eyebrow">SELECTION</span><b id="contextSelectionCount">0 elements</b></div>
+  <span class="context-fill"></span><span class="context-brand">ARQENVO · BIM</span>
+</div>
 <div class="work">
 <aside class="tools" aria-label="Toolbox">
 <button class="tool active" data-tool="select"><b>↖</b>Select</button><button class="tool" data-tool="wall"><b>╱</b>Wall</button><button class="tool" data-tool="slab"><b>▱</b>Slab</button><button class="tool" data-tool="column"><b>▣</b>Column</button><button class="tool" data-tool="beam"><b>━</b>Beam</button><button class="tool" data-tool="door"><b>▯</b>Door</button><button class="tool" data-tool="window"><b>▤</b>Window</button><button class="tool" data-tool="dimension"><b>↔</b>Dimension</button>
