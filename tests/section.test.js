@@ -12,7 +12,7 @@ test("section represents an opening as a vertical gap in a cut wall",()=>{
  const p=createProject(),w=createWall({x:0,y:0},{x:4,y:0},{height:3,thickness:.2});
  addOpening(w,"door",1.5,1,2.1);p.elements.push(w);
  const out=extractSection(p,{start:{x:2,y:-1},end:{x:2,y:1}});
- assert.equal(out.length,2);assert.equal(out[0].elevationStart,0);assert.equal(out[0].elevationEnd,0); // placeholder corrected below
+ assert.equal(out.length,1);assert.equal(out[0].elevationStart,2.1);assert.equal(out[0].elevationEnd,3);
 });
 test("section intersects slabs and columns and ignores elements on other stories",()=>{
  const p=createProject();p.elements.push(createSlab([{x:0,y:0},{x:4,y:0},{x:4,y:4},{x:0,y:4}],{thickness:.2}),createColumn({x:2,y:2},{width:.4,depth:.4}));
