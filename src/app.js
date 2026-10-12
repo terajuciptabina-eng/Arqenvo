@@ -134,7 +134,7 @@ c.addEventListener("contextmenu",e=>{e.preventDefault();finish()});
 function zoomAt(clientX,clientY,factor){
  const rect=c.getBoundingClientRect(),mx=clientX-rect.left,my=clientY-rect.top;
  if(view==="3d"){camera3d.zoom=Math.max(.2,Math.min(5,camera3d.zoom*factor))}
- else{const next=Math.max(1,Math.min(180,scale*factor)),actual=next/scale;origin.x=mx-(mx-origin.x)*actual;origin.y=my-(my-origin.y)*actual;scale=next}
+ else{const next=Math.max(1,Math.min(180,scale*factor)),actual=next/scale,cx=mx-c.clientWidth/2,cy=my-c.clientHeight/2;origin.x=cx-(cx-origin.x)*actual;origin.y=cy-(cy-origin.y)*actual;scale=next}
  redraw();
 }
 function panBy(dx,dy){
