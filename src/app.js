@@ -158,7 +158,7 @@ try{const recovery=localStorage.getItem(AUTOSAVE_KEY);if(recovery){const recover
 document.querySelectorAll("[data-command]").forEach(b=>b.addEventListener("click",()=>{const id=b.dataset.command;if(id==="zoomFit"){fitFloorPlan();return}$(id)?.click();b.closest("details")?.removeAttribute("open")}));
 document.querySelectorAll("[data-view-command]").forEach(b=>b.addEventListener("click",()=>{setView(b.dataset.viewCommand);document.querySelectorAll(".menu-group[open]").forEach(m=>m.open=false)}));
 document.querySelectorAll("[data-tool-command]").forEach(b=>b.addEventListener("click",()=>{setTool(b.dataset.toolCommand);document.querySelectorAll(".menu-group[open]").forEach(m=>m.open=false)}));
-document.querySelectorAll("[data-panel-command]").forEach(b=>b.addEventListener("click",()=>{const target=$(b.dataset.panelCommand);if(target){target.style.display=target.style.display==="none"?"block":"none"}document.querySelectorAll(".menu-group[open]").forEach(m=>m.open=false)}));
+document.querySelectorAll("[data-panel-command]").forEach(b=>b.addEventListener("click",()=>{const target=$(b.dataset.panelCommand);if(target){target.style.display=target.style.display==="none"?(target.id==="toolbox"?"flex":"block"):"none"}document.querySelectorAll(".menu-group[open]").forEach(m=>m.open=false)}));
 document.querySelectorAll("[data-navtab]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-navtab]").forEach(t=>t.classList.toggle("active",t===b));document.querySelectorAll("[data-navpanel]").forEach(p=>p.hidden=p.dataset.navpanel!==b.dataset.navtab);if(b.dataset.navtab==="layers")renderLayerPanel()}));
 
 $("newProjectRibbon").addEventListener("click",()=>$("new").click());
