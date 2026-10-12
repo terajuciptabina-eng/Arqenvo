@@ -61,7 +61,7 @@ Status key: **Basic** = early implementation; **Partial** = limited workflow; **
 - `src/core/transactions.js`: initial pure services for atomic model edits, bounded undo/redo snapshots and downstream dependency invalidation. These services are unit-tested but are not yet the app-wide transaction/event pipeline; current UI still uses its existing local history handler.
 - `tests/core.test.js`, `tests/rooms.test.js`: initial model/room tests; GitHub Actions runs CI.
 
-Known gaps: no real solid geometry; openings do not cut 3D wall bodies; near-tolerance junction handling and complex wall-network topology still need broader validation; common parameter editing for multiple selected items is absent; only first story is active in UI; no real sections/elevations, layout book, publishing, IFC/DWG, object library or collaboration server. New opening-property synchronization needs regression tests for all edge cases.
+Known gaps: no production solid geometry kernel; 3D walls are split into simple vertical intervals around openings but are not boolean-cut solids; near-tolerance junction handling and complex wall-network topology need broader validation; story selection exists but vertical constraints and cross-story coordination are incomplete; sections are data extraction rather than a fully rendered orthographic view; elevations, layout book, publishing, IFC, full DWG/DXF round-trip, object library and collaboration server remain incomplete. Multi-selection parameter editing exists for common dimensions/materials. Opening-property synchronization needs regression tests for all edge cases.
 
 ## Integrated architecture required
 
@@ -138,3 +138,13 @@ Automated checks and GitHub Pages deployment run on each push. Verify the latest
 7. Persistence/security decisions for shared/team projects; current local autosave is browser-local and is not cloud collaboration.
 
 **Release gate:** do not describe ARQENVO as feature-complete or Archicad-equivalent until these gaps are implemented, tested and explicitly accepted. The existing canvas 3D preview and DXF output are useful increments, not substitutes for a production BIM kernel or IFC exchange.
+
+
+### Workspace UI increment — 12 October 2026
+
+- Updated the application chrome to a coordinated professional BIM/CAD workspace: graphite menu strip, neutral command toolbar, dedicated toolbox, project navigator, central drawing tabs, story selector, right-side Info Box/settings and compact status line.
+- Preserved the original ARQENVO logo and existing element/tool IDs to avoid breaking app event wiring.
+- Responsive layouts now reduce side-panel footprint on smaller screens while retaining the drawing canvas and primary commands.
+- This is a visual/workspace refinement only; menu labels are not yet full dropdown command systems, and unsupported tool families are deliberately not shown as if implemented.
+
+**UI acceptance still required:** inspect live Pages on desktop and mobile, keyboard navigation/focus, panel overflow, canvas resizing, and real drawing/save/open workflows. Visual resemblance alone does not imply Archicad feature parity.
