@@ -42,7 +42,7 @@ test("wall end join resolves a right-angle corner with bounded miters",()=>{
  assert.ok(join.right.points[0].x>0);
 });
 test("wall end join bevels excessive acute miters and rejects disconnected walls",()=>{
- const join=wallEndJoin({start:{x:-2,y:0},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:2,y:.01}},.2,.2,{miterLimit:2});
+ const join=wallEndJoin({start:{x:-2,y:0},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:-2,y:.01}},.2,.2,{miterLimit:2});
  assert.equal(join.type,"bevel");
  assert.equal(join.left.type,"bevel");
  assert.equal(join.right.type,"bevel");
