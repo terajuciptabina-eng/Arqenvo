@@ -112,11 +112,24 @@ export function validateProject(data) {
   if (![1, MODEL_VERSION].includes(data?.version)) errors.push("Unsupported project schema version");
   if (data?.version === MODEL_VERSION && (!Array.isArray(data?.stories) || !Array.isArray(data?.elements))) errors.push("Project must contain stories and elements arrays");
   if (data?.version === 1 && !["walls", "slabs", "columns", "beams", "dimensions"].some(k => Array.isArray(data?.[k]))) errors.push("Legacy project has no recognized element collections");
+  const storyIds = new Set();
+  const storyNames = new Set();
+  for (const s of data?.stories ?? []) {
+    if (!s.id || storyIds.has(s.id)) errors.push(`Missing or duplicate story id: ${s.id ?? "(missing)"}`);
+    storyIds.add(s.id);
+    const name = String(s.name ?? "").trim().toLowerCase();
+    if (!name) errors.push("Story name is required");
+    else if (storyNames.has(name)) errors.push(`Duplicate story name: ${s.name}`);
+    storyNames.add(name);
+    if (!Number.isFinite(s.elevation) || !Number.isFinite(s.height) || s.height <= 0) errors.push(`Invalid elevation or height for story: ${s.name ?? s.id}`);
+  }
+  if (data?.version === MODEL_VERSION && (data.stories ?? []).length === 0) errors.push("Project must contain at least one story");
   const ids = new Set();
   for (const el of data?.elements ?? []) {
     if (!el.id || ids.has(el.id)) errors.push(`Missing or duplicate element id: ${el.id ?? "(missing)"}`);
     ids.add(el.id);
     if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "room"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
+    if (data?.version === MODEL_VERSION && el.storyId && !storyIds.has(el.storyId)) errors.push(`Element ${el.id} references unknown story: ${el.storyId}`);
   }
   return { valid: errors.length === 0, errors };
 }
