@@ -50,3 +50,21 @@ test("project validation rejects duplicate story names ignoring case", () => {
  p.stories.push({id:"story-first",name:"ground floor",elevation:3,height:3});
  assert.ok(validateProject(p).errors.some(error=>error.includes("Duplicate story name")));
 });
+
+test("project validation rejects invalid wall geometry and out-of-bounds openings", () => {
+ const p=createProject();
+ const wall=createWall({x:0,y:0},{x:2,y:0});
+ wall.height=0;
+ p.elements.push(wall);
+ assert.ok(validateProject(p).errors.some(error=>error.includes("invalid height or thickness")));
+ const q=createProject();
+ const host=createWall({x:0,y:0},{x:2,y:0});
+ host.openings.push({id:"opening-1",type:"door",offset:1.8,width:.5,height:2,sill:0});
+ q.elements.push(host);
+ assert.ok(validateProject(q).errors.some(error=>error.includes("exceeds wall")));
+});
+test("project validation rejects hosted door/window elements without host links", () => {
+ const p=createProject();
+ p.elements.push({id:"door-1",type:"door",storyId:p.stories[0].id,hostWallId:"missing",offset:0,width:.9,height:2.1,sill:0});
+ assert.ok(validateProject(p).errors.some(error=>error.includes("has no host wall")));
+});
