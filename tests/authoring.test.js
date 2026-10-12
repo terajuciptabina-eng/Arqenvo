@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createOpeningPlacement, doorSwingGeometry, openingPlacementDirection } from "../src/core/authoring.js";
+import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, openingPlacementDirection } from "../src/core/authoring.js";
 
 test("door swing geometry pivots at the hinge and uses opening width as radius", () => {
   const g = doorSwingGeometry({x:10,y:20},{x:11,y:20},{hingeSide:"left",swingDirection:"inside"});
@@ -46,4 +46,32 @@ test("placement rejects invalid starts and zero-width door symbols", () => {
   const placement = createOpeningPlacement();
   assert.throws(()=>placement.begin({type:"door"}),/host wall/);
   assert.throws(()=>doorSwingGeometry({x:0,y:0},{x:0,y:0}),/width/);
+});
+
+test("hosted door 3D leaf footprint pivots at selected hinge and follows swing side", () => {
+  const wall = { start:{x:0,y:0}, end:{x:4,y:0}, thickness:.15 };
+  const door = { type:"door", offset:1, width:.9, height:2.1, sill:0, hingeSide:"left", swingDirection:"inside" };
+  const g = hostedOpening3dGeometry(wall,door);
+  assert.equal(g.boundary.length,4);
+  assert.equal(g.height,2.1);
+  const hinge = {x:1,y:0};
+  assert.ok(g.boundary.some(p=>Math.abs(p.x-hinge.x)<1e-9&&Math.abs(p.y-hinge.y)<.02));
+  assert.ok(g.boundary.some(p=>p.y>.85));
+  const outside = hostedOpening3dGeometry(wall,{...door,swingDirection:"outside"});
+  assert.ok(outside.boundary.some(p=>p.y<-.85));
+});
+
+test("hosted window pane is centred on wall thickness and keeps sill height", () => {
+  const wall = { start:{x:0,y:0}, end:{x:0,y:5}, thickness:.2 };
+  const window = { type:"window", offset:1, width:1.2, height:1.1, sill:.9 };
+  const g = hostedOpening3dGeometry(wall,window);
+  assert.equal(g.zOffset,.9);
+  assert.equal(g.height,1.1);
+  const xs=g.boundary.map(p=>p.x);
+  assert.ok(Math.min(...xs)<0&&Math.max(...xs)>0);
+  assert.ok(Math.abs((Math.max(...xs)-Math.min(...xs))-.225)<1e-9);
+});
+
+test("hosted 3D opening rejects a component outside its wall", () => {
+  assert.throws(()=>hostedOpening3dGeometry({start:{x:0,y:0},end:{x:2,y:0},thickness:.15},{type:"door",offset:1.8,width:.9,height:2,sill:0}),/fit/);
 });
