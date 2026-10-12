@@ -130,6 +130,27 @@ export function validateProject(data) {
     ids.add(el.id);
     if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "room"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
     if (data?.version === MODEL_VERSION && el.storyId && !storyIds.has(el.storyId)) errors.push(`Element ${el.id} references unknown story: ${el.storyId}`);
+    const finitePoint = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
+    const positive = n => Number.isFinite(n) && n > 0;
+    if (["wall","beam","dimension"].includes(el.type)) {
+      if (!finitePoint(el.start) || !finitePoint(el.end)) errors.push(`Element ${el.id} has invalid endpoints`);
+      else if (distance(el.start, el.end) <= 1e-6 && el.type !== "dimension") errors.push(`Element ${el.id} has zero length`);
+    }
+    if (el.type === "wall") {
+      if (!positive(el.height) || !positive(el.thickness)) errors.push(`Wall ${el.id} has invalid height or thickness`);
+      for (const opening of el.openings ?? []) {
+        if (!["door","window","opening"].includes(opening.type) || !Number.isFinite(opening.offset) || !positive(opening.width) || !positive(opening.height) || !Number.isFinite(opening.sill ?? 0)) errors.push(`Wall ${el.id} has invalid opening data`);
+        else if (opening.offset < 0 || opening.offset + opening.width > wallLength(el) + 1e-6 || (opening.sill ?? 0) < 0 || (opening.sill ?? 0) + opening.height > el.height + 1e-6) errors.push(`Opening ${opening.id ?? ""} exceeds wall ${el.id}`);
+      }
+    }
+    if (el.type === "slab" && (!Array.isArray(el.boundary) || el.boundary.length < 3 || el.boundary.some(v => !finitePoint(v)) || polygonArea(el.boundary) <= 1e-8 || !positive(el.thickness))) errors.push(`Slab ${el.id} has invalid boundary or thickness`);
+    if (el.type === "column" && (!finitePoint(el.position) || !positive(el.width) || !positive(el.depth) || !positive(el.height))) errors.push(`Column ${el.id} has invalid position or dimensions`);
+    if (el.type === "beam" && (!positive(el.width) || !positive(el.depth))) errors.push(`Beam ${el.id} has invalid width or depth`);
+    if (["door","window"].includes(el.type)) {
+      const host = (data?.elements ?? []).find(candidate => candidate.id === el.hostWallId && candidate.type === "wall");
+      if (!host) errors.push(`Opening element ${el.id} has no host wall`);
+      else if (!(host.openings ?? []).some(opening => opening.id === el.id)) errors.push(`Opening element ${el.id} is missing from its host wall`);
+    }
   }
   return { valid: errors.length === 0, errors };
 }
