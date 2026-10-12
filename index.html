@@ -110,6 +110,28 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .tool-group-label{font-size:8px;letter-spacing:.1em;font-weight:700;color:#89939b;text-align:center;padding:7px 0 2px}
 .tool-note{font-size:9px;color:#7b858e;line-height:1.35;text-align:center;padding:4px 2px}
 @media(max-width:760px){.app{grid-template-rows:27px 55px 43px minmax(0,1fr) 23px}.context-toolbar{gap:8px;padding:4px 6px}.context-identity{min-width:150px;gap:5px}.context-identity>strong{width:27px;height:27px;font-size:17px}.context-identity small{display:none}.context-control{min-width:88px}.context-input input{width:50px}.context-summary,.context-brand{display:none}.toolbox-title,.tool-group-label,.tool-note{display:none}}
+
+/* Full-width ribbon redesign: distinct command groups, not a flat row of buttons */
+.app{grid-template-rows:29px 91px 48px minmax(0,1fr) 23px}
+.top{display:flex;align-items:stretch;gap:0;padding:5px 8px;background:#e8ebee;border-bottom:1px solid #aeb7bf;overflow-x:auto;overflow-y:hidden;box-shadow:inset 0 1px #fff;scrollbar-width:thin}
+.ribbon-brand{display:flex;align-items:center;justify-content:center;min-width:116px;padding:0 12px 0 4px;margin-right:8px;border-right:1px solid #c3cbd1}
+.ribbon-brand .brand-logo{height:60px;width:auto;max-width:108px}
+.ribbon-group{display:flex;flex-direction:column;justify-content:space-between;align-items:center;min-width:max-content;padding:3px 9px 0;margin-right:3px;border-right:1px solid #c6cdd3}
+.ribbon-group>small{font-size:9px;line-height:15px;letter-spacing:.1em;font-weight:700;color:#76818a}
+.ribbon-buttons{display:flex;align-items:center;gap:3px;height:58px}
+.ribbon-buttons button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:48px;height:54px;padding:4px 7px;border:1px solid transparent;border-radius:3px;background:transparent;box-shadow:none;color:#35424d;font-size:21px;line-height:1.05}
+.ribbon-buttons button span{font-size:10px;line-height:1.2;white-space:nowrap}
+.ribbon-buttons button:hover{background:#d8e8ea;border-color:#a0c7cb}
+.ribbon-buttons button:disabled{opacity:.38}
+.ribbon-spacer{flex:1;min-width:2px}
+.context-toolbar{height:48px}
+.work{grid-template-columns:70px 245px minmax(0,1fr) 285px}
+.tools{background:#e7eaed;border-right:1px solid #aeb8c0}
+.tool{min-height:60px}
+.navigator{background:#f3f5f6}
+.inspector{background:#f3f5f6}
+@media(max-width:1000px){.ribbon-brand{min-width:85px;padding:0 7px}.ribbon-brand .brand-logo{max-width:78px;height:48px}.ribbon-group{padding-left:5px;padding-right:5px}.ribbon-buttons button{min-width:42px;padding:3px}.ribbon-buttons button span{font-size:9px}.work{grid-template-columns:58px minmax(0,1fr) 245px}.navigator{display:none}}
+@media(max-width:760px){.app{grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}.top{padding:3px 4px}.ribbon-brand{min-width:60px;padding:0 4px;margin-right:3px}.ribbon-brand .brand-logo{max-width:56px;height:38px}.ribbon-group{padding:2px 3px 0}.ribbon-group>small{font-size:7px}.ribbon-buttons{height:46px;gap:1px}.ribbon-buttons button{height:43px;min-width:35px;font-size:16px;padding:2px}.ribbon-buttons button span{font-size:8px}.work{grid-template-columns:46px minmax(0,1fr)}.inspector{display:none}.tool{min-height:46px}.context-toolbar{height:43px}.context-identity{min-width:135px}}
 </style></head>
 <body><div class="app">
 <nav class="menu" aria-label="Application menu">
@@ -121,7 +143,15 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 <details class="menu-group"><summary>Window</summary><div class="menu-pop"><button data-panel-command="navigator">Navigator panel</button><button data-panel-command="inspector">Info Box / Properties</button></div></details>
 <details class="menu-group"><summary>Help</summary><div class="menu-pop help-menu"><strong>ARQENVO BIM Workspace</strong><span>F2 Floor Plan · F3 3D Window</span><span>Space-drag / middle mouse: Pan</span><span>3D left-drag: Orbit · Wheel: Zoom</span><span>Esc: Finish / cancel command</span></div></details>
 </nav>
-<header class="top"><div class="brand"><img class="brand-logo" src="./assets/assets/arqenvo-logo.png" alt="ARQENVO Building Information Modeling Software"></div><div class="spacer"></div><button id="undo" title="Undo (Cmd/Ctrl+Z)">↶ Undo</button><button id="redo" title="Redo (Cmd/Ctrl+Shift+Z)">↷ Redo</button><button id="moveSelection" title="Move selected elements">Move</button><button id="rotateSelection" title="Rotate selected elements">Rotate</button><button id="mirrorSelection" title="Mirror selected elements">Mirror</button><button id="copySelection" title="Duplicate selected elements">Multiply / Copy</button><button id="save">Save Project</button><button id="exportSchedule">Export Schedule CSV</button><button id="validateModel">Validate Model</button><button id="exportSection">Extract Section CSV</button><button id="exportDxf">Export Floor Plan DXF</button><button id="open">Open Project</button><input id="file" type="file" accept=".arq,.json,application/json" hidden></header>
+<header class="top" aria-label="Main ribbon">
+<div class="ribbon-brand"><img class="brand-logo" src="./assets/assets/arqenvo-logo.png" alt="ARQENVO"></div>
+<div class="ribbon-group project-group"><div class="ribbon-buttons"><button id="new" title="New Project">▧<span>New</span></button><button id="open" title="Open Project">▱<span>Open</span></button><button id="save" title="Save Project">▣<span>Save</span></button><input id="file" type="file" accept=".arq,.json,application/json" hidden></div><small>PROJECT</small></div>
+<div class="ribbon-group history-group"><div class="ribbon-buttons"><button id="undo" title="Undo (Cmd/Ctrl+Z)">↶<span>Undo</span></button><button id="redo" title="Redo (Cmd/Ctrl+Shift+Z)">↷<span>Redo</span></button></div><small>HISTORY</small></div>
+<div class="ribbon-group transform-group"><div class="ribbon-buttons"><button id="moveSelection" title="Move selected elements">✥<span>Move</span></button><button id="rotateSelection" title="Rotate selected elements">⟳<span>Rotate</span></button><button id="mirrorSelection" title="Mirror selected elements">⇋<span>Mirror</span></button><button id="copySelection" title="Duplicate selected elements">▣<span>Multiply</span></button></div><small>TRANSFORM</small></div>
+<div class="ribbon-group document-group"><div class="ribbon-buttons"><button id="exportSchedule" title="Export Schedule CSV">▤<span>Schedules</span></button><button id="exportSection" title="Extract Section CSV">▥<span>Section Data</span></button><button id="exportDxf" title="Export Floor Plan DXF">⇩<span>Export DXF</span></button></div><small>DOCUMENTATION</small></div>
+<div class="ribbon-group verify-group"><div class="ribbon-buttons"><button id="validateModel" title="Validate Model">✓<span>Validate</span></button></div><small>MODEL</small></div>
+<span class="ribbon-spacer"></span>
+</header>
 <div class="context-toolbar" id="contextToolbar" aria-label="Contextual tool settings">
   <div class="context-identity"><span class="context-eyebrow">TOOL SETTINGS</span><strong id="contextToolIcon">↖</strong><div><b id="contextToolName">Arrow / Select</b><small id="contextToolHint">Select, inspect and edit model elements</small></div></div>
   <div class="context-divider"></div>
