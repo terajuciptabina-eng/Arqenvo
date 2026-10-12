@@ -157,3 +157,15 @@ Automated checks and GitHub Pages deployment run on each push. Verify the latest
 - Added standard camera actions: orbit left/right, top, front, home and fit model.
 - Navigation is an initial interaction layer and still needs hands-on acceptance tests. Camera projection remains a lightweight canvas renderer; it is not a perspective-correct 3D viewport, and true model geometry, clipping, selection depth and production-grade orbit behavior remain open work.
 - Latest Core Checks run for commit `eabaf49f`: https://github.com/terajuciptabina-eng/Arqenvo/actions/runs/38217750834 (check final result before release).
+
+
+### Editing/navigation toolbar increment — 12 October 2026
+
+- Added Move, Rotate, Mirror and Multiply/Copy toolbar commands for selected supported model elements.
+- Copy creates new element IDs and preserves wall-hosted door/window relationships for duplicated walls. This is an initial transform implementation; it does not yet handle all constraints, linked dimensions, complex groups or every hosted-component edge case.
+- Added F2 (Floor Plan), F3 (3D Window) and arrow-key orbit adjustment while the 3D window is active.
+- Existing 3D navigation includes drag orbit, middle/Space drag pan, wheel zoom, standard camera views and Fit Model.
+- UI conventions are being aligned to Archicad’s documented menu, tab bar, Toolbox, Navigator, Info Box and navigation workflow. Reference: https://help.graphisoft.com/AC/26/INT/_AC26_Help/030_Interaction/030_Interaction-2.htm and https://helpcenter.graphisoft.com/user-guide/88351/.
+- Core geometry is still a lightweight custom canvas renderer. A true solid/boolean kernel, perspective-correct viewport, precise hit-testing, associative dimensions and production-grade constraints are not implemented yet.
+
+**Acceptance gate:** run the current Core Checks and Pages workflows, then test Move/Rotate/Mirror/Copy with walls, slabs, beams, columns and hosted openings; verify undo/redo, save/open, story filtering and 3D camera behavior before treating this increment as production-ready.
