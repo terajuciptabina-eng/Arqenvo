@@ -57,7 +57,8 @@ Status key: **Basic** = early implementation; **Partial** = limited workflow; **
 - `index.html`: browser shell, canvas, toolbar, navigator and properties panel.
 - `src/app.js`: drawing interactions, multi-selection, undo/redo, basic parameter editing, opening placement, room detection and conceptual 3D.
 - `src/core/model.js`: schema-v2 constructors, area calculations, serialization/migration and validation.
-- `src/core/rooms.js`: room detection now splits walls at proper segment intersections before cycle detection; collinear overlaps, tolerance edge cases and complex networks still need broader regression coverage.
+- `src/core/rooms.js`: room detection now splits walls at proper segment intersections before cycle detection and filters enclosing cycles when partition faces cover the full area; collinear overlaps, tolerance edge cases and complex networks still need broader regression coverage.
+- `src/core/transactions.js`: initial pure services for atomic model edits, bounded undo/redo snapshots and downstream dependency invalidation. These services are unit-tested but are not yet the app-wide transaction/event pipeline; current UI still uses its existing local history handler.
 - `tests/core.test.js`, `tests/rooms.test.js`: initial model/room tests; GitHub Actions runs CI.
 
 Known gaps: no real solid geometry; openings do not cut 3D wall bodies; near-tolerance junction handling and complex wall-network topology still need broader validation; common parameter editing for multiple selected items is absent; only first story is active in UI; no real sections/elevations, layout book, publishing, IFC/DWG, object library or collaboration server. New opening-property synchronization needs regression tests for all edge cases.
@@ -77,6 +78,8 @@ Known gaps: no real solid geometry; openings do not cut 3D wall bodies; near-tol
 
 ### Gate 1 — Core integrity
 Typed model contracts, stable IDs, units/tolerances, transactions, undo/redo, project recovery, migrations and save/open tests.
+
+**Implementation started:** the standalone transaction/history/dependency services are committed and tested. The next integration step is to route UI edits through one transaction boundary and publish changed-node invalidations; do not mark Gate 1 complete until app integration, recovery and end-to-end regression tests pass.
 
 ### Gate 2 — Architectural geometry
 Shared geometry for walls/slabs/columns/beams; wall joins/intersections; trim/extend; polygon validity; geometry tests for near misses and tolerances.
