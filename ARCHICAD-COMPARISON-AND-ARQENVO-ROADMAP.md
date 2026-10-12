@@ -169,3 +169,15 @@ Automated checks and GitHub Pages deployment run on each push. Verify the latest
 - Core geometry is still a lightweight custom canvas renderer. A true solid/boolean kernel, perspective-correct viewport, precise hit-testing, associative dimensions and production-grade constraints are not implemented yet.
 
 **Acceptance gate:** run the current Core Checks and Pages workflows, then test Move/Rotate/Mirror/Copy with walls, slabs, beams, columns and hosted openings; verify undo/redo, save/open, story filtering and 3D camera behavior before treating this increment as production-ready.
+
+
+### Workspace UI increment 2 — 12 October 2026
+
+- Replaced static menu labels with keyboard-accessible native menu groups. Implemented commands are wired to the existing actions: project save/open/new, undo/redo, supported transforms, tool selection, view switching, validation and exports.
+- Added toolbox category hierarchy, a Navigator switch between Project Map and available views, and a bottom Quick Options strip.
+- Quick Options now expose plan scale presets, grid spacing, grid visibility, endpoint snapping, zoom in/out and fit drawing. These are controls connected to current canvas state, not decorative mock controls.
+- Removed misleading Elevation/Section preview entries from the primary Navigator. Section remains available as data extraction/CSV, not as a rendered orthographic drawing view.
+- Preserved the original ARQENVO logo and existing app action IDs.
+- Core checks caught an initial JavaScript line-break issue during this increment; the source was corrected and the latest workflow must pass before release.
+
+**Still not Archicad parity:** menus only expose implemented commands; the geometry viewport remains a lightweight canvas projection; there is no full Info Box option system, saved view/map system, layout book, true orthographic section/elevation renderer, or production solid geometry engine. Continue with screenshot-based desktop acceptance and tool-by-tool workflows rather than adding fake controls.
