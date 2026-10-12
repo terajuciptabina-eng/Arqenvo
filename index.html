@@ -140,6 +140,31 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .layer-swatch{width:12px;height:12px;display:inline-block;border:1px solid #8797a1;background:#d6e0e5;flex:0 0 12px}
 .layer-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .layer-row small{color:#7b858e;font-size:9px;font-variant-numeric:tabular-nums}
+
+/* Archicad-oriented palette docking: Toolbox left, Navigator dock right, Info Box above workspace */
+.work{display:grid!important;grid-template-columns:58px minmax(0,1fr) 260px!important;grid-template-rows:minmax(150px,.82fr) minmax(210px,1.18fr)!important;min-height:0}
+#toolbox{grid-column:1!important;grid-row:1 / span 2!important}
+.workspace{grid-column:2!important;grid-row:1 / span 2!important;min-width:0;min-height:0}
+.navigator{display:block!important;grid-column:3!important;grid-row:1!important;min-height:0;overflow:auto;border-left:1px solid #b9c1c8;border-right:0;border-bottom:1px solid #b9c1c8;padding:9px}
+.inspector{display:block!important;grid-column:3!important;grid-row:2!important;min-height:0;overflow:auto;border-left:1px solid #b9c1c8;border-right:0;padding:9px}
+.navigator .nav-note{font-size:10px}
+.navigator .tree{font-size:10px}
+.inspector .section,.navigator .section{letter-spacing:.09em}
+.context-toolbar{border-bottom:1px solid #9da8b1;background:#e6e9ec}
+.top{background:#e6e9ec}
+.canvaswrap{touch-action:none}
+@media(max-width:1050px){
+ .work{grid-template-columns:50px minmax(0,1fr) 220px!important}
+ .navigator{padding:7px}
+ .inspector{padding:7px}
+}
+@media(max-width:780px){
+ .work{grid-template-columns:45px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr) auto!important}
+ #toolbox{grid-column:1!important;grid-row:1!important}
+ .workspace{grid-column:2!important;grid-row:1!important}
+ .navigator{display:none!important}
+ .inspector{display:none!important}
+}
 </style></head>
 <body><div class="app">
 <nav class="menu" aria-label="Application menu">
