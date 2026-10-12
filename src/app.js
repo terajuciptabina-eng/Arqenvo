@@ -35,23 +35,24 @@ else if(e.type==="dimension"){const a=spos(e.start),b=spos(e.end);x.beginPath();
 }
 if(draft.length&&mouse){const anchor=draft[draft.length-1],raw=wpos(mouse),endpoint=(tool==="wall"||tool==="beam"||tool==="dimension"||tool==="slab")?constrain(anchor,raw,{shiftKey:shiftHeld}):raw,a=spos(anchor),b=spos(endpoint);x.setLineDash([4,4]);x.strokeStyle="#087e8b";x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();x.setLineDash([])}
 }else{
-const project3d=(pt,z)=>{
+const faces3d=[];
+ const project3d=(pt,z)=>{
 const yaw=camera3d.yaw,pitch=camera3d.pitch,cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
 const wx=pt.x,wy=pt.y,wz=z;
 const rx=wx*cy-wy*sy,ry=wx*sy+wy*cy;
 const px=(rx-camera3d.panX)*scale*.72*camera3d.zoom;
 const py=((ry-camera3d.panY)*sp-(wz)*cp)*scale*.72*camera3d.zoom;
-return{x:c.clientWidth/2+origin.x+px,y:c.clientHeight*.58+origin.y+py+camera3d.panY*0};
+return{x:c.clientWidth/2+origin.x+px,y:c.clientHeight*.58+origin.y+py,depth:ry*cp+wz*sp};
 };
-const prism=(e,footprint,z0,height)=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height));const chosenElement=selected.has(e.id);x.strokeStyle=chosenElement?"#087e8b":"#52616b";x.lineWidth=1;
-for(let i=0;i<base.length;i++){const j=(i+1)%base.length;const face=[base[i],base[j],top[j],top[i]];hitPolys3d.push({id:e.id,poly:face});x.fillStyle=chosenElement?"#9acbd0":(i%2?"#cbd4da":"#b8c4cc");x.beginPath();x.moveTo(base[i].x,base[i].y);x.lineTo(base[j].x,base[j].y);x.lineTo(top[j].x,top[j].y);x.lineTo(top[i].x,top[i].y);x.closePath();x.fill();x.stroke()}
-hitPolys3d.push({id:e.id,poly:top});x.fillStyle=chosenElement?"#bce3e6":"#e4e9ed";x.beginPath();top.forEach((pt,i)=>i?x.lineTo(pt.x,pt.y):x.moveTo(pt.x,pt.y));x.closePath();x.fill();x.stroke()};
+const prism=(e,footprint,z0,height)=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height));const chosenElement=selected.has(e.id);
+for(let i=0;i<base.length;i++){const j=(i+1)%base.length;const poly=[base[i],base[j],top[j],top[i]];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,fill:chosenElement?"#9acbd0":(i%2?"#cbd4da":"#b8c4cc"),selected:chosenElement})}
+faces3d.push({id:e.id,poly:top,depth:top.reduce((sum,pt)=>sum+pt.depth,0)/top.length,fill:chosenElement?"#bce3e6":"#e4e9ed",selected:chosenElement})};
 for(const e of els()){if(!isLayerVisible(e)||!["wall","beam","column","slab"].includes(e.type))continue;const level=p.stories.find(v=>v.id===e.storyId),storyElevation=level?.elevation||0;let footprint=[],z0=storyElevation,height=0;
 if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=e.openings||[],cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len});for(const [low,high] of solids){const u=at(lo),v=at(hi),poly=[{x:u.x+nx,y:u.y+ny},{x:v.x+nx,y:v.y+ny},{x:v.x-nx,y:v.y-ny},{x:u.x-nx,y:u.y-ny}];prism(e,poly,base+low,high-low)} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
 else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
 else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
 prism(e,footprint,z0,height)
-}}
+}}for(const face of faces3d.sort((a,b)=>a.depth-b.depth)){x.fillStyle=face.fill;x.strokeStyle=face.selected?"#087e8b":"#52616b";x.lineWidth=face.selected?1.5:1;x.beginPath();face.poly.forEach((pt,i)=>i?x.lineTo(pt.x,pt.y):x.moveTo(pt.x,pt.y));x.closePath();x.fill();x.stroke()}hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));
 $("selectionInfo").textContent=selected.size?selected.size+" selected · "+chosen().map(e=>e.type).join(", "):"No selection";updateHistoryButtons()}
 function renderProperties(){updateContextUI();const host=$("elementProperties");if(!host)return;const list=chosen();host.innerHTML="";if(!list.length){host.innerHTML='<p style="color:var(--muted);font-size:11px">Select an element to inspect its parameters.</p>';return}if(list.length>1){
 const type=list.every(e=>e.type===list[0].type)?list[0].type:"mixed";
