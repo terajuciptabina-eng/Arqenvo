@@ -108,3 +108,33 @@ A button is not proof a feature is complete. Each feature needs a data contract,
 ARQENVO must be built as a coherent architectural modeling platform, not a set of disconnected look-alike tools. The first priority is a tested geometry and dependency core; then openings, rooms, stories, documentation and IFC can share one source of truth. Archicad-level parity is a substantial product effort and cannot honestly be claimed from the current prototype.
 
 ARQENVO remains independent, retains its original logo, uses local-first project storage and remains separate from TerajuWorks and SunG Solution.
+
+## Implementation log — 12 October 2026
+
+The following increments have now been committed to `main`:
+
+- Model validation checks story references, element geometry, positive dimensions, and host-wall opening bounds.
+- The 3D preview draws extruded wall, slab, column and beam geometry; wall surfaces are split vertically around hosted opening intervals. This is still a lightweight canvas renderer, not a production solid/B-rep kernel.
+- Multi-selection supports applying shared dimensions/materials to compatible selected elements.
+- Canvas navigation supports space-drag or middle-mouse panning, grid placement and endpoint/vertex snapping.
+- Local recovery snapshots are written after model-changing actions rather than every pointer redraw.
+- Schedule CSV serialization has isolated tests for quoting, embedded line breaks, BOM and CRLF.
+- Section extraction derives wall/slab/column/beam intersections from a section line and can export a cut-element schedule as CSV.
+- Floor-plan DXF export writes supported 2D plan geometry on named layers in metre units. It does not export IFC semantics or editable 3D solids.
+- A model-validation action is available in the toolbar.
+
+### Verification status
+
+Automated checks and GitHub Pages deployment run on each push. Verify the latest workflow result before considering the latest revision released. These features remain an early-stage implementation and have not yet passed cross-browser, mobile, large-project, professional drawing, or interoperability acceptance testing.
+
+### Still required before a production-complete BIM product
+
+1. Robust solid/boolean geometry, wall junction cleanup, wall thickness/joins, accurate opening-host editing and collision handling.
+2. Parametric editing and transforms (move, rotate, mirror, copy, trim/extend), reliable undo/redo transactions and project-level validation.
+3. Real orthographic sections/elevations with dimensioning, annotations, drawing layouts, title blocks, PDF plotting and revision management.
+4. Proper IFC4 import/export with entity/property mapping and round-trip fixtures; DXF round-trip verification and additional exchange formats as justified.
+5. Materials/surfaces, objects/components, stairs/roofs, zones/room schedules, quantity take-off and consistent dependent-view updates.
+6. Accessibility, responsive mobile/tablet interactions, browser compatibility, large-model performance, backup/recovery tests and end-to-end user acceptance.
+7. Persistence/security decisions for shared/team projects; current local autosave is browser-local and is not cloud collaboration.
+
+**Release gate:** do not describe ARQENVO as feature-complete or Archicad-equivalent until these gaps are implemented, tested and explicitly accepted. The existing canvas 3D preview and DXF output are useful increments, not substitutes for a production BIM kernel or IFC exchange.
