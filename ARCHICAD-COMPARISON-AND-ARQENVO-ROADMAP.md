@@ -148,3 +148,12 @@ Automated checks and GitHub Pages deployment run on each push. Verify the latest
 - This is a visual/workspace refinement only; menu labels are not yet full dropdown command systems, and unsupported tool families are deliberately not shown as if implemented.
 
 **UI acceptance still required:** inspect live Pages on desktop and mobile, keyboard navigation/focus, panel overflow, canvas resizing, and real drawing/save/open workflows. Visual resemblance alone does not imply Archicad feature parity.
+
+
+### 3D navigation increment — 12 October 2026
+
+- Added camera state for yaw, pitch, zoom and pan to the 3D canvas projection.
+- 3D left-drag orbits the camera; middle-mouse or Space-drag pans; wheel zooms independently from 2D plan zoom.
+- Added standard camera actions: orbit left/right, top, front, home and fit model.
+- Navigation is an initial interaction layer and still needs hands-on acceptance tests. Camera projection remains a lightweight canvas renderer; it is not a perspective-correct 3D viewport, and true model geometry, clipping, selection depth and production-grade orbit behavior remain open work.
+- Latest Core Checks run for commit `eabaf49f`: https://github.com/terajuciptabina-eng/Arqenvo/actions/runs/38217750834 (check final result before release).
