@@ -103,41 +103,45 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
-  // Archicad-style element picking: openings must be independently selectable above their host wall.
-  // Re-read the canvas bounds after prior drawing/tool interactions; the inspector can resize the workspace.
-  rect = await canvas.boundingBox();
-  assert.ok(rect, "Floor-plan canvas must remain visible before opening tests");
-  cx = rect.x + rect.width / 2;
-  cy = rect.y + rect.height / 2;
-  await page.locator('[data-tool="wall"]').click();
-  await page.waitForTimeout(80);
-  rect = await canvas.boundingBox();
-  assert.ok(rect, "Floor-plan canvas must remain visible after selecting Wall");
-  cx = rect.x + rect.width / 2;
-  cy = rect.y + rect.height / 2;
-  await page.locator("#wallGeometryMethod").selectOption("single");
-  await page.mouse.click(cx - 140, cy + 120);
-  await page.mouse.click(cx + 140, cy + 120);
-  await page.locator('[data-tool="door"]').click();
-  await page.mouse.click(cx - 55, cy + 120);
-  await page.mouse.move(cx - 55, cy + 90);
-  await page.keyboard.press("Enter");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
-  await page.locator('[data-tool="select"]').click();
-  await page.mouse.click(cx - 55, cy + 120);
-  await page.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
-  assert.match(await page.locator("#elementProperties").textContent(), /door ·/i,
+  // Archicad-style element picking: run opening regression in a clean editor state so
+  // earlier wall-chain/undo interactions cannot leave a stale pointer or transient canvas state.
+  const openingPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  openingPage.setDefaultTimeout(8000);
+  openingPage.on("pageerror", error => pageErrors.push(error.message));
+  await openingPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await openingPage.waitForFunction(() => {
+    const el = document.querySelector("#canvas");
+    return el && el.clientWidth > 100 && el.clientHeight > 100;
+  });
+  const openingCanvas = openingPage.locator("#canvas");
+  await openingPage.locator('[data-tool="wall"]').click();
+  await openingPage.locator("#wallGeometryMethod").selectOption("single");
+  const openingRect = await openingCanvas.boundingBox();
+  assert.ok(openingRect, "Floor-plan canvas must be visible for opening tests");
+  cx = openingRect.x + openingRect.width / 2;
+  cy = openingRect.y + openingRect.height / 2;
+  await openingPage.mouse.click(cx - 140, cy + 120);
+  await openingPage.mouse.click(cx + 140, cy + 120);
+  await openingPage.locator('[data-tool="door"]').click();
+  await openingPage.mouse.click(cx - 55, cy + 120);
+  await openingPage.mouse.move(cx - 55, cy + 90);
+  await openingPage.keyboard.press("Enter");
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
+  await openingPage.locator('[data-tool="select"]').click();
+  await openingPage.mouse.click(cx - 55, cy + 120);
+  await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
+  assert.match(await openingPage.locator("#elementProperties").textContent(), /door ·/i,
     "Clicking the door symbol should select the door rather than its host wall");
 
-  await page.locator('[data-tool="window"]').click();
-  await page.mouse.click(cx + 55, cy + 120);
-  await page.mouse.move(cx + 55, cy + 90);
-  await page.keyboard.press("Enter");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
-  await page.locator('[data-tool="select"]').click();
-  await page.mouse.click(cx + 55, cy + 120);
-  await page.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("window ·"));
-  assert.match(await page.locator("#elementProperties").textContent(), /window ·/i,
+  await openingPage.locator('[data-tool="window"]').click();
+  await openingPage.mouse.click(cx + 55, cy + 120);
+  await openingPage.mouse.move(cx + 55, cy + 90);
+  await openingPage.keyboard.press("Enter");
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
+  await openingPage.locator('[data-tool="select"]').click();
+  await openingPage.mouse.click(cx + 55, cy + 120);
+  await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("window ·"));
+  assert.match(await openingPage.locator("#elementProperties").textContent(), /window ·/i,
     "Clicking the window symbol should select the window rather than its host wall");
 
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
