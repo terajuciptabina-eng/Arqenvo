@@ -247,12 +247,13 @@ c.addEventListener("wheel",e=>{
  e.preventDefault();
  // Mac trackpad pinch is commonly reported as Ctrl/Meta+wheel. Shift+wheel/trackpad orbits in 3D.
  if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before panning/zooming";return}
- if(e.ctrlKey||e.metaKey){zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.012));return}
+ // Give Shift-orbit priority over browser-modified trackpad events.
  if(view==="3d"&&(e.shiftKey||shiftHeld)){
-  camera3d.yaw+=e.deltaX*.006;
+  camera3d.yaw+=((Math.abs(e.deltaX)>0?e.deltaX:0)+e.deltaY*.35)*.006;
   camera3d.pitch=Math.max(.12,Math.min(1.35,camera3d.pitch+e.deltaY*.006));
   redraw();return;
  }
+ if(e.ctrlKey||e.metaKey){zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.012));return}
  // Do not use deltaMode===0 as a trackpad test: normal mouse wheels also report pixel deltas.
  const trackpadLike=Math.abs(e.deltaX)>0||Math.abs(e.deltaY)<45;
  if(trackpadLike){panBy(-e.deltaX,-e.deltaY);return}
