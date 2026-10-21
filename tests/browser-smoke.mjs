@@ -149,7 +149,7 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
   await modelPoint(0, wallY);
-  await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?./door ·/i.test(document.querySelector("#elementProperties")?.textContent || ""));
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties")?.textContent || "").toLowerCase().includes("door ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /door ·/i,
     "Clicking the door symbol should select the door rather than its host wall");
 
@@ -160,7 +160,7 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
   await openingPage.locator('[data-tool="select"]').click();
   await modelPoint(2, wallY);
-  await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?./window ·/i.test(document.querySelector("#elementProperties")?.textContent || ""));
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties")?.textContent || "").toLowerCase().includes("window ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /window ·/i,
     "Clicking the window symbol should select the window rather than its host wall");
 
