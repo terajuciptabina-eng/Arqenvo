@@ -245,15 +245,19 @@ function panBy(dx,dy){
 // macOS trackpad: two-finger pan emits deltaX/deltaY; pinch emits ctrlKey+wheel in Safari/Chromium.
 c.addEventListener("wheel",e=>{
  e.preventDefault();
- // Keep the screen-to-world transform fixed while a drawing is in progress.
- // Trackpad pan/zoom here used to change origin/scale between the first and second wall points.
+ // Trackpad gestures: two-finger scroll pans; pinch zooms; Shift + two-finger scroll orbits in 3D.
  if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before panning/zooming";return}
  if(e.ctrlKey||e.metaKey){zoomAt(e.clientX,e.clientY,Math.exp(-e.deltaY*.012));return}
- const trackpadPan=Math.abs(e.deltaX)>0||Math.abs(e.deltaY)<45;
- if(trackpadPan){panBy(-e.deltaX,-e.deltaY);return}
+ const trackpadLike=Math.abs(e.deltaX)>0||Math.abs(e.deltaY)<45||e.deltaMode===0;
+ if(view==="3d"&&(e.shiftKey||shiftHeld)&&trackpadLike){
+  camera3d.yaw+=e.deltaX*.006;
+  camera3d.pitch=Math.max(.12,Math.min(1.35,camera3d.pitch+e.deltaY*.006));
+  redraw();return;
+ }
+ if(trackpadLike){panBy(-e.deltaX,-e.deltaY);return}
  zoomAt(e.clientX,e.clientY,e.deltaY<0?1.1:.9);
 },{passive:false});
-// Do not bind Safari gesture events to the drawing canvas: they can turn trackpad input into unintended zoom while drawing. Pinch zoom remains available through ctrl/meta+wheel.
+// Trackpad: two-finger pan, pinch to zoom, and Shift + two-finger scroll to orbit in 3D.
 document.querySelectorAll("[data-tool]").forEach(b=>b.onclick=()=>setTool(b.dataset.tool));$("moveSelection").onclick=()=>transformSelected("move");$("rotateSelection").onclick=()=>transformSelected("rotate");$("mirrorSelection").onclick=()=>transformSelected("mirror");$("copySelection").onclick=()=>transformSelected("copy");
 const roomButton=document.createElement("button");roomButton.className="tree";roomButton.textContent="▦ Detect Rooms / Areas";roomButton.onclick=()=>{const rooms=detectClosedRooms(els().filter(e=>e.type==="wall"&&e.storyId===story().id));hist();$("status").textContent=rooms.length?rooms.length+" room(s) · "+rooms.reduce((sum,r)=>sum+r.area,0).toFixed(2)+" m² detected":"No closed rooms found (walls must connect at endpoints)";p.elements=els().filter(e=>e.type!=="room"||e.storyId!==story().id);p.elements.push(...rooms.map(r=>({...r,storyId:story().id,layer:"A-ROOM"})));selected.clear();redraw();renderProperties()};document.querySelector(".navigator").appendChild(roomButton);
 function refreshStories(){const select=$("storySelect");if(!select)return;select.innerHTML="";for(const s of p.stories){const option=document.createElement("option");option.value=s.id;option.textContent=s.name;select.appendChild(option)}if(!p.stories.some(s=>s.id===activeStoryId))activeStoryId=p.stories[0]?.id;select.value=activeStoryId;const active=story();$("viewLabel").textContent=view==="floor"?active.name+" · 1:100":"3D Window · conceptual preview";updateContextUI()}
