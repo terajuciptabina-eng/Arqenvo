@@ -338,7 +338,7 @@ $("orbitLeft").onclick=()=>{camera3d.yaw-=Math.PI/12;redraw()};
 $("orbitRight").onclick=()=>{camera3d.yaw+=Math.PI/12;redraw()};
 $("viewTop").onclick=()=>{camera3d.pitch=1.35;camera3d.yaw=0;redraw()};
 $("viewFront").onclick=()=>{camera3d.pitch=.05;camera3d.yaw=0;redraw()};
-$("viewHome").onclick=()=>{camera3d={yaw:-Math.PI/4,pitch:Math.PI/5,zoom:1,panX:0,panY:0};redraw()};
+$("viewHome").onclick=()=>{camera3d={yaw:-Math.PI/4,pitch:Math.PI/5,zoom:1,panX:0,panY:0,targetZ:1.5};redraw()};
 $("fitModel").onclick=fit3d;
 $("floorTab").onclick=()=>setView("floor");$("threeTab").onclick=()=>setView("3d");
 $("storySelect").onchange=()=>{activeStoryId=$("storySelect").value;selected.clear();draft=[];refreshStories();redraw();renderProperties()};
