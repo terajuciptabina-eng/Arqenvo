@@ -148,10 +148,14 @@ try {
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
-  await modelPoint(0.45, wallY);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { throw new Error(`Door selection failed; status="${await openingPage.locator("#status").textContent()}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,400)}"; ${error.message}`); });
+  // Select the visible door leaf/swing arc, deliberately away from the wall centreline.
+  await modelPoint(0.45, wallY + 0.45);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { throw new Error(`Door symbol selection failed; status="${await openingPage.locator("#status").textContent()}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,400)}"; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
-    "Clicking the door symbol should select the door rather than its host wall");
+    "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
+  // Clicking within the opening itself must also choose the opening element, not Wall.
+  await modelPoint(0.45, wallY);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"));
 
   await openingPage.locator('[data-tool="window"]').click();
   await modelPoint(2, wallY);
@@ -159,10 +163,13 @@ try {
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"), null, {timeout:8000}).catch(async error => { throw new Error(`Window placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
-  await modelPoint(2.6, wallY);
+  // Window sash lines are offset from the host wall centreline in the rendered plan.
+  await modelPoint(2.6, wallY + 0.075);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /window ·/i,
-    "Clicking the window symbol should select the window rather than its host wall");
+    "Clicking a visible window sash should select Window rather than its host wall");
+  await modelPoint(2.6, wallY);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
 
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
