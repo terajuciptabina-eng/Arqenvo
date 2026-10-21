@@ -46,9 +46,11 @@ try {
     return canvas && canvas.clientWidth > 100 && canvas.clientHeight > 100;
   });
   const canvas = page.locator("#canvas");
+  await page.locator('[data-tool="wall"]').click();
+  // Tool selection can resize the workspace; calculate coordinates only after the UI settles.
+  await page.waitForTimeout(80);
   const rect = await canvas.boundingBox();
   assert.ok(rect, "Floor-plan canvas must be visible");
-  await page.locator('[data-tool="wall"]').click();
   const cx = rect.x + rect.width / 2;
   const cy = rect.y + rect.height / 2;
 
@@ -56,6 +58,7 @@ try {
   await page.mouse.click(cx - 72, cy);
   await page.mouse.click(cx + 72, cy);
   await page.locator('[data-tool="wall"]').click();
+  await page.waitForTimeout(80);
   await page.mouse.click(cx, cy);
   await page.mouse.click(cx, cy - 72);
   await page.waitForFunction(() => document.querySelector("#undo")?.disabled === false);
