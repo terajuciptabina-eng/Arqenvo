@@ -56,10 +56,10 @@ function nearestElement(q){
   if(el.type==="door"){
    const g=doorSwingGeometry(a,b,{hingeSide:el.hingeSide,swingDirection:el.swingDirection});
    const arcRadius=g.radius,radial=Math.abs(Math.hypot(screenQ.x-g.hinge.x,screenQ.y-g.hinge.y)-arcRadius);
-   const angle=Math.atan2(screenQ.y-g.hinge.y,screenQ.x-g.hinge.x);
-   const norm=v=>((v%(Math.PI*2))+(Math.PI*2))%(Math.PI*2);
-   const arcSpan=g.anticlockwise?norm(g.startAngle-angle)+norm(angle-g.endAngle)<=norm(g.startAngle-g.endAngle)+1e-6:norm(angle-g.startAngle)<=norm(g.endAngle-g.startAngle)+1e-6;
-   symbolDistance=Math.min(pointSegmentDistance(screenQ,g.hinge,g.openFree),arcSpan?radial:Infinity);
+   // The visible arc is stroked in screen space. Use its radial distance with
+   // the opening interval constraint below; the canvas arc sweep direction and
+   // model-space Y inversion must not make a visible arc unpickable.
+   symbolDistance=Math.min(pointSegmentDistance(screenQ,g.hinge,g.openFree),radial);
   }else{
    const offset=wallPixels*.28;
    symbolDistance=Math.min(
