@@ -148,8 +148,12 @@ try {
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
+  // Clear any selection left by placement before asserting a fresh hit-test result.
+  await modelPoint(7, 3);
+  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
+  await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Select the visible door leaf/swing arc, deliberately away from the wall centreline.
-  await modelPoint(0.45, wallY + 0.45);
+  await modelPoint(0.566, wallY + 0.566);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { throw new Error(`Door symbol selection failed; status="${await openingPage.locator("#status").textContent()}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,400)}"; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
     "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
@@ -163,6 +167,10 @@ try {
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"), null, {timeout:8000}).catch(async error => { throw new Error(`Window placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
+  // Clear selection left by placement so the assertion proves a new Window hit.
+  await modelPoint(7, 3);
+  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
+  await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Window sash lines are offset from the host wall centreline in the rendered plan.
   await modelPoint(2.6, wallY + 0.075);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
