@@ -169,6 +169,11 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#propAlignment")?.value === "left" && document.querySelector("#status")?.textContent === "Opening updated");
   assert.ok(Math.abs(Number(await openingPage.locator('[data-prop="offset"]').inputValue())) < 1e-8,
     "Choosing Left should immediately move the door opening to the host wall start");
+  await openingPage.locator('[data-prop="width"]').fill("1.2");
+  await openingPage.locator('[data-prop="width"]').press("Tab");
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Opening updated");
+  assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
+    "Changing door width should immediately update the hosted opening geometry");
 
   await openingPage.locator('[data-tool="window"]').click();
   await modelPoint(2, wallY);
