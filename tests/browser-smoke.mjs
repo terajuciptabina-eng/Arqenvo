@@ -209,6 +209,35 @@ try {
   await modelPoint(2.6, wallY);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
 
+  // Gridline endpoint gestures must terminate with Enter and roll back with Escape.
+  const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  gridPage.setDefaultTimeout(8000);
+  gridPage.on("pageerror", error => pageErrors.push(error.message));
+  await gridPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await gridPage.waitForFunction(() => { const el=document.querySelector("#canvas"); return el && el.clientWidth>100 && el.clientHeight>100; });
+  const gridPoint = async (wx, wy, action = "click") => {
+    const pt = await gridPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
+    if(action==="move") await gridPage.mouse.move(pt.x,pt.y); else await gridPage.mouse.click(pt.x,pt.y);
+  };
+  await gridPage.locator('[data-tool="gridline"]').click();
+  await gridPoint(-2, 0);
+  await gridPoint(2, 0);
+  await gridPage.locator('[data-tool="select"]').click();
+  await gridPoint(-2, 0);
+  await gridPoint(-2, 1, "move");
+  await gridPage.keyboard.press("Enter");
+  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Gridline endpoint move committed");
+  await gridPoint(-1, 2, "move");
+  assert.equal(await gridPage.locator("#status").textContent(), "Gridline endpoint move committed",
+    "Moving the pointer after Enter must not continue moving the Gridline endpoint");
+  await gridPoint(-2, 1);
+  await gridPoint(-1, 2, "move");
+  await gridPage.keyboard.press("Escape");
+  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Gridline endpoint move cancelled");
+  await gridPoint(1, 3, "move");
+  assert.equal(await gridPage.locator("#status").textContent(), "Gridline endpoint move cancelled",
+    "Escape must cancel the endpoint gesture instead of leaving it active");
+
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
 } finally {
