@@ -47,6 +47,7 @@ try {
   });
   const canvas = page.locator("#canvas");
   await page.locator('[data-tool="wall"]').click();
+  await page.locator("#wallGeometryMethod").selectOption("single");
   // Tool selection can resize the workspace; calculate coordinates only after the UI settles.
   await page.waitForTimeout(80);
   let rect = await canvas.boundingBox();
@@ -57,13 +58,7 @@ try {
   // Draw a horizontal wall, then a vertical branch ending at its midpoint (T junction).
   await page.mouse.click(cx - 72, cy);
   await page.mouse.click(cx + 72, cy);
-  await page.locator('[data-tool="wall"]').click();
-  await page.waitForTimeout(80);
-  // Re-center after any toolbar/layout resize so clicks and pixel assertions share coordinates.
-  rect = await canvas.boundingBox();
-  assert.ok(rect, "Floor-plan canvas remains visible after tool selection");
-  cx = rect.x + rect.width / 2;
-  cy = rect.y + rect.height / 2;
+  // Single-segment mode leaves the next wall independent, allowing a true T-junction test.
   await page.mouse.click(cx, cy);
   await page.mouse.click(cx, cy - 72);
   await page.waitForFunction(() => document.querySelector("#undo")?.disabled === false);
