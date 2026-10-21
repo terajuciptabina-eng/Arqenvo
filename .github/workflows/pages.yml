@@ -14,18 +14,30 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout production site
         uses: actions/checkout@v4
+      - name: Checkout tested branch for isolated preview
+        uses: actions/checkout@v4
+        with:
+          ref: feat/model-history-and-wall-joins
+          path: preview-src
+      - name: Add tested branch under /preview/ without changing production app
+        run: |
+          mkdir -p preview
+          cp preview-src/index.html preview/index.html
+          cp -R preview-src/src preview/src
+          cp -R preview-src/assets preview/assets
+          touch .nojekyll
       - name: Configure Pages
         uses: actions/configure-pages@v5
-      - name: Upload site artifact
+      - name: Upload production site plus isolated preview
         uses: actions/upload-pages-artifact@v3
         with:
           path: "."
   deploy:
     environment:
       name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      url: ${{ steps.deployment.outputs.page_url }}preview/
     runs-on: ubuntu-latest
     needs: build
     steps:
