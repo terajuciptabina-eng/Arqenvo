@@ -29,7 +29,43 @@ function updateHistoryButtons(){$("undo").disabled=!modelHistory.canUndo;$("redo
 function selectOnly(id){selected=id?new Set([id]):new Set();renderProperties()}
 function elementLayer(el){return el.layer||({"wall":"A-WALL","slab":"A-SLAB","column":"A-COLS","beam":"A-BEAM","door":"A-DOOR","window":"A-WIND","dimension":"A-DIMS","room":"A-ROOM"}[el.type]||"A-MISC")}
 function isLayerVisible(el){return !hiddenLayers.has(elementLayer(el))}
-function nearestElement(q){let best=null,dist=.22;for(const el of [...els()].filter(e=>isLayerVisible(e)&&(view!=="floor"||e.storyId===story().id)).reverse()){let d=Infinity;if(el.type==="wall"||el.type==="beam")d=pointSegmentDistance(q,el.start,el.end);else if(el.type==="column")d=Math.hypot(q.x-el.position.x,q.y-el.position.y);else if(el.type==="slab"||el.type==="room"){if(pointInPolygon(q,el.boundary))d=0;else d=Math.min(...el.boundary.map((v,i)=>pointSegmentDistance(q,v,el.boundary[(i+1)%el.boundary.length])))}else if(el.type==="dimension")d=pointSegmentDistance(q,el.start,el.end);if(d<dist){best=el;dist=d}}return best}
+function nearestElement(q){
+ const candidates=els().filter(e=>isLayerVisible(e)&&(view!=="floor"||e.storyId===story().id));
+ let best=null,bestScore=Infinity;
+ const hitTolerance=Math.max(.12,10/Math.max(1,scale));
+ for(const el of candidates){
+  let d=Infinity,score=Infinity;
+  if(el.type==="door"||el.type==="window"){
+   const host=candidates.find(v=>v.id===el.hostWallId&&v.type==="wall");
+   if(!host)continue;
+   const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy);
+   if(len<1e-8)continue;
+   const along=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/len;
+   const perpendicular=Math.abs((q.x-host.start.x)*dy-(q.y-host.start.y)*dx)/len;
+   const start=el.offset||0,end=start+(el.width||0);
+   const tolerance=Math.max(hitTolerance,host.thickness/2+.06);
+   if(along>=start-hitTolerance&&along<=end+hitTolerance&&perpendicular<=tolerance){
+    d=perpendicular;
+    score=d-.15;
+   }
+  }else if(el.type==="wall"||el.type==="beam"){
+   const half=(el.type==="wall"?el.thickness:el.width||0)/2;
+   d=Math.max(0,pointSegmentDistance(q,el.start,el.end)-half);
+   score=d;
+  }else if(el.type==="column"){
+   d=Math.hypot(q.x-el.position.x,q.y-el.position.y)-Math.max(el.width||0,el.depth||0)/2;
+   d=Math.max(0,d);score=d;
+  }else if(el.type==="slab"||el.type==="room"){
+   if(pointInPolygon(q,el.boundary))d=0;
+   else d=Math.min(...el.boundary.map((v,i)=>pointSegmentDistance(q,v,el.boundary[(i+1)%el.boundary.length])));
+   score=d;
+  }else if(el.type==="dimension"){
+   d=pointSegmentDistance(q,el.start,el.end);score=d;
+  }
+  if(d<=hitTolerance&&score<bestScore){best=el;bestScore=score}
+ }
+ return best
+}
 function snapPoint(q,radius){activeSnapPoint=null;if(p.settings?.snap===false)return q;const threshold=radius??(10/Math.max(1,scale));let best=null,bestDistance=threshold,bestKind="";const consider=(point,kind)=>{if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;const d=Math.hypot(q.x-point.x,q.y-point.y);if(d<bestDistance){best={x:point.x,y:point.y};bestDistance=d;bestKind=kind}};for(const el of els()){if(!isLayerVisible(el)||(view==="floor"&&el.storyId!==story().id))continue;if(el.type==="wall"||el.type==="beam"){consider(el.start,"endpoint");consider(el.end,"endpoint");consider({x:(el.start.x+el.end.x)/2,y:(el.start.y+el.end.y)/2},"midpoint");const dx=el.end.x-el.start.x,dy=el.end.y-el.start.y,len2=dx*dx+dy*dy;if(len2>1e-9){const t=Math.max(0,Math.min(1,((q.x-el.start.x)*dx+(q.y-el.start.y)*dy)/len2));if(t>0.025&&t<0.975)consider({x:el.start.x+t*dx,y:el.start.y+t*dy},"nearest")}}if(el.type==="column")consider(el.position,"center");if(el.type==="slab")for(const v of el.boundary)consider(v,"endpoint")}if(best)activeSnapPoint={...best,kind:bestKind};return best||q}
 function pointInPolygon(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){let a=poly[i],b=poly[j];if(((a.y>p.y)!==(b.y>p.y))&&(p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x))inside=!inside}return inside}
 function drawWallJunctions(){
