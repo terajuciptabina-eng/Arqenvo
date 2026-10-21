@@ -174,7 +174,10 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Opening updated");
   assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
     "Pressing Enter should apply the new door width to the hosted opening");
-  await modelPoint(0.45, wallY);
+  // Alignment=Left moved the opening to the host wall start (-4 m); hit the updated visible arc and opening span.
+  await modelPoint(-3.434, wallY + 0.566);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
+  await modelPoint(-3.55, wallY);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
 
   await openingPage.locator('[data-tool="window"]').click();
