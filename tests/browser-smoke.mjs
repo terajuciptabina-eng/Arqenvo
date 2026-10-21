@@ -49,16 +49,21 @@ try {
   await page.locator('[data-tool="wall"]').click();
   // Tool selection can resize the workspace; calculate coordinates only after the UI settles.
   await page.waitForTimeout(80);
-  const rect = await canvas.boundingBox();
+  let rect = await canvas.boundingBox();
   assert.ok(rect, "Floor-plan canvas must be visible");
-  const cx = rect.x + rect.width / 2;
-  const cy = rect.y + rect.height / 2;
+  let cx = rect.x + rect.width / 2;
+  let cy = rect.y + rect.height / 2;
 
   // Draw a horizontal wall, then a vertical branch ending at its midpoint (T junction).
   await page.mouse.click(cx - 72, cy);
   await page.mouse.click(cx + 72, cy);
   await page.locator('[data-tool="wall"]').click();
   await page.waitForTimeout(80);
+  // Re-center after any toolbar/layout resize so clicks and pixel assertions share coordinates.
+  rect = await canvas.boundingBox();
+  assert.ok(rect, "Floor-plan canvas remains visible after tool selection");
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
   await page.mouse.click(cx, cy);
   await page.mouse.click(cx, cy - 72);
   await page.waitForFunction(() => document.querySelector("#undo")?.disabled === false);
