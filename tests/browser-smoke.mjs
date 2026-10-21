@@ -69,12 +69,11 @@ try {
   await page.waitForFunction(() => document.querySelector("#undo")?.disabled === false);
   await page.waitForTimeout(50);
 
-  const centerPixel = await canvas.evaluate((el, point) => {
+  const centerPixel = await canvas.evaluate(el => {
     const ctx = el.getContext("2d");
-    const px = Math.max(0, Math.min(el.width - 1, Math.round(point.x)));
-    const py = Math.max(0, Math.min(el.height - 1, Math.round(point.y)));
-    return Array.from(ctx.getImageData(px, py, 1, 1).data);
-  }, { x: Math.round((cx - rect.x) * (await canvas.evaluate(el => el.width)) / rect.width), y: Math.round((cy - rect.y) * (await canvas.evaluate(el => el.height)) / rect.height) });
+    // The world origin is always the live canvas centre; do not reuse stale screen-space coordinates.
+    return Array.from(ctx.getImageData(Math.round(el.width / 2), Math.round(el.height / 2), 1, 1).data);
+  });
   assert.ok(centerPixel[0] < 170 && centerPixel[1] < 180 && centerPixel[2] < 190,
     `T-junction centre should render as a wall, got rgba(${centerPixel.join(",")})`);
 
