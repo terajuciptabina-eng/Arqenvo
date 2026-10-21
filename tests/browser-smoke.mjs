@@ -120,40 +120,29 @@ try {
   assert.ok(openingRect, "Floor-plan canvas must be visible for opening tests");
   cx = openingRect.x + openingRect.width / 2;
   cy = openingRect.y + openingRect.height / 2;
-  await openingPage.mouse.click(cx - 140, cy + 120);
-  await openingPage.mouse.click(cx + 140, cy + 120);
+  const wallScreenX = cx;
+  const wallScreenY = cy + 120;
+  await openingPage.mouse.click(wallScreenX - 140, wallScreenY);
+  await openingPage.mouse.click(wallScreenX + 140, wallScreenY);
   // Place openings on the host wall centreline first; avoid grid/snap ambiguity at the symbol offset.
   await openingPage.locator('[data-tool="door"]').click();
-  rect = await openingCanvas.boundingBox();
-  assert.ok(rect, "Canvas remains visible after selecting Door");
-  cx = rect.x + rect.width / 2;
-  cy = rect.y + rect.height / 2;
-  await openingPage.mouse.click(cx, cy + 120);
-  await openingPage.mouse.move(cx, cy + 90);
+  await openingPage.mouse.click(wallScreenX, wallScreenY);
+  await openingPage.mouse.move(wallScreenX, wallScreenY - 30);
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
   await openingPage.locator('[data-tool="select"]').click();
-  rect = await openingCanvas.boundingBox();
-  cx = rect.x + rect.width / 2;
-  cy = rect.y + rect.height / 2;
-  await openingPage.mouse.click(cx, cy + 120);
+  await openingPage.mouse.click(wallScreenX, wallScreenY);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /door ·/i,
     "Clicking the door symbol should select the door rather than its host wall");
 
   await openingPage.locator('[data-tool="window"]').click();
-  rect = await openingCanvas.boundingBox();
-  cx = rect.x + rect.width / 2;
-  cy = rect.y + rect.height / 2;
-  await openingPage.mouse.click(cx + 55, cy + 120);
-  await openingPage.mouse.move(cx + 55, cy + 90);
+  await openingPage.mouse.click(wallScreenX + 55, wallScreenY);
+  await openingPage.mouse.move(wallScreenX + 55, wallScreenY - 30);
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
   await openingPage.locator('[data-tool="select"]').click();
-  rect = await openingCanvas.boundingBox();
-  cx = rect.x + rect.width / 2;
-  cy = rect.y + rect.height / 2;
-  await openingPage.mouse.click(cx + 55, cy + 120);
+  await openingPage.mouse.click(wallScreenX + 55, wallScreenY);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("window ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /window ·/i,
     "Clicking the window symbol should select the window rather than its host wall");
