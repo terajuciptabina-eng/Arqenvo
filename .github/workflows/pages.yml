@@ -1,4 +1,4 @@
-name: Publish ARQENVO production and refreshed branch preview to GitHub Pages
+name: Publish ARQENVO production and wall-loop preview to GitHub Pages
 on:
   push:
     branches: ["main"]
