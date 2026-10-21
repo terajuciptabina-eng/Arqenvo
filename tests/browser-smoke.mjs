@@ -88,6 +88,14 @@ try {
   await page.mouse.click(cx + 130, cy + 100);
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing finished"));
+
+  // Backspace removes only the last segment of an active chain.
+  await page.mouse.click(cx + 80, cy + 160);
+  await page.mouse.click(cx + 130, cy + 160);
+  await page.mouse.click(cx + 130, cy + 210);
+  await page.keyboard.press("Backspace");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
+  await page.keyboard.press("Enter");
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-loop closure, Enter finish, no page errors.");
 } finally {
