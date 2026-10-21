@@ -77,22 +77,23 @@ try {
 
   // Continuous wall chain should close by clicking the original first point.
   await page.locator('[data-tool="wall"]').click();
-  await page.mouse.click(cx - 100, cy + 110);
-  await page.mouse.click(cx - 35, cy + 110);
-  await page.mouse.click(cx - 35, cy + 45);
-  await page.mouse.click(cx - 100, cy + 110);
+  await page.locator("#wallGeometryMethod").selectOption("continuous");
+  await page.mouse.click(cx - 200, cy + 180);
+  await page.mouse.click(cx - 100, cy + 180);
+  await page.mouse.click(cx - 100, cy + 80);
+  await page.mouse.click(cx - 200, cy + 180);
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Closed wall loop created"));
 
   // Enter finishes an open chain without adding a closing segment.
-  await page.mouse.click(cx + 80, cy + 100);
-  await page.mouse.click(cx + 130, cy + 100);
+  await page.mouse.click(cx + 150, cy + 140);
+  await page.mouse.click(cx + 230, cy + 140);
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing finished"));
 
   // Backspace removes only the last segment of an active chain.
-  await page.mouse.click(cx + 80, cy + 160);
-  await page.mouse.click(cx + 130, cy + 160);
-  await page.mouse.click(cx + 130, cy + 210);
+  await page.mouse.click(cx + 150, cy + 220);
+  await page.mouse.click(cx + 230, cy + 220);
+  await page.mouse.click(cx + 230, cy + 290);
   await page.keyboard.press("Backspace");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Enter");
