@@ -1,7 +1,7 @@
-name: Publish ARQENVO production and isolated wall-chain preview to GitHub Pages
+name: Publish ARQENVO production and PR-specific preview to GitHub Pages
 on:
   push:
-    branches: ["main", "feat/model-history-and-wall-joins"]
+    branches: ["main", "feat/model-history-and-wall-joins", "fix/archicad-style-element-selection"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -18,10 +18,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-      - name: Checkout wall-chain branch for isolated preview
+      - name: Checkout PR branch for PR preview
         uses: actions/checkout@v4
         with:
-          ref: feat/model-history-and-wall-joins
+          ref: fix/archicad-style-element-selection
           path: preview-src
       - name: Assemble production site plus isolated preview
         run: |
