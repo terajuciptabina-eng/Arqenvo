@@ -5,7 +5,7 @@ import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry} from "./core/authoring.js";
 import {ModelHistory} from "./core/transactions.js";
-import {wallEndJoin} from "./core/geometry.js";
+import {wallEndJoin, segmentIntersection} from "./core/geometry.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set();
 const modelHistory=new ModelHistory({limit:80});
