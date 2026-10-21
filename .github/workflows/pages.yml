@@ -1,14 +1,14 @@
 name: Publish ARQENVO production and isolated wall-chain preview to GitHub Pages
 on:
   push:
-    branches: ["main", "feat/model-history-and-wall-joins"]
+    branches: ["main"]
   workflow_dispatch:
 permissions:
   contents: read
   pages: write
   id-token: write
 concurrency:
-  group: "pages"
+  group: "github-pages-production"
   cancel-in-progress: true
 jobs:
   build:
