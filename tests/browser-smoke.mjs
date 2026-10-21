@@ -133,6 +133,8 @@ try {
   };
   // Disable magnetic snapping for deterministic host-wall placement in this test.
   await openingPage.locator("#snapToggle").click();
+  await openingPage.locator("#snapToggle").click(); // toggle implementation maps undefined -> false -> true
+  await openingPage.waitForFunction(() => document.querySelector("#snapToggle")?.getAttribute("aria-pressed") === "false");
   await openingPage.locator("#gridQuick").selectOption("0.1");
   const wallY = -3.5;
   await modelPoint(-4, wallY);
