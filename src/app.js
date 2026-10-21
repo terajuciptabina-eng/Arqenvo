@@ -31,42 +31,55 @@ function elementLayer(el){return el.layer||({"wall":"A-WALL","slab":"A-SLAB","co
 function isLayerVisible(el){return !hiddenLayers.has(elementLayer(el))}
 function nearestElement(q){
  const candidates=els().filter(e=>isLayerVisible(e)&&(view!=="floor"||e.storyId===story().id));
- let best=null,bestScore=Infinity;
  const hitTolerance=Math.max(.12,10/Math.max(1,scale));
+ let best=null,bestScore=Infinity;
+ // Hosted openings are distinct selectable elements. Test them before their host
+ // wall and measure against the actual visible symbol (leaf/swing arc or sash),
+ // otherwise a click away from the wall centreline incorrectly falls through to Wall.
+ const openings=candidates.filter(el=>el.type==="door"||el.type==="window");
+ for(const el of openings){
+  const host=candidates.find(v=>v.id===el.hostWallId&&v.type==="wall");
+  if(!host)continue;
+  const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy);
+  if(len<1e-8)continue;
+  const ux=dx/len,uy=dy/len,nx=-uy,ny=ux;
+  const start=el.offset||0,width=el.width||0,end=start+width;
+  if(!(width>0))continue;
+  const a={x:host.start.x+ux*start,y:host.start.y+uy*start};
+  const b={x:host.start.x+ux*end,y:host.start.y+uy*end};
+  const side=el.swingDirection==="outside"?-1:1;
+  const hinge=el.type==="door"&&el.hingeSide==="right"?b:a;
+  const closedFree=el.type==="door"&&el.hingeSide==="right"?a:b;
+  const openFree={x:hinge.x+nx*side*width,y:hinge.y+ny*side*width};
+  const symbolDistance=el.type==="door"
+   ?Math.min(pointSegmentDistance(q,hinge,openFree),Math.abs(Math.hypot(q.x-hinge.x,q.y-hinge.y)-width))
+   :Math.min(pointSegmentDistance(q,{x:a.x+nx*side*(host.thickness/2+.025),y:a.y+ny*side*(host.thickness/2+.025)},{x:b.x+nx*side*(host.thickness/2+.025),y:b.y+ny*side*(host.thickness/2+.025)}),
+             pointSegmentDistance(q,{x:a.x-nx*side*(host.thickness/2+.025),y:a.y-ny*side*(host.thickness/2+.025)},{x:b.x-nx*side*(host.thickness/2+.025),y:b.y-ny*side*(host.thickness/2+.025)}));
+  const symbolTolerance=Math.max(hitTolerance,.09);
+  const openingAlong=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/len;
+  const overlapsOpening=openingAlong>=start-hitTolerance&&openingAlong<=end+hitTolerance;
+  const withinOpening=overlapsOpening&&Math.abs((q.x-host.start.x)*dy-(q.y-host.start.y)*dx)/len<=host.thickness/2+symbolTolerance;
+  if(symbolDistance<=symbolTolerance||withinOpening){
+   const score=(symbolDistance<=symbolTolerance?symbolDistance:hitTolerance*.5)-1;
+   if(score<bestScore){best=el;bestScore=score}
+  }
+ }
+ if(best)return best;
  for(const el of candidates){
-  let d=Infinity,score=Infinity;
-  if(el.type==="door"||el.type==="window"){
-   const host=candidates.find(v=>v.id===el.hostWallId&&v.type==="wall");
-   if(!host)continue;
-   const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy);
-   if(len<1e-8)continue;
-   const along=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/len;
-   const perpendicular=Math.abs((q.x-host.start.x)*dy-(q.y-host.start.y)*dx)/len;
-   const start=el.offset||0,end=start+(el.width||0);
-   // Opening symbols extend away from the host wall (door swing arc / window sash).
-   // Hit-test the visible symbol footprint, not just the thin wall opening line.
-   const symbolReach=Math.max(hitTolerance,(el.width||0)*.8);
-   const tolerance=Math.max(hitTolerance,host.thickness/2+.06);
-   if(along>=start-hitTolerance&&along<=end+hitTolerance&&perpendicular<=Math.max(tolerance,symbolReach)){
-    d=perpendicular;
-    // Prefer the opening over its host wall anywhere inside the opening symbol.
-    score=d-Math.max(.15,(el.width||0)*.8);
-   }
-  }else if(el.type==="wall"||el.type==="beam"){
+  if(el.type==="door"||el.type==="window")continue;
+  let d=Infinity;
+  if(el.type==="wall"||el.type==="beam"){
    const half=(el.type==="wall"?el.thickness:el.width||0)/2;
    d=Math.max(0,pointSegmentDistance(q,el.start,el.end)-half);
-   score=d;
   }else if(el.type==="column"){
-   d=Math.hypot(q.x-el.position.x,q.y-el.position.y)-Math.max(el.width||0,el.depth||0)/2;
-   d=Math.max(0,d);score=d;
+   d=Math.max(0,Math.hypot(q.x-el.position.x,q.y-el.position.y)-Math.max(el.width||0,el.depth||0)/2);
   }else if(el.type==="slab"||el.type==="room"){
    if(pointInPolygon(q,el.boundary))d=0;
    else d=Math.min(...el.boundary.map((v,i)=>pointSegmentDistance(q,v,el.boundary[(i+1)%el.boundary.length])));
-   score=d;
   }else if(el.type==="dimension"){
-   d=pointSegmentDistance(q,el.start,el.end);score=d;
+   d=pointSegmentDistance(q,el.start,el.end);
   }
-  if(d<=hitTolerance&&score<bestScore){best=el;bestScore=score}
+  if(d<=hitTolerance&&d<bestScore){best=el;bestScore=d}
  }
  return best
 }
