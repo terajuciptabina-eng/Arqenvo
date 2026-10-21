@@ -72,7 +72,9 @@ function nearestElement(q){
   // The opening span itself belongs to the hosted Door/Window as well as
   // its visible swing/sash symbol. Do not require the centreline click to also
   // fall within the rendered-symbol pixel tolerance; that lets the host Wall win.
-  if(withinOpening){
+  // Prefer a directly hit visible Door/Window symbol even if legacy or locally recovered
+  // opening offsets no longer agree exactly with the host-wall projection.
+  if(withinOpening||symbolDistance<=pixelTolerance){
    const score=(symbolDistance<=pixelTolerance?symbolDistance:pixelTolerance)-1000;
    if(score<bestScore){best=el;bestScore=score}
   }
