@@ -131,6 +131,9 @@ try {
     if (action === "move") await openingPage.mouse.move(pt.x, pt.y);
     else await openingPage.mouse.click(pt.x, pt.y);
   };
+  // Disable magnetic snapping for deterministic host-wall placement in this test.
+  await openingPage.locator("#snapToggle").click();
+  await openingPage.locator("#gridQuick").selectOption("0.1");
   const wallY = -3.5;
   await modelPoint(-4, wallY);
   await modelPoint(4, wallY);
