@@ -1,7 +1,7 @@
-name: Publish ARQENVO production and wall-loop preview to GitHub Pages
+name: Publish ARQENVO production and isolated wall-chain preview to GitHub Pages
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "feat/model-history-and-wall-joins"]
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,19 +14,21 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout production site
+      - name: Checkout production site from main
         uses: actions/checkout@v4
-      - name: Checkout tested branch for isolated preview
+        with:
+          ref: main
+      - name: Checkout wall-chain branch for isolated preview
         uses: actions/checkout@v4
         with:
           ref: feat/model-history-and-wall-joins
           path: preview-src
-      - name: Add tested branch under /preview/ without changing production app
+      - name: Assemble production site plus isolated preview
         run: |
           mkdir -p preview
           cp preview-src/index.html preview/index.html
           cp -R preview-src/src preview/src
-          cp -R preview-src/assets preview/assets
+          if [ -d preview-src/assets ]; then cp -R preview-src/assets preview/assets; fi
           touch .nojekyll
       - name: Configure Pages
         uses: actions/configure-pages@v5
