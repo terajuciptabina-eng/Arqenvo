@@ -66,7 +66,7 @@ try {
     const px = Math.max(0, Math.min(el.width - 1, Math.round(point.x)));
     const py = Math.max(0, Math.min(el.height - 1, Math.round(point.y)));
     return Array.from(ctx.getImageData(px, py, 1, 1).data);
-  }, { x: rect.width / 2, y: rect.height / 2 });
+  }, { x: Math.round(el.width / 2), y: Math.round(el.height / 2) });
   assert.ok(centerPixel[0] < 170 && centerPixel[1] < 180 && centerPixel[2] < 190,
     `T-junction centre should render as a wall, got rgba(${centerPixel.join(",")})`);
 
@@ -75,17 +75,18 @@ try {
   await page.locator("#redo").click();
   await page.waitForFunction(() => document.querySelector("#undo")?.disabled === false);
 
-  // Continuous wall chain should close by clicking the original first point.
+  // Returning to the first point must not auto-close an active chain.
   await page.locator('[data-tool="wall"]').click();
   await page.locator("#wallGeometryMethod").selectOption("continuous");
   await page.mouse.click(cx - 200, cy + 180);
   await page.mouse.click(cx - 100, cy + 180);
   await page.mouse.click(cx - 100, cy + 80);
   await page.mouse.click(cx - 200, cy + 180);
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall loop closed · press Enter to commit or Esc to cancel"));
+  await page.waitForTimeout(50);
+  assert.ok(!document.querySelector("#status")?.textContent.includes("Wall loop closed"),
+    "Continuous wall must not auto-close when cursor returns near its first point");
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
-
   // Enter finishes an open chain without adding a closing segment.
   await page.mouse.click(cx + 150, cy + 140);
   await page.mouse.click(cx + 230, cy + 140);
