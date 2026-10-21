@@ -63,3 +63,13 @@ test("history enforces a bounded positive limit", () => {
   assert.deepEqual(history.undo({ n: 2 }), { n: 1 });
   assert.equal(history.canUndo, false);
 });
+
+test("model history ignores no-op snapshots and preserves undo state", () => {
+  const history = new ModelHistory();
+  const model = { elements: [{ id: "wall-1", thickness: 0.2 }] };
+  history.commit(model, structuredClone(model), "No-op edit");
+  assert.equal(history.canUndo, false);
+  history.commit(model, { elements: [{ id: "wall-1", thickness: 0.3 }] }, "Change thickness");
+  assert.equal(history.canUndo, true);
+  assert.deepEqual(history.undo({ elements: [{ id: "wall-1", thickness: 0.3 }] }), model);
+});

@@ -110,6 +110,30 @@ export function wallSolidIntervals(hostLength,openings,{tolerance=1e-8}={}) {
  * intersected independently. Acute joins beyond the miter limit are bevelled
  * instead of creating long spikes. This returns plan geometry only.
  */
+/**
+ * Intersection of two finite line segments. Returns the intersection point,
+ * normalized parameters and endpoint flags; parallel/collinear pairs return null.
+ */
+export function segmentIntersection(a,b,c,d,{tolerance=1e-8}={}) {
+  if (![a,b,c,d].every(finitePoint)) throw new TypeError("Segment coordinates must be finite points");
+  if (!Number.isFinite(tolerance)||tolerance<0) throw new RangeError("Tolerance must be non-negative");
+  const r=sub(b,a),s=sub(d,c),lengthA=norm(r),lengthB=norm(s);
+  if(lengthA<EPS||lengthB<EPS) throw new RangeError("Segments must have non-zero length");
+  const denominator=cross(r,s);
+  if(Math.abs(denominator)<=EPS*lengthA*lengthB) return null;
+  const offset=sub(c,a),t=cross(offset,s)/denominator,u=cross(offset,r)/denominator;
+  const toleranceA=tolerance/lengthA,toleranceB=tolerance/lengthB;
+  if(t < -toleranceA||t > 1+toleranceA||u < -toleranceB||u > 1+toleranceB) return null;
+  const clampedT=Math.max(0,Math.min(1,t)),clampedU=Math.max(0,Math.min(1,u));
+  const pointA=add(a,mul(r,clampedT)),pointB=add(c,mul(s,clampedU));
+  const point=mul(add(pointA,pointB),.5);
+  return {
+    point,t:clampedT,u:clampedU,
+    endpointA:clampedT<=toleranceA||clampedT>=1-toleranceA,
+    endpointB:clampedU<=toleranceB||clampedU>=1-toleranceB
+  };
+}
+
 export function wallEndJoin(wallA, wallB, thicknessA, thicknessB=thicknessA, {miterLimit=10,tolerance=1e-7}={}) {
   const validSegment=w=>w&&finitePoint(w.start)&&finitePoint(w.end);
   if(!validSegment(wallA)||!validSegment(wallB)) throw new TypeError("Wall join needs two finite wall segments");

@@ -65,7 +65,9 @@ export class ModelHistory {
   get canRedo() { return this.#future.length > 0; }
 
   commit(before, after, label = "Edit model") {
-    if (!label.trim()) throw new TypeError("History label is required");
+    if (typeof label !== "string" || !label.trim()) throw new TypeError("History label is required");
+    // Ignore no-op edits so Undo never lands on an identical project snapshot.
+    if (JSON.stringify(before) === JSON.stringify(after)) return clone(after);
     this.#past.push({ snapshot: clone(before), label });
     if (this.#past.length > this.#limit) this.#past.shift();
     this.#future = [];

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { lineIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin } from "../src/core/geometry.js";
+import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin } from "../src/core/geometry.js";
 
 test("line intersection returns parameters and point",()=>{
  const hit=lineIntersection({x:0,y:0},{x:1,y:0},{x:2,y:-1},{x:0,y:1});
@@ -47,4 +47,33 @@ test("wall end join bevels excessive acute miters and rejects disconnected walls
  assert.equal(join.left.type,"bevel");
  assert.equal(join.right.type,"bevel");
  assert.throws(()=>wallEndJoin({start:{x:0,y:0},end:{x:1,y:0}},{start:{x:1.1,y:0},end:{x:2,y:0}},.2));
+});
+
+test("wall end join handles reversed wall direction and unequal thicknesses",()=>{
+ const join=wallEndJoin({start:{x:0,y:0},end:{x:2,y:0}},{start:{x:2,y:0},end:{x:2,y:2}},.2,.3);
+ assert.equal(join.type,"miter");
+ assert.ok(join.left.points[0].x<2);
+ assert.ok(join.right.points[0].x>2);
+ assert.throws(()=>wallEndJoin({start:{x:0,y:0},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:1,y:0}},.2));
+});
+
+test("segment intersection detects T-junctions and marks endpoint membership",()=>{
+ const hit=segmentIntersection({x:0,y:0},{x:4,y:0},{x:2,y:0},{x:2,y:2});
+ assert.ok(hit);
+ assert.deepEqual(hit.point,{x:2,y:0});
+ assert.equal(hit.endpointA,false);
+ assert.equal(hit.endpointB,true);
+});
+test("segment intersection detects crossings and ignores disjoint or parallel segments",()=>{
+ const cross=segmentIntersection({x:0,y:0},{x:2,y:2},{x:0,y:2},{x:2,y:0});
+ assert.ok(cross);
+ assert.ok(Math.abs(cross.point.x-1)<1e-9&&Math.abs(cross.point.y-1)<1e-9);
+ assert.equal(cross.endpointA,false);
+ assert.equal(cross.endpointB,false);
+ assert.equal(segmentIntersection({x:0,y:0},{x:1,y:0},{x:2,y:0},{x:3,y:0}),null);
+ assert.equal(segmentIntersection({x:0,y:0},{x:1,y:0},{x:0,y:1},{x:1,y:1}),null);
+});
+test("segment intersection rejects zero-length segments and invalid tolerance",()=>{
+ assert.throws(()=>segmentIntersection({x:0,y:0},{x:0,y:0},{x:0,y:0},{x:1,y:0}),/non-zero/);
+ assert.throws(()=>segmentIntersection({x:0,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:1},{tolerance:-1}),/non-negative/);
 });
