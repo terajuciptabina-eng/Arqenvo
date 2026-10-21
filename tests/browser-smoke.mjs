@@ -82,13 +82,15 @@ try {
   await page.mouse.click(cx - 100, cy + 180);
   await page.mouse.click(cx - 100, cy + 80);
   await page.mouse.click(cx - 200, cy + 180);
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Closed wall loop created"));
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall loop closed · press Enter to commit or Esc to cancel"));
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
 
   // Enter finishes an open chain without adding a closing segment.
   await page.mouse.click(cx + 150, cy + 140);
   await page.mouse.click(cx + 230, cy + 140);
   await page.keyboard.press("Enter");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing finished"));
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
 
   // Backspace removes only the last segment of an active chain.
   await page.mouse.click(cx + 150, cy + 220);
@@ -96,7 +98,8 @@ try {
   await page.mouse.click(cx + 230, cy + 290);
   await page.keyboard.press("Backspace");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
-  await page.keyboard.press("Enter");
+  await page.keyboard.press("Escape");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-loop closure, Enter finish, no page errors.");
 } finally {
