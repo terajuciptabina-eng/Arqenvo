@@ -139,7 +139,7 @@ try {
   await modelPoint(0, wallY);
   await modelPoint(0, wallY + .8, "move");
   await openingPage.keyboard.press("Enter");
-  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
   await modelPoint(0, wallY);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
