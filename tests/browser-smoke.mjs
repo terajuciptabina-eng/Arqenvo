@@ -160,6 +160,13 @@ try {
   // Clicking within the opening itself must also choose the opening element, not Wall.
   await modelPoint(0.45, wallY);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"));
+  // Property dropdowns apply immediately: hinge flips and host-wall alignment moves the opening.
+  await openingPage.locator("#propHinge").selectOption("right");
+  await openingPage.waitForFunction(() => document.querySelector("#propHinge")?.value === "right");
+  await openingPage.locator("#propAlignment").selectOption("left");
+  await openingPage.waitForFunction(() => document.querySelector("#propAlignment")?.value === "left");
+  assert.ok(Math.abs(Number(await openingPage.locator('[data-prop="offset"]').inputValue())) < 1e-8,
+    "Choosing Left should immediately move the door opening to the host wall start");
 
   await openingPage.locator('[data-tool="window"]').click();
   await modelPoint(2, wallY);
