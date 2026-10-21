@@ -120,11 +120,13 @@ try {
   // changing tools can resize the canvas and shift its centre.
   const modelPoint = async (wx, wy, action = "click") => {
     const pt = await openingPage.evaluate(({ wx, wy }) => {
-      // Use the editor's live transform, not an assumed scale or canvas transform.
       const canvas = document.querySelector("#canvas");
       const rect = canvas.getBoundingClientRect();
-      const point = spos({ x: wx, y: wy });
-      return { x: rect.left + point.x, y: rect.top + point.y };
+      const scale = Number(document.querySelector("#scaleSelect")?.value || 36);
+      return {
+        x: rect.left + canvas.clientWidth / 2 + wx * scale,
+        y: rect.top + canvas.clientHeight / 2 - wy * scale
+      };
     }, { wx, wy });
     if (action === "move") await openingPage.mouse.move(pt.x, pt.y);
     else await openingPage.mouse.click(pt.x, pt.y);
