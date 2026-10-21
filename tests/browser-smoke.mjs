@@ -122,23 +122,37 @@ try {
   cy = openingRect.y + openingRect.height / 2;
   await openingPage.mouse.click(cx - 140, cy + 120);
   await openingPage.mouse.click(cx + 140, cy + 120);
+  // Place openings on the host wall centreline first; avoid grid/snap ambiguity at the symbol offset.
   await openingPage.locator('[data-tool="door"]').click();
-  await openingPage.mouse.click(cx - 55, cy + 120);
-  await openingPage.mouse.move(cx - 55, cy + 90);
+  rect = await openingCanvas.boundingBox();
+  assert.ok(rect, "Canvas remains visible after selecting Door");
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
+  await openingPage.mouse.click(cx, cy + 120);
+  await openingPage.mouse.move(cx, cy + 90);
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
   await openingPage.locator('[data-tool="select"]').click();
-  await openingPage.mouse.click(cx - 55, cy + 120);
+  rect = await openingCanvas.boundingBox();
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
+  await openingPage.mouse.click(cx, cy + 120);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /door ·/i,
     "Clicking the door symbol should select the door rather than its host wall");
 
   await openingPage.locator('[data-tool="window"]').click();
+  rect = await openingCanvas.boundingBox();
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
   await openingPage.mouse.click(cx + 55, cy + 120);
   await openingPage.mouse.move(cx + 55, cy + 90);
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
   await openingPage.locator('[data-tool="select"]').click();
+  rect = await openingCanvas.boundingBox();
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
   await openingPage.mouse.click(cx + 55, cy + 120);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("window ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /window ·/i,
