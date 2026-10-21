@@ -179,6 +179,17 @@ try {
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
   await modelPoint(-3.55, wallY);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
+  const doorOffsetBeforeMove = Number(await openingPage.locator('[data-prop="offset"]').inputValue());
+  const dragScreenPoint = async (wx, wy) => openingPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
+  const doorDragStart = await dragScreenPoint(-3.434, wallY + 0.566);
+  const doorDragEnd = await dragScreenPoint(-2.634, wallY + 0.566);
+  await openingPage.mouse.move(doorDragStart.x, doorDragStart.y);
+  await openingPage.mouse.down();
+  await openingPage.mouse.move(doorDragEnd.x, doorDragEnd.y, {steps:6});
+  await openingPage.mouse.up();
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door moved"), null, {timeout:8000});
+  assert.ok(Number(await openingPage.locator('[data-prop="offset"]').inputValue()) > doorOffsetBeforeMove + 0.5,
+    "Dragging the Door symbol should move its offset along the host wall");
 
   await openingPage.locator('[data-tool="window"]').click();
   await modelPoint(2, wallY);
