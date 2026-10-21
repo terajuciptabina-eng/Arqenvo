@@ -162,9 +162,11 @@ try {
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"));
   // Property dropdowns apply immediately: hinge flips and host-wall alignment moves the opening.
   await openingPage.locator("#propHinge").selectOption("right");
-  await openingPage.waitForFunction(() => document.querySelector("#propHinge")?.value === "right");
+  await openingPage.waitForFunction(() => document.querySelector("#propHinge")?.value === "right" && document.querySelector("#status")?.textContent === "Opening updated");
+  await openingPage.locator("#propSwing").selectOption("outside");
+  await openingPage.waitForFunction(() => document.querySelector("#propSwing")?.value === "outside" && document.querySelector("#status")?.textContent === "Opening updated");
   await openingPage.locator("#propAlignment").selectOption("left");
-  await openingPage.waitForFunction(() => document.querySelector("#propAlignment")?.value === "left");
+  await openingPage.waitForFunction(() => document.querySelector("#propAlignment")?.value === "left" && document.querySelector("#status")?.textContent === "Opening updated");
   assert.ok(Math.abs(Number(await openingPage.locator('[data-prop="offset"]').inputValue())) < 1e-8,
     "Choosing Left should immediately move the door opening to the host wall start");
 
