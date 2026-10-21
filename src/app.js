@@ -5,6 +5,7 @@ import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry} from "./core/authoring.js";
 import {ModelHistory} from "./core/transactions.js";
+import {wallEndJoin} from "./core/geometry.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set();
 const modelHistory=new ModelHistory({limit:80});
@@ -21,7 +22,7 @@ let autosaveTimer=null;
 let camera3d={yaw:-Math.PI/4,pitch:Math.PI/5,zoom:1,panX:0,panY:0};
 let orbiting=false,lastCameraPointer=null,pending3dPointer=null,hitPolys3d=[],shiftHeld=false,shiftAngleLock=null;
 function scheduleAutoSave(){if(autosaveTimer)clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch(error){$("status").textContent="Autosave unavailable: "+error.message}},700)}
-function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnapshot=structuredClone(p);if(historyCommitQueued)return;historyCommitQueued=true;queueMicrotask(()=>{const before=pendingHistorySnapshot;pendingHistorySnapshot=null;historyCommitQueued=false;if(!before)return;try{modelHistory.commit(before,p,label);updateHistoryButtons();scheduleAutoSave()}catch(error){$("status").textContent="History snapshot failed: "+error.message}})}
+function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnapshot=structuredClone(p);if(historyCommitQueued)return;historyCommitQueued=true;queueMicrotask(()=>{const before=pendingHistorySnapshot;pendingHistorySnapshot=null;historyCommitQueued=false;if(!before)return;try{if(JSON.stringify(before)===JSON.stringify(p)){updateHistoryButtons();return}modelHistory.commit(before,p,label);updateHistoryButtons();scheduleAutoSave()}catch(error){$("status").textContent="History snapshot failed: "+error.message}})}
 function restore(json){p=deserializeProject(json);selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));redraw();renderProperties();updateHistoryButtons()}
 function updateHistoryButtons(){$("undo").disabled=!modelHistory.canUndo;$("redo").disabled=!modelHistory.canRedo}
 function selectOnly(id){selected=id?new Set([id]):new Set();renderProperties()}
@@ -30,6 +31,34 @@ function isLayerVisible(el){return !hiddenLayers.has(elementLayer(el))}
 function nearestElement(q){let best=null,dist=.22;for(const el of [...els()].filter(e=>isLayerVisible(e)&&(view!=="floor"||e.storyId===story().id)).reverse()){let d=Infinity;if(el.type==="wall"||el.type==="beam")d=pointSegmentDistance(q,el.start,el.end);else if(el.type==="column")d=Math.hypot(q.x-el.position.x,q.y-el.position.y);else if(el.type==="slab"||el.type==="room"){if(pointInPolygon(q,el.boundary))d=0;else d=Math.min(...el.boundary.map((v,i)=>pointSegmentDistance(q,v,el.boundary[(i+1)%el.boundary.length])))}else if(el.type==="dimension")d=pointSegmentDistance(q,el.start,el.end);if(d<dist){best=el;dist=d}}return best}
 function snapPoint(q,radius){activeSnapPoint=null;if(p.settings?.snap===false)return q;const threshold=radius??(10/Math.max(1,scale));let best=null,bestDistance=threshold,bestKind="";const consider=(point,kind)=>{if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;const d=Math.hypot(q.x-point.x,q.y-point.y);if(d<bestDistance){best={x:point.x,y:point.y};bestDistance=d;bestKind=kind}};for(const el of els()){if(!isLayerVisible(el)||(view==="floor"&&el.storyId!==story().id))continue;if(el.type==="wall"||el.type==="beam"){consider(el.start,"endpoint");consider(el.end,"endpoint");consider({x:(el.start.x+el.end.x)/2,y:(el.start.y+el.end.y)/2},"midpoint");const dx=el.end.x-el.start.x,dy=el.end.y-el.start.y,len2=dx*dx+dy*dy;if(len2>1e-9){const t=Math.max(0,Math.min(1,((q.x-el.start.x)*dx+(q.y-el.start.y)*dy)/len2));if(t>0.025&&t<0.975)consider({x:el.start.x+t*dx,y:el.start.y+t*dy},"nearest")}}if(el.type==="column")consider(el.position,"center");if(el.type==="slab")for(const v of el.boundary)consider(v,"endpoint")}if(best)activeSnapPoint={...best,kind:bestKind};return best||q}
 function pointInPolygon(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){let a=poly[i],b=poly[j];if(((a.y>p.y)!==(b.y>p.y))&&(p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x))inside=!inside}return inside}
+function drawWallJunctions(){
+ const walls=els().filter(e=>e.type==="wall"&&e.storyId===story().id&&isLayerVisible(e)&&Number.isFinite(e.thickness)&&e.thickness>0);
+ const tolerance=1e-6, same=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<=tolerance;
+ const ends=w=>[{name:"start",point:w.start},{name:"end",point:w.end}];
+ const degree=(wall,point)=>walls.reduce((count,other)=>count+(other.id===wall.id?0:ends(other).filter(end=>same(end.point,point)).length),0);
+ for(let i=0;i<walls.length;i++)for(let j=i+1;j<walls.length;j++){
+  const first=walls[i],second=walls[j];
+  for(const ea of ends(first))for(const eb of ends(second)){
+   if(!same(ea.point,eb.point)||degree(first,ea.point)!==1||degree(second,eb.point)!==1)continue;
+   const joint=ea.point;
+   const a=ea.name==="end"?{start:first.start,end:first.end}:{start:first.end,end:first.start};
+   const b=eb.name==="start"?{start:second.start,end:second.end}:{start:second.end,end:second.start};
+   let join;
+   try{join=wallEndJoin(a,b,first.thickness,second.thickness,{miterLimit:10,tolerance})}catch{continue}
+   const da={x:a.end.x-a.start.x,y:a.end.y-a.start.y},la=Math.hypot(da.x,da.y);
+   const db={x:b.end.x-b.start.x,y:b.end.y-b.start.y},lb=Math.hypot(db.x,db.y);
+   if(la<tolerance||lb<tolerance)continue;
+   const na={x:-da.y/la,y:da.x/la},nb={x:-db.y/lb,y:db.x/lb},ha=first.thickness/2,hb=second.thickness/2;
+   const aLeft={x:joint.x+na.x*ha,y:joint.y+na.y*ha},aRight={x:joint.x-na.x*ha,y:joint.y-na.y*ha};
+   const bLeft={x:joint.x+nb.x*hb,y:joint.y+nb.y*hb},bRight={x:joint.x-nb.x*hb,y:joint.y-nb.y*hb};
+   const polygon=[aLeft,...join.left.points,bLeft,bRight,...[...join.right.points].reverse(),aRight];
+   if(polygon.some(pt=>!Number.isFinite(pt.x)||!Number.isFinite(pt.y)))continue;
+   x.save();x.fillStyle=selected.has(first.id)||selected.has(second.id)?"#087e8b":"#4b5660";x.strokeStyle=x.fillStyle;x.lineWidth=1;
+   polygon.forEach((pt,k)=>{const q=spos(pt);if(k===0){x.beginPath();x.moveTo(q.x,q.y)}else{x.lineTo(q.x,q.y)}});
+   x.closePath();x.fill();x.restore();
+  }
+ }
+}
 function redraw(){if(!document.querySelector('[data-navpanel="layers"]')?.hidden)renderLayerPanel();const w=c.clientWidth,h=c.clientHeight;if(!w||!h)return;x.clearRect(0,0,w,h);x.fillStyle="#fff";x.fillRect(0,0,w,h);
 if(view==="floor"){const g=Math.max(.1,+$("grid").value||.5)*scale;x.strokeStyle="#eef0f2";x.lineWidth=1;if(gridVisible){for(let a=((w/2+origin.x)%g);a<w;a+=g){x.beginPath();x.moveTo(a,0);x.lineTo(a,h);x.stroke()}for(let a=((h/2+origin.y)%g);a<h;a+=g){x.beginPath();x.moveTo(0,a);x.lineTo(w,a);x.stroke()}}
 for(const e of els().filter(e=>e.storyId===story().id&&isLayerVisible(e))){const isSel=selected.has(e.id);x.strokeStyle=isSel?"#087e8b":e.type==="room"?"#6aa5a8":"#4b5660";x.fillStyle=e.type==="room"?"rgba(217,240,242,.28)":"#e9eef0";x.lineWidth=1;
@@ -38,6 +67,7 @@ else if(e.type==="slab"||e.type==="room"){x.beginPath();e.boundary.forEach((v,i)
 else if(e.type==="column"){const q=spos(e.position);x.fillRect(q.x-e.width*scale/2,q.y-e.depth*scale/2,e.width*scale,e.depth*scale);x.strokeRect(q.x-e.width*scale/2,q.y-e.depth*scale/2,e.width*scale,e.depth*scale)}
 else if(e.type==="dimension"){const a=spos(e.start),b=spos(e.end);x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();x.fillStyle="#39444e";x.font="11px Arial";x.fillText(Math.hypot(e.end.x-e.start.x,e.end.y-e.start.y).toFixed(2)+" m",(a.x+b.x)/2,(a.y+b.y)/2-5)}
 }
+drawWallJunctions();
 if(draft.length&&mouse){const anchor=draft[draft.length-1],raw=wpos(mouse),snapped=snapPoint(raw),baseEndpoint=(tool==="wall"||tool==="beam"||tool==="dimension"||tool==="slab")?constrain(anchor,snapped,{shiftKey:shiftHeld}):snapped,endpoint=trackerEndpoint(anchor,baseEndpoint),a=spos(anchor),b=spos(endpoint);x.setLineDash([4,4]);x.strokeStyle="#087e8b";x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();x.setLineDash([])}
 if(view==="floor"&&activeSnapPoint&&p.settings?.snap!==false){const q=spos(activeSnapPoint);x.save();x.strokeStyle="#00a6b5";x.fillStyle="rgba(0,166,181,.13)";x.lineWidth=1.5;x.beginPath();if(activeSnapPoint.kind==="midpoint"){x.moveTo(q.x,q.y-6);x.lineTo(q.x+6,q.y);x.lineTo(q.x,q.y+6);x.lineTo(q.x-6,q.y);x.closePath()}else if(activeSnapPoint.kind==="center"){x.arc(q.x,q.y,5,0,Math.PI*2);x.moveTo(q.x-8,q.y);x.lineTo(q.x+8,q.y);x.moveTo(q.x,q.y-8);x.lineTo(q.x,q.y+8)}else if(activeSnapPoint.kind==="nearest"){x.arc(q.x,q.y,4,0,Math.PI*2);x.moveTo(q.x-7,q.y);x.lineTo(q.x+7,q.y)}else{x.rect(q.x-4,q.y-4,8,8)}x.fill();x.stroke();x.restore()}
 updateTrackerUI();

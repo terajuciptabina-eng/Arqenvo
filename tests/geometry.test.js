@@ -48,3 +48,11 @@ test("wall end join bevels excessive acute miters and rejects disconnected walls
  assert.equal(join.right.type,"bevel");
  assert.throws(()=>wallEndJoin({start:{x:0,y:0},end:{x:1,y:0}},{start:{x:1.1,y:0},end:{x:2,y:0}},.2));
 });
+
+test("wall end join handles reversed wall direction and unequal thicknesses",()=>{
+ const join=wallEndJoin({start:{x:0,y:0},end:{x:2,y:0}},{start:{x:2,y:0},end:{x:2,y:2}},.2,.3);
+ assert.equal(join.type,"miter");
+ assert.ok(join.left.points[0].x<2);
+ assert.ok(join.right.points[0].x>2);
+ assert.throws(()=>wallEndJoin({start:{x:0,y:0},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:1,y:0}},.2));
+});
