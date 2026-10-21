@@ -139,6 +139,9 @@ try {
   await modelPoint(-4, wallY);
   await modelPoint(4, wallY);
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall created"));
+  // Wall geometry is provisional until explicitly committed; changing tools cancels it.
+  await openingPage.keyboard.press("Enter");
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("committed") || document.querySelector("#undo")?.disabled === false);
   await openingPage.locator('[data-tool="door"]').click();
   await modelPoint(0, wallY);
   await modelPoint(0, wallY + .8, "move");
