@@ -37,6 +37,8 @@ const browser = await chromium.launch({ headless: true });
 try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   const pageErrors = [];
+  page.setDefaultTimeout(8000);
+  page.setDefaultNavigationTimeout(15000);
   page.on("pageerror", error => pageErrors.push(error.message));
   await page.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
   await page.waitForFunction(() => {
@@ -46,14 +48,14 @@ try {
   const canvas = page.locator("#canvas");
   const rect = await canvas.boundingBox();
   assert.ok(rect, "Floor-plan canvas must be visible");
-  await page.locator('[data-tool-command="wall"]').click();
+  await page.locator('[data-tool="wall"]').click();
   const cx = rect.x + rect.width / 2;
   const cy = rect.y + rect.height / 2;
 
   // Draw a horizontal wall, then a vertical branch ending at its midpoint (T junction).
   await page.mouse.click(cx - 72, cy);
   await page.mouse.click(cx + 72, cy);
-  await page.locator('[data-tool-command="wall"]').click();
+  await page.locator('[data-tool="wall"]').click();
   await page.mouse.click(cx, cy);
   await page.mouse.click(cx, cy - 72);
   await page.waitForFunction(() => document.querySelector("#undo")?.disabled === false);
