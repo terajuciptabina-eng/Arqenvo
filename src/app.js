@@ -22,7 +22,7 @@ let autosaveTimer=null;
 let camera3d={yaw:-Math.PI/4,pitch:Math.PI/5,zoom:1,panX:0,panY:0};
 let orbiting=false,lastCameraPointer=null,pending3dPointer=null,hitPolys3d=[],shiftHeld=false,shiftAngleLock=null;
 function scheduleAutoSave(){if(autosaveTimer)clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch(error){$("status").textContent="Autosave unavailable: "+error.message}},700)}
-function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnapshot=structuredClone(p);if(historyCommitQueued)return;historyCommitQueued=true;queueMicrotask(()=>{const before=pendingHistorySnapshot;pendingHistorySnapshot=null;historyCommitQueued=false;if(!before)return;try{if(JSON.stringify(before)===JSON.stringify(p)){updateHistoryButtons();return}modelHistory.commit(before,p,label);updateHistoryButtons();scheduleAutoSave()}catch(error){$("status").textContent="History snapshot failed: "+error.message}})}
+function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnapshot=structuredClone(p);if(historyCommitQueued)return;historyCommitQueued=true;queueMicrotask(()=>{const before=pendingHistorySnapshot;pendingHistorySnapshot=null;historyCommitQueued=false;if(!before)return;try{const verdict=validateProject(p);if(!verdict.valid){p=before;activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));refreshStories();redraw();renderProperties();updateHistoryButtons();$("status").textContent="Edit rejected: "+verdict.errors.slice(0,3).join("; ");return}if(JSON.stringify(before)===JSON.stringify(p)){updateHistoryButtons();return}modelHistory.commit(before,p,label);updateHistoryButtons();scheduleAutoSave()}catch(error){$("status").textContent="History snapshot failed: "+error.message}})}
 function restore(json){p=deserializeProject(json);selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));redraw();renderProperties();updateHistoryButtons()}
 function updateHistoryButtons(){$("undo").disabled=!modelHistory.canUndo;$("redo").disabled=!modelHistory.canRedo}
 function selectOnly(id){selected=id?new Set([id]):new Set();renderProperties()}
@@ -36,7 +36,7 @@ function drawWallJunctions(){
  const tolerance=1e-6, cellSize=tolerance, same=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<=tolerance;
  const records=[];
  for(const wall of walls){records.push({wall,name:"start",point:wall.start,neighbors:[],index:records.length});records.push({wall,name:"end",point:wall.end,neighbors:[],index:records.length})}
- const cell=(p)=>({x:Math.floor(p.x/cellSize),y:Math.floor(p.y/cellSize)}), buckets=new Map();
+ const cell=p=>({x:Math.floor(p.x/cellSize),y:Math.floor(p.y/cellSize)}), buckets=new Map();
  const key=(x,y)=>x+","+y;
  for(const record of records){const c=cell(record.point),k=key(c.x,c.y);if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(record)}
  for(const record of records){
@@ -46,24 +46,57 @@ function drawWallJunctions(){
    record.neighbors.push(other);other.neighbors.push(record);
   }
  }
- for(const record of records){
-  if(record.neighbors.length!==1)continue;
-  const peer=record.neighbors[0];if(peer.neighbors.length!==1||record.index>peer.index)continue;
-  const first=record.wall,second=peer.wall,joint=record.point;
-  const a=record.name==="end"?{start:first.start,end:first.end}:{start:first.end,end:first.start};
-  const b=peer.name==="start"?{start:second.start,end:second.end}:{start:second.end,end:second.start};
-  let join;
-  try{join=wallEndJoin(a,b,first.thickness,second.thickness,{miterLimit:10,tolerance})}catch{continue}
-  const da={x:a.end.x-a.start.x,y:a.end.y-a.start.y},la=Math.hypot(da.x,da.y);
-  const db={x:b.end.x-b.start.x,y:b.end.y-b.start.y},lb=Math.hypot(db.x,db.y);
-  if(la<tolerance||lb<tolerance)continue;
-  const na={x:-da.y/la,y:da.x/la},nb={x:-db.y/lb,y:db.x/lb},ha=first.thickness/2,hb=second.thickness/2;
-  const aLeft={x:joint.x+na.x*ha,y:joint.y+na.y*ha},aRight={x:joint.x-na.x*ha,y:joint.y-na.y*ha};
-  const bLeft={x:joint.x+nb.x*hb,y:joint.y+nb.y*hb},bRight={x:joint.x-nb.x*hb,y:joint.y-nb.y*hb};
-  const polygon=[aLeft,...join.left.points,bLeft,bRight,...[...join.right.points].reverse(),aRight];
-  if(polygon.some(pt=>!Number.isFinite(pt.x)||!Number.isFinite(pt.y)))continue;
-  x.save();x.fillStyle=selected.has(first.id)||selected.has(second.id)?"#087e8b":"#4b5660";x.strokeStyle=x.fillStyle;x.lineWidth=1;
-  polygon.forEach((pt,k)=>{const q=spos(pt);if(k===0){x.beginPath();x.moveTo(q.x,q.y)}else{x.lineTo(q.x,q.y)}});
+ const cores=new Map();
+ const addCore=(point,first,second)=>{
+  const k=Math.round(point.x/tolerance)+","+Math.round(point.y/tolerance);
+  if(!cores.has(k))cores.set(k,{point,walls:new Map()});
+  const core=cores.get(k);core.walls.set(first.id,first);core.walls.set(second.id,second);
+ };
+ for(let i=0;i<walls.length;i++)for(let j=i+1;j<walls.length;j++){
+  const first=walls[i],second=walls[j];
+  let intersection;
+  try{intersection=segmentIntersection(first.start,first.end,second.start,second.end,{tolerance})}catch{continue}
+  if(!intersection)continue;
+  if(!intersection.endpointA||!intersection.endpointB){addCore(intersection.point,first,second);continue}
+  const ea=records.find(r=>r.wall.id===first.id&&same(r.point,intersection.point));
+  const eb=records.find(r=>r.wall.id===second.id&&same(r.point,intersection.point));
+  if(!ea||!eb||ea.neighbors.length!==1||eb.neighbors.length!==1)addCore(intersection.point,first,second);
+ }
+ for(let i=0;i<walls.length;i++)for(let j=i+1;j<walls.length;j++){
+  const first=walls[i],second=walls[j];
+  for(const ea of records.filter(r=>r.wall.id===first.id))for(const eb of records.filter(r=>r.wall.id===second.id)){
+   if(!same(ea.point,eb.point)||ea.neighbors.length!==1||eb.neighbors.length!==1||ea.index>eb.index)continue;
+   const joint=ea.point;
+   const a=ea.name==="end"?{start:first.start,end:first.end}:{start:first.end,end:first.start};
+   const b=eb.name==="start"?{start:second.start,end:second.end}:{start:second.end,end:second.start};
+   let join;
+   try{join=wallEndJoin(a,b,first.thickness,second.thickness,{miterLimit:10,tolerance})}catch{continue}
+   const da={x:a.end.x-a.start.x,y:a.end.y-a.start.y},la=Math.hypot(da.x,da.y);
+   const db={x:b.end.x-b.start.x,y:b.end.y-b.start.y},lb=Math.hypot(db.x,db.y);
+   if(la<tolerance||lb<tolerance)continue;
+   const na={x:-da.y/la,y:da.x/la},nb={x:-db.y/lb,y:db.x/lb},ha=first.thickness/2,hb=second.thickness/2;
+   const aLeft={x:joint.x+na.x*ha,y:joint.y+na.y*ha},aRight={x:joint.x-na.x*ha,y:joint.y-na.y*ha};
+   const bLeft={x:joint.x+nb.x*hb,y:joint.y+nb.y*hb},bRight={x:joint.x-nb.x*hb,y:joint.y-nb.y*hb};
+   const polygon=[aLeft,...join.left.points,bLeft,bRight,...[...join.right.points].reverse(),aRight];
+   if(polygon.some(pt=>!Number.isFinite(pt.x)||!Number.isFinite(pt.y)))continue;
+   x.save();x.fillStyle=selected.has(first.id)||selected.has(second.id)?"#087e8b":"#4b5660";x.strokeStyle=x.fillStyle;x.lineWidth=1;
+   polygon.forEach((pt,k)=>{const q=spos(pt);if(k===0){x.beginPath();x.moveTo(q.x,q.y)}else{x.lineTo(q.x,q.y)}});
+   x.closePath();x.fill();x.restore();
+  }
+ }
+ for(const {point,walls:incidentMap} of cores.values()){
+  const incident=[...incidentMap.values()],first=incident[0],half=Math.max(...incident.map(w=>w.thickness))/2;
+  const dx=first.end.x-first.start.x,dy=first.end.y-first.start.y,len=Math.hypot(dx,dy);
+  if(len<tolerance)continue;
+  const ux=dx/len,uy=dy/len,nx=-uy,ny=ux;
+  const polygon=[
+   {x:point.x-ux*half-nx*half,y:point.y-uy*half-ny*half},
+   {x:point.x+ux*half-nx*half,y:point.y+uy*half-ny*half},
+   {x:point.x+ux*half+nx*half,y:point.y+uy*half+ny*half},
+   {x:point.x-ux*half+nx*half,y:point.y-uy*half+ny*half}
+  ];
+  x.save();x.fillStyle=incident.some(w=>selected.has(w.id))?"#087e8b":"#4b5660";x.beginPath();
+  polygon.forEach((pt,i)=>{const q=spos(pt);i?x.lineTo(q.x,q.y):x.moveTo(q.x,q.y)});
   x.closePath();x.fill();x.restore();
  }
 }
