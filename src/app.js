@@ -4,7 +4,7 @@ import {serializeScheduleCsv} from "./core/csv.js";
 import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry} from "./core/authoring.js";
-import {ModelHistory} from "./core/transactions.js";
+import {ModelHistory, transactModel} from "./core/transactions.js";
 import {wallEndJoin, segmentIntersection} from "./core/geometry.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set();
@@ -22,7 +22,7 @@ let autosaveTimer=null;
 let camera3d={yaw:-Math.PI/4,pitch:Math.PI/5,zoom:1,panX:0,panY:0};
 let orbiting=false,lastCameraPointer=null,pending3dPointer=null,hitPolys3d=[],shiftHeld=false,shiftAngleLock=null;
 function scheduleAutoSave(){if(autosaveTimer)clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch(error){$("status").textContent="Autosave unavailable: "+error.message}},700)}
-function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnapshot=structuredClone(p);if(historyCommitQueued)return;historyCommitQueued=true;queueMicrotask(()=>{const before=pendingHistorySnapshot;pendingHistorySnapshot=null;historyCommitQueued=false;if(!before)return;try{const verdict=validateProject(p);if(!verdict.valid){p=before;activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));refreshStories();redraw();renderProperties();updateHistoryButtons();$("status").textContent="Edit rejected: "+verdict.errors.slice(0,3).join("; ");return}if(JSON.stringify(before)===JSON.stringify(p)){updateHistoryButtons();return}modelHistory.commit(before,p,label);updateHistoryButtons();scheduleAutoSave()}catch(error){$("status").textContent="History snapshot failed: "+error.message}})}
+function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnapshot=structuredClone(p);if(historyCommitQueued)return;historyCommitQueued=true;queueMicrotask(()=>{const before=pendingHistorySnapshot;pendingHistorySnapshot=null;historyCommitQueued=false;if(!before)return;try{if(JSON.stringify(before)===JSON.stringify(p)){updateHistoryButtons();return}const transaction=transactModel(before,{label,mutate:draft=>{for(const key of Object.keys(draft))delete draft[key];Object.assign(draft,structuredClone(p));return {changedNodes:["model"]}},validate:draft=>validateProject(draft),history:modelHistory});p=transaction.model;updateHistoryButtons();scheduleAutoSave()}catch(error){p=before;activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));refreshStories();redraw();renderProperties();updateHistoryButtons();$("status").textContent="Edit rejected: "+error.message}})}
 function restore(json){p=deserializeProject(json);selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));redraw();renderProperties();updateHistoryButtons()}
 function updateHistoryButtons(){$("undo").disabled=!modelHistory.canUndo;$("redo").disabled=!modelHistory.canRedo}
 function selectOnly(id){selected=id?new Set([id]):new Set();renderProperties()}
