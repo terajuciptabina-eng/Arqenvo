@@ -170,10 +170,12 @@ try {
   assert.ok(Math.abs(Number(await openingPage.locator('[data-prop="offset"]').inputValue())) < 1e-8,
     "Choosing Left should immediately move the door opening to the host wall start");
   await openingPage.locator('[data-prop="width"]').fill("1.2");
-  await openingPage.locator('[data-prop="width"]').press("Tab");
+  await openingPage.locator('[data-prop="width"]').press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Opening updated");
   assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
-    "Changing door width should immediately update the hosted opening geometry");
+    "Pressing Enter should apply the new door width to the hosted opening");
+  await modelPoint(0.45, wallY);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
 
   await openingPage.locator('[data-tool="window"]').click();
   await modelPoint(2, wallY);
