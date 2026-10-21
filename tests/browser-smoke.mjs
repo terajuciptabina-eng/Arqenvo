@@ -103,8 +103,93 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
+  // Archicad-style element picking: run opening regression in a clean editor state so
+  // earlier wall-chain/undo interactions cannot leave a stale pointer or transient canvas state.
+  const openingPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  openingPage.setDefaultTimeout(8000);
+  openingPage.on("pageerror", error => pageErrors.push(error.message));
+  await openingPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await openingPage.waitForFunction(() => {
+    const el = document.querySelector("#canvas");
+    return el && el.clientWidth > 100 && el.clientHeight > 100;
+  });
+  const openingCanvas = openingPage.locator("#canvas");
+  await openingPage.locator('[data-tool="wall"]').click();
+  await openingPage.locator("#wallGeometryMethod").selectOption("single");
+  // Drive clicks from fixed model-space coordinates, not canvas-relative coordinates:
+  // changing tools can resize the canvas and shift its centre.
+  const modelPoint = async (wx, wy, action = "click") => {
+    const pt = await openingPage.evaluate(({ wx, wy }) => {
+      const canvas = document.querySelector("#canvas");
+      const rect = canvas.getBoundingClientRect();
+      const scale = Number(document.querySelector("#scaleSelect")?.value || 36);
+      return {
+        x: rect.left + canvas.clientWidth / 2 + wx * scale,
+        y: rect.top + canvas.clientHeight / 2 - wy * scale
+      };
+    }, { wx, wy });
+    if (action === "move") await openingPage.mouse.move(pt.x, pt.y);
+    else await openingPage.mouse.click(pt.x, pt.y);
+  };
+  // Disable magnetic snapping for deterministic host-wall placement in this test.
+  await openingPage.locator("#snapToggle").click();
+  await openingPage.waitForFunction(() => document.querySelector("#snapToggle")?.getAttribute("aria-pressed") === "false");
+  await openingPage.locator("#gridQuick").selectOption("0.1");
+  const wallY = -3.5;
+  await modelPoint(-4, wallY);
+  await modelPoint(4, wallY);
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall created"));
+  // Wall geometry is provisional until explicitly committed; changing tools cancels it.
+  await openingPage.keyboard.press("Enter");
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("committed") || document.querySelector("#undo")?.disabled === false);
+  await openingPage.locator('[data-tool="door"]').click();
+  await modelPoint(0, wallY);
+  await modelPoint(0, wallY + .8, "move");
+  await openingPage.keyboard.press("Enter");
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
+  await openingPage.locator('[data-tool="select"]').click();
+  // Clear any selection left by placement before asserting a fresh hit-test result.
+  await modelPoint(7, 3);
+  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
+  await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
+  // Select the visible door leaf/swing arc, deliberately away from the wall centreline.
+  await modelPoint(0.566, wallY + 0.566);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { throw new Error(`Door symbol selection failed; status="${await openingPage.locator("#status").textContent()}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,400)}"; ${error.message}`); });
+  assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
+    "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
+  // Clicking within the opening itself must also choose the opening element, not Wall.
+  await modelPoint(0.45, wallY);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"));
+  // Property dropdowns apply immediately: hinge flips and host-wall alignment moves the opening.
+  await openingPage.locator("#propHinge").selectOption("right");
+  await openingPage.waitForFunction(() => document.querySelector("#propHinge")?.value === "right" && document.querySelector("#status")?.textContent === "Opening updated");
+  await openingPage.locator("#propSwing").selectOption("outside");
+  await openingPage.waitForFunction(() => document.querySelector("#propSwing")?.value === "outside" && document.querySelector("#status")?.textContent === "Opening updated");
+  await openingPage.locator("#propAlignment").selectOption("left");
+  await openingPage.waitForFunction(() => document.querySelector("#propAlignment")?.value === "left" && document.querySelector("#status")?.textContent === "Opening updated");
+  assert.ok(Math.abs(Number(await openingPage.locator('[data-prop="offset"]').inputValue())) < 1e-8,
+    "Choosing Left should immediately move the door opening to the host wall start");
+
+  await openingPage.locator('[data-tool="window"]').click();
+  await modelPoint(2, wallY);
+  await modelPoint(2, wallY + .8, "move");
+  await openingPage.keyboard.press("Enter");
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"), null, {timeout:8000}).catch(async error => { throw new Error(`Window placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
+  await openingPage.locator('[data-tool="select"]').click();
+  // Clear selection left by placement so the assertion proves a new Window hit.
+  await modelPoint(7, 3);
+  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
+  await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
+  // Window sash lines are offset from the host wall centreline in the rendered plan.
+  await modelPoint(2.6, wallY + 0.075);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
+  assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /window ·/i,
+    "Clicking a visible window sash should select Window rather than its host wall");
+  await modelPoint(2.6, wallY);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
+
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
-  console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-loop closure, Enter finish, no page errors.");
+  console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
 } finally {
   await browser.close();
   await new Promise(resolve => server.close(resolve));
