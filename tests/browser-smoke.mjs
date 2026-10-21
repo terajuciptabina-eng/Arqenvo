@@ -74,8 +74,22 @@ try {
   await page.waitForFunction(() => document.querySelector("#redo")?.disabled === false);
   await page.locator("#redo").click();
   await page.waitForFunction(() => document.querySelector("#undo")?.disabled === false);
+
+  // Continuous wall chain should close by clicking the original first point.
+  await page.locator('[data-tool="wall"]').click();
+  await page.mouse.click(cx - 100, cy + 110);
+  await page.mouse.click(cx - 35, cy + 110);
+  await page.mouse.click(cx - 35, cy + 45);
+  await page.mouse.click(cx - 100, cy + 110);
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Closed wall loop created"));
+
+  // Enter finishes an open chain without adding a closing segment.
+  await page.mouse.click(cx + 80, cy + 100);
+  await page.mouse.click(cx + 130, cy + 100);
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing finished"));
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
-  console.log("Browser smoke passed: app boot, canvas rendering, T-junction, Undo/Redo, no page errors.");
+  console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-loop closure, Enter finish, no page errors.");
 } finally {
   await browser.close();
   await new Promise(resolve => server.close(resolve));
