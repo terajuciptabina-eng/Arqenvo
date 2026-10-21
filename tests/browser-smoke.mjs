@@ -103,8 +103,35 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
+  // Archicad-style element picking: openings must be independently selectable above their host wall.
+  await page.locator('[data-tool="wall"]').click();
+  await page.locator("#wallGeometryMethod").selectOption("single");
+  await page.mouse.click(cx - 140, cy + 245);
+  await page.mouse.click(cx + 140, cy + 245);
+  await page.locator('[data-tool="door"]').click();
+  await page.mouse.click(cx - 55, cy + 245);
+  await page.mouse.move(cx - 55, cy + 210);
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
+  await page.locator('[data-tool="select"]').click();
+  await page.mouse.click(cx - 55, cy + 245);
+  await page.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
+  assert.match(await page.locator("#elementProperties").textContent(), /door ·/i,
+    "Clicking the door symbol should select the door rather than its host wall");
+
+  await page.locator('[data-tool="window"]').click();
+  await page.mouse.click(cx + 55, cy + 245);
+  await page.mouse.move(cx + 55, cy + 210);
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
+  await page.locator('[data-tool="select"]').click();
+  await page.mouse.click(cx + 55, cy + 245);
+  await page.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("window ·"));
+  assert.match(await page.locator("#elementProperties").textContent(), /window ·/i,
+    "Clicking the window symbol should select the window rather than its host wall");
+
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
-  console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-loop closure, Enter finish, no page errors.");
+  console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
 } finally {
   await browser.close();
   await new Promise(resolve => server.close(resolve));
