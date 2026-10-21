@@ -33,30 +33,38 @@ function snapPoint(q,radius){activeSnapPoint=null;if(p.settings?.snap===false)re
 function pointInPolygon(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){let a=poly[i],b=poly[j];if(((a.y>p.y)!==(b.y>p.y))&&(p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x))inside=!inside}return inside}
 function drawWallJunctions(){
  const walls=els().filter(e=>e.type==="wall"&&e.storyId===story().id&&isLayerVisible(e)&&Number.isFinite(e.thickness)&&e.thickness>0);
- const tolerance=1e-6, same=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<=tolerance;
- const ends=w=>[{name:"start",point:w.start},{name:"end",point:w.end}];
- const degree=(wall,point)=>walls.reduce((count,other)=>count+(other.id===wall.id?0:ends(other).filter(end=>same(end.point,point)).length),0);
- for(let i=0;i<walls.length;i++)for(let j=i+1;j<walls.length;j++){
-  const first=walls[i],second=walls[j];
-  for(const ea of ends(first))for(const eb of ends(second)){
-   if(!same(ea.point,eb.point)||degree(first,ea.point)!==1||degree(second,eb.point)!==1)continue;
-   const joint=ea.point;
-   const a=ea.name==="end"?{start:first.start,end:first.end}:{start:first.end,end:first.start};
-   const b=eb.name==="start"?{start:second.start,end:second.end}:{start:second.end,end:second.start};
-   let join;
-   try{join=wallEndJoin(a,b,first.thickness,second.thickness,{miterLimit:10,tolerance})}catch{continue}
-   const da={x:a.end.x-a.start.x,y:a.end.y-a.start.y},la=Math.hypot(da.x,da.y);
-   const db={x:b.end.x-b.start.x,y:b.end.y-b.start.y},lb=Math.hypot(db.x,db.y);
-   if(la<tolerance||lb<tolerance)continue;
-   const na={x:-da.y/la,y:da.x/la},nb={x:-db.y/lb,y:db.x/lb},ha=first.thickness/2,hb=second.thickness/2;
-   const aLeft={x:joint.x+na.x*ha,y:joint.y+na.y*ha},aRight={x:joint.x-na.x*ha,y:joint.y-na.y*ha};
-   const bLeft={x:joint.x+nb.x*hb,y:joint.y+nb.y*hb},bRight={x:joint.x-nb.x*hb,y:joint.y-nb.y*hb};
-   const polygon=[aLeft,...join.left.points,bLeft,bRight,...[...join.right.points].reverse(),aRight];
-   if(polygon.some(pt=>!Number.isFinite(pt.x)||!Number.isFinite(pt.y)))continue;
-   x.save();x.fillStyle=selected.has(first.id)||selected.has(second.id)?"#087e8b":"#4b5660";x.strokeStyle=x.fillStyle;x.lineWidth=1;
-   polygon.forEach((pt,k)=>{const q=spos(pt);if(k===0){x.beginPath();x.moveTo(q.x,q.y)}else{x.lineTo(q.x,q.y)}});
-   x.closePath();x.fill();x.restore();
+ const tolerance=1e-6, cellSize=tolerance, same=(a,b)=>Math.hypot(a.x-b.x,a.y-b.y)<=tolerance;
+ const records=[];
+ for(const wall of walls){records.push({wall,name:"start",point:wall.start,neighbors:[],index:records.length});records.push({wall,name:"end",point:wall.end,neighbors:[],index:records.length})}
+ const cell=(p)=>({x:Math.floor(p.x/cellSize),y:Math.floor(p.y/cellSize)}), buckets=new Map();
+ const key=(x,y)=>x+","+y;
+ for(const record of records){const c=cell(record.point),k=key(c.x,c.y);if(!buckets.has(k))buckets.set(k,[]);buckets.get(k).push(record)}
+ for(const record of records){
+  const c=cell(record.point);
+  for(let ox=-1;ox<=1;ox++)for(let oy=-1;oy<=1;oy++)for(const other of buckets.get(key(c.x+ox,c.y+oy))||[]){
+   if(other.index<=record.index||other.wall.id===record.wall.id||!same(record.point,other.point))continue;
+   record.neighbors.push(other);other.neighbors.push(record);
   }
+ }
+ for(const record of records){
+  if(record.neighbors.length!==1)continue;
+  const peer=record.neighbors[0];if(peer.neighbors.length!==1||record.index>peer.index)continue;
+  const first=record.wall,second=peer.wall,joint=record.point;
+  const a=record.name==="end"?{start:first.start,end:first.end}:{start:first.end,end:first.start};
+  const b=peer.name==="start"?{start:second.start,end:second.end}:{start:second.end,end:second.start};
+  let join;
+  try{join=wallEndJoin(a,b,first.thickness,second.thickness,{miterLimit:10,tolerance})}catch{continue}
+  const da={x:a.end.x-a.start.x,y:a.end.y-a.start.y},la=Math.hypot(da.x,da.y);
+  const db={x:b.end.x-b.start.x,y:b.end.y-b.start.y},lb=Math.hypot(db.x,db.y);
+  if(la<tolerance||lb<tolerance)continue;
+  const na={x:-da.y/la,y:da.x/la},nb={x:-db.y/lb,y:db.x/lb},ha=first.thickness/2,hb=second.thickness/2;
+  const aLeft={x:joint.x+na.x*ha,y:joint.y+na.y*ha},aRight={x:joint.x-na.x*ha,y:joint.y-na.y*ha};
+  const bLeft={x:joint.x+nb.x*hb,y:joint.y+nb.y*hb},bRight={x:joint.x-nb.x*hb,y:joint.y-nb.y*hb};
+  const polygon=[aLeft,...join.left.points,bLeft,bRight,...[...join.right.points].reverse(),aRight];
+  if(polygon.some(pt=>!Number.isFinite(pt.x)||!Number.isFinite(pt.y)))continue;
+  x.save();x.fillStyle=selected.has(first.id)||selected.has(second.id)?"#087e8b":"#4b5660";x.strokeStyle=x.fillStyle;x.lineWidth=1;
+  polygon.forEach((pt,k)=>{const q=spos(pt);if(k===0){x.beginPath();x.moveTo(q.x,q.y)}else{x.lineTo(q.x,q.y)}});
+  x.closePath();x.fill();x.restore();
  }
 }
 function redraw(){if(!document.querySelector('[data-navpanel="layers"]')?.hidden)renderLayerPanel();const w=c.clientWidth,h=c.clientHeight;if(!w||!h)return;x.clearRect(0,0,w,h);x.fillStyle="#fff";x.fillRect(0,0,w,h);
