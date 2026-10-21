@@ -85,7 +85,7 @@ try {
   await page.mouse.click(cx - 100, cy + 80);
   await page.mouse.click(cx - 200, cy + 180);
   await page.waitForTimeout(50);
-  assert.ok(!document.querySelector("#status")?.textContent.includes("Wall loop closed"),
+  assert.ok(!(await page.locator("#status").textContent()).includes("Wall loop closed"),
     "Continuous wall must not auto-close when cursor returns near its first point");
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
