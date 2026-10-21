@@ -149,7 +149,7 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
   await modelPoint(0, wallY);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties")?.textContent || "").toLowerCase().includes("door ·"));
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties")?.textContent || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { throw new Error(`Door selection failed; status="${await openingPage.locator("#status").textContent()}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,400)}"; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties").textContent(), /door ·/i,
     "Clicking the door symbol should select the door rather than its host wall");
 
