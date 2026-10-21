@@ -106,26 +106,26 @@ try {
   // Archicad-style element picking: openings must be independently selectable above their host wall.
   await page.locator('[data-tool="wall"]').click();
   await page.locator("#wallGeometryMethod").selectOption("single");
-  await page.mouse.click(cx - 140, cy + 245);
-  await page.mouse.click(cx + 140, cy + 245);
+  await page.mouse.click(cx - 140, cy + 120);
+  await page.mouse.click(cx + 140, cy + 120);
   await page.locator('[data-tool="door"]').click();
-  await page.mouse.click(cx - 55, cy + 245);
-  await page.mouse.move(cx - 55, cy + 210);
+  await page.mouse.click(cx - 55, cy + 120);
+  await page.mouse.move(cx - 55, cy + 90);
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
   await page.locator('[data-tool="select"]').click();
-  await page.mouse.click(cx - 55, cy + 245);
+  await page.mouse.click(cx - 55, cy + 120);
   await page.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
   assert.match(await page.locator("#elementProperties").textContent(), /door ·/i,
     "Clicking the door symbol should select the door rather than its host wall");
 
   await page.locator('[data-tool="window"]').click();
-  await page.mouse.click(cx + 55, cy + 245);
-  await page.mouse.move(cx + 55, cy + 210);
+  await page.mouse.click(cx + 55, cy + 120);
+  await page.mouse.move(cx + 55, cy + 90);
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
   await page.locator('[data-tool="select"]').click();
-  await page.mouse.click(cx + 55, cy + 245);
+  await page.mouse.click(cx + 55, cy + 120);
   await page.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("window ·"));
   assert.match(await page.locator("#elementProperties").textContent(), /window ·/i,
     "Clicking the window symbol should select the window rather than its host wall");
