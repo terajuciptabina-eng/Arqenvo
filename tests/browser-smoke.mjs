@@ -120,29 +120,36 @@ try {
   assert.ok(openingRect, "Floor-plan canvas must be visible for opening tests");
   cx = openingRect.x + openingRect.width / 2;
   cy = openingRect.y + openingRect.height / 2;
-  const wallScreenX = cx;
-  const wallScreenY = cy + 120;
-  await openingPage.mouse.click(wallScreenX - 140, wallScreenY);
-  await openingPage.mouse.click(wallScreenX + 140, wallScreenY);
+  // Keep model-space offsets constant while the canvas is resized by tool context changes.
+  const pointOnCanvas = async (dx, dy, action = "click") => {
+    const bounds = await openingCanvas.boundingBox();
+    assert.ok(bounds, "Canvas remains visible during element placement");
+    const px = bounds.x + bounds.width / 2 + dx;
+    const py = bounds.y + bounds.height / 2 + dy;
+    if (action === "move") await openingPage.mouse.move(px, py);
+    else await openingPage.mouse.click(px, py);
+  };
+  await pointOnCanvas(-140, 120);
+  await pointOnCanvas(140, 120);
   // Place openings on the host wall centreline first; avoid grid/snap ambiguity at the symbol offset.
   await openingPage.locator('[data-tool="door"]').click();
-  await openingPage.mouse.click(wallScreenX, wallScreenY);
-  await openingPage.mouse.move(wallScreenX, wallScreenY - 30);
+  await pointOnCanvas(0, 120);
+  await pointOnCanvas(0, 90, "move");
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
   await openingPage.locator('[data-tool="select"]').click();
-  await openingPage.mouse.click(wallScreenX, wallScreenY);
+  await pointOnCanvas(0, 120);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /door ·/i,
     "Clicking the door symbol should select the door rather than its host wall");
 
   await openingPage.locator('[data-tool="window"]').click();
-  await openingPage.mouse.click(wallScreenX + 55, wallScreenY);
-  await openingPage.mouse.move(wallScreenX + 55, wallScreenY - 30);
+  await pointOnCanvas(55, 120);
+  await pointOnCanvas(55, 90, "move");
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
   await openingPage.locator('[data-tool="select"]').click();
-  await openingPage.mouse.click(wallScreenX + 55, wallScreenY);
+  await pointOnCanvas(55, 120);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("window ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /window ·/i,
     "Clicking the window symbol should select the window rather than its host wall");
