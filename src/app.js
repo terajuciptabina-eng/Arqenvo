@@ -185,11 +185,13 @@ function updateContextUI(){
  if($("contextToolIcon"))$("contextToolIcon").textContent=info[0];
  if($("contextToolName"))$("contextToolName").textContent=info[1];
  if($("contextToolHint"))$("contextToolHint").textContent=info[2];
- if($("wallHeightControl"))$("wallHeightControl").hidden=tool!=="wall";
- if($("wallThicknessControl"))$("wallThicknessControl").hidden=tool!=="wall";
- if($("wallGeometryControl"))$("wallGeometryControl").hidden=tool!=="wall";
+ const show=(id,visible)=>{const node=$(id);if(node){node.hidden=!visible;node.style.display=visible?"":"none"}};
+ show("wallHeightControl",tool==="wall");
+ show("wallThicknessControl",tool==="wall");
+ show("wallGeometryControl",tool==="wall");
  if($("wallGeometryMethod")&&document.activeElement!==$("wallGeometryMethod"))$("wallGeometryMethod").value=wallGeometryMethod;
- if($("openingHingeControl"))$("openingHingeControl").hidden=!(tool==="door"||tool==="window");if($("openingSwingControl"))$("openingSwingControl").hidden=!(tool==="door"||tool==="window");if($("openingHinge")&&document.activeElement!==$("openingHinge"))$("openingHinge").value=openingHingeSide;if($("openingSwing")&&document.activeElement!==$("openingSwing"))$("openingSwing").value=openingSwingDirection;
+ show("openingHingeControl",tool==="door");
+ show("openingSwingControl",tool==="door");if($("openingHinge")&&document.activeElement!==$("openingHinge"))$("openingHinge").value=openingHingeSide;if($("openingSwing")&&document.activeElement!==$("openingSwing"))$("openingSwing").value=openingSwingDirection;
  if($("contextStoryName"))$("contextStoryName").textContent=story().name;
  if($("contextSelectionCount"))$("contextSelectionCount").textContent=selected.size+" element"+(selected.size===1?"":"s");
  if($("contextHeight")&&document.activeElement!==$("contextHeight"))$("contextHeight").value=$("height").value;
