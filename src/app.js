@@ -69,8 +69,11 @@ function nearestElement(q){
   }
   const along=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/(len||1);
   const withinOpening=along>=start-hitTolerance&&along<=end+hitTolerance;
-  if(withinOpening&&symbolDistance<=pixelTolerance){
-   const score=symbolDistance-1000;
+  // The opening span itself belongs to the hosted Door/Window as well as
+  // its visible swing/sash symbol. Do not require the centreline click to also
+  // fall within the rendered-symbol pixel tolerance; that lets the host Wall win.
+  if(withinOpening){
+   const score=(symbolDistance<=pixelTolerance?symbolDistance:pixelTolerance)-1000;
    if(score<bestScore){best=el;bestScore=score}
   }
  }
