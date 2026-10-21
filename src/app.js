@@ -4,10 +4,13 @@ import {serializeScheduleCsv} from "./core/csv.js";
 import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry} from "./core/authoring.js";
+import {ModelHistory} from "./core/transactions.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set();
+const modelHistory=new ModelHistory({limit:80});
+let pendingHistorySnapshot=null,historyCommitQueued=false;
 const escapeHtml=value=>String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("\\'","&#39;");
-let p=createProject(), tool="select", view="floor", draft=[], floorDrawGesture=null, selected=new Set(), scale=36, origin={x:0,y:0}, mouse=null, history=[], future=[], activeStoryId=p.stories[0].id, isPanning=false, panStart=null, spaceHeld=false, wallGeometryMethod="continuous", trackerDistanceOverride=null, trackerAngleOverride=null, activeSnapPoint=null, openingHingeSide="left", openingSwingDirection="inside", pendingOpeningPlacement=null;
+let p=createProject(), tool="select", view="floor", draft=[], floorDrawGesture=null, selected=new Set(), scale=36, origin={x:0,y:0}, mouse=null, activeStoryId=p.stories[0].id, isPanning=false, panStart=null, spaceHeld=false, wallGeometryMethod="continuous", trackerDistanceOverride=null, trackerAngleOverride=null, activeSnapPoint=null, openingHingeSide="left", openingSwingDirection="inside", pendingOpeningPlacement=null;
 const openingPlacement=createOpeningPlacement();
 const els=()=>p.elements, story=()=>p.stories.find(s=>s.id===activeStoryId)||p.stories[0], chosen=()=>els().filter(e=>selected.has(e.id));
 const wpos=q=>({x:(q.x-c.clientWidth/2-origin.x)/scale,y:(c.clientHeight/2+origin.y-q.y)/scale});
@@ -18,9 +21,9 @@ let autosaveTimer=null;
 let camera3d={yaw:-Math.PI/4,pitch:Math.PI/5,zoom:1,panX:0,panY:0};
 let orbiting=false,lastCameraPointer=null,pending3dPointer=null,hitPolys3d=[],shiftHeld=false,shiftAngleLock=null;
 function scheduleAutoSave(){if(autosaveTimer)clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch(error){$("status").textContent="Autosave unavailable: "+error.message}},700)}
-function hist(){history.push(JSON.stringify(p));if(history.length>80)history.shift();future=[];updateHistoryButtons();scheduleAutoSave()}
+function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnapshot=structuredClone(p);if(historyCommitQueued)return;historyCommitQueued=true;queueMicrotask(()=>{const before=pendingHistorySnapshot;pendingHistorySnapshot=null;historyCommitQueued=false;if(!before)return;try{modelHistory.commit(before,p,label);updateHistoryButtons();scheduleAutoSave()}catch(error){$("status").textContent="History snapshot failed: "+error.message}})}
 function restore(json){p=deserializeProject(json);selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));redraw();renderProperties();updateHistoryButtons()}
-function updateHistoryButtons(){$("undo").disabled=!history.length;$("redo").disabled=!future.length}
+function updateHistoryButtons(){$("undo").disabled=!modelHistory.canUndo;$("redo").disabled=!modelHistory.canRedo}
 function selectOnly(id){selected=id?new Set([id]):new Set();renderProperties()}
 function elementLayer(el){return el.layer||({"wall":"A-WALL","slab":"A-SLAB","column":"A-COLS","beam":"A-BEAM","door":"A-DOOR","window":"A-WIND","dimension":"A-DIMS","room":"A-ROOM"}[el.type]||"A-MISC")}
 function isLayerVisible(el){return !hiddenLayers.has(elementLayer(el))}
@@ -188,8 +191,8 @@ $("fitModel").onclick=fit3d;
 $("floorTab").onclick=()=>setView("floor");$("threeTab").onclick=()=>setView("3d");
 $("storySelect").onchange=()=>{activeStoryId=$("storySelect").value;selected.clear();draft=[];refreshStories();redraw();renderProperties()};
 $("addStory").onclick=()=>{const name=prompt("New story name (e.g. First Floor):");if(!name?.trim())return;const elevationRaw=prompt("Story elevation in metres:",String(Math.max(...p.stories.map(s=>s.elevation+s.height))));if(elevationRaw===null)return;const elevation=Number(elevationRaw);if(!Number.isFinite(elevation)){ $("status").textContent="Elevation must be a valid number";return}if(p.stories.some(s=>s.name.toLowerCase()===name.trim().toLowerCase())){$("status").textContent="Story name already exists";return}hist();p.stories.push({id:crypto.randomUUID(),name:name.trim(),elevation,height:3});p.views.push({id:"view-floor-"+p.stories[p.stories.length-1].id,name:name.trim(),type:"floor-plan",storyId:p.stories[p.stories.length-1].id,scale:100});activeStoryId=p.stories[p.stories.length-1].id;refreshStories();redraw();renderProperties();$("status").textContent="Story added"};document.querySelectorAll("[data-view]").forEach(b=>b.onclick=()=>setView(b.dataset.view));
-$("undo").onclick=()=>{if(history.length){future.push(JSON.stringify(p));p=deserializeProject(history.pop());activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;selected.clear();refreshStories();redraw();renderProperties();scheduleAutoSave()}updateHistoryButtons()};
-$("redo").onclick=()=>{if(future.length){history.push(JSON.stringify(p));p=deserializeProject(future.pop());activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;selected.clear();refreshStories();redraw();renderProperties();scheduleAutoSave()}updateHistoryButtons()};
+$("undo").onclick=()=>{const previous=modelHistory.undo(p);if(previous){p=previous;activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;selected.clear();refreshStories();redraw();renderProperties();scheduleAutoSave()}updateHistoryButtons()};
+$("redo").onclick=()=>{const next=modelHistory.redo(p);if(next){p=next;activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;selected.clear();refreshStories();redraw();renderProperties();scheduleAutoSave()}updateHistoryButtons()};
 $("delete").onclick=()=>{if(selected.size){hist();const ids=new Set(selected);p.elements=els().filter(e=>!ids.has(e.id)&&!(["door","window"].includes(e.type)&&ids.has(e.hostWallId)));for(const e of els())if(e.type==="wall")e.openings=(e.openings||[]).filter(o=>!ids.has(o.id));selected.clear();$("status").textContent="Selected elements deleted";redraw();renderProperties()}};
 $("clear").onclick=()=>{if(confirm("Clear all elements?")){hist();p.elements=[];selected.clear();redraw();renderProperties()}};
 $("new").onclick=()=>{if(confirm("Start new project?")){hist();p=createProject();activeStoryId=p.stories[0].id;selected.clear();refreshStories();redraw();renderProperties()}};
