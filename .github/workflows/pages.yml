@@ -25,7 +25,7 @@ jobs:
           path: preview-src
       - name: Assemble production site plus isolated preview
         run: |
-          echo "Preview source: fix/archicad-style-element-selection (current branch HEAD)"
+          echo "Preview source: fix/archicad-style-element-selection (current branch HEAD; redeploy after property-update fix)"
           mkdir -p preview
           cp preview-src/index.html preview/index.html
           cp -R preview-src/src preview/src
