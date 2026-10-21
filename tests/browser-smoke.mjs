@@ -157,7 +157,7 @@ try {
   await modelPoint(2, wallY);
   await modelPoint(2, wallY + .8, "move");
   await openingPage.keyboard.press("Enter");
-  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"), null, {timeout:8000}).catch(async error => { throw new Error(`Window placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
   await modelPoint(2.6, wallY);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
