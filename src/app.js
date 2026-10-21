@@ -58,13 +58,13 @@ function drawWallJunctions(){
   try{intersection=segmentIntersection(first.start,first.end,second.start,second.end,{tolerance})}catch{continue}
   if(!intersection)continue;
   if(!intersection.endpointA||!intersection.endpointB){addCore(intersection.point,first,second);continue}
-  const ea=records.find(r=>r.wall.id===first.id&&same(r.point,intersection.point));
-  const eb=records.find(r=>r.wall.id===second.id&&same(r.point,intersection.point));
+  const ea=records[i*2+(intersection.t<=.5?0:1)];
+  const eb=records[j*2+(intersection.u<=.5?0:1)];
   if(!ea||!eb||ea.neighbors.length!==1||eb.neighbors.length!==1)addCore(intersection.point,first,second);
  }
  for(let i=0;i<walls.length;i++)for(let j=i+1;j<walls.length;j++){
   const first=walls[i],second=walls[j];
-  for(const ea of records.filter(r=>r.wall.id===first.id))for(const eb of records.filter(r=>r.wall.id===second.id)){
+  for(const ea of [records[i*2],records[i*2+1]])for(const eb of [records[j*2],records[j*2+1]]){
    if(!same(ea.point,eb.point)||ea.neighbors.length!==1||eb.neighbors.length!==1||ea.index>eb.index)continue;
    const joint=ea.point;
    const a=ea.name==="end"?{start:first.start,end:first.end}:{start:first.end,end:first.start};
