@@ -66,7 +66,7 @@ try {
     const px = Math.max(0, Math.min(el.width - 1, Math.round(point.x)));
     const py = Math.max(0, Math.min(el.height - 1, Math.round(point.y)));
     return Array.from(ctx.getImageData(px, py, 1, 1).data);
-  }, { x: Math.round((await canvas.evaluate(el => el.width)) / 2), y: Math.round((await canvas.evaluate(el => el.height)) / 2) });
+  }, { x: Math.round((cx - rect.x) * (await canvas.evaluate(el => el.width)) / rect.width), y: Math.round((cy - rect.y) * (await canvas.evaluate(el => el.height)) / rect.height) });
   assert.ok(centerPixel[0] < 170 && centerPixel[1] < 180 && centerPixel[2] < 190,
     `T-junction centre should render as a wall, got rgba(${centerPixel.join(",")})`);
 
