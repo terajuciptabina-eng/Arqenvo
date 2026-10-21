@@ -228,6 +228,30 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .menu-group{flex:0 0 auto}
 .menu-pop{z-index:1100;max-height:min(70vh,560px);overflow-y:auto}
 .canvaswrap{min-width:0;min-height:0}
+
+/* Tablet and touch drafting ergonomics */
+@media(max-width:900px){
+  html,body,.app{height:100%;height:100dvh;overflow:hidden}
+  .top{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .work{min-height:0}
+  .tools{overflow-y:auto;overscroll-behavior:contain}
+  .tool{min-height:48px;touch-action:manipulation}
+  .quick-options{overflow-x:auto;overflow-y:hidden;white-space:nowrap;gap:8px;padding-left:8px;padding-right:8px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .quick-options button,.quick-options select,.tabs button,.top button{min-height:38px}
+  .inspector{position:absolute;z-index:30;right:0;top:calc(29px + 68px + 32px);bottom:24px;width:min(340px,88vw);max-width:88vw;overflow:auto;background:var(--panel);box-shadow:-8px 0 24px #0003;border-left:1px solid var(--line);padding:12px}
+  .inspector[style*="display: none"]{pointer-events:none}
+  .hint{max-width:calc(100% - 20px);font-size:10px;line-height:1.35}
+}
+@media(max-width:600px){
+  .menu{overflow-x:auto;white-space:nowrap;-webkit-overflow-scrolling:touch}
+  .menu span{flex:0 0 auto}
+  .brand{min-width:76px}
+  .top{gap:4px}
+  .tool{min-height:48px;padding:6px 2px}
+  .quick-options .quick-label{display:none}
+  .quick-options label{gap:3px}
+  .inspector{top:calc(28px + 54px + 32px);bottom:24px;width:88vw}
+}
 </style></head>
 <body><div class="app">
 <nav class="menu" aria-label="Application menu">
