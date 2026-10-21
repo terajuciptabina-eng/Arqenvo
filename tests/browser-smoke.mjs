@@ -104,7 +104,17 @@ try {
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
   // Archicad-style element picking: openings must be independently selectable above their host wall.
+  // Re-read the canvas bounds after prior drawing/tool interactions; the inspector can resize the workspace.
+  rect = await canvas.boundingBox();
+  assert.ok(rect, "Floor-plan canvas must remain visible before opening tests");
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
   await page.locator('[data-tool="wall"]').click();
+  await page.waitForTimeout(80);
+  rect = await canvas.boundingBox();
+  assert.ok(rect, "Floor-plan canvas must remain visible after selecting Wall");
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
   await page.locator("#wallGeometryMethod").selectOption("single");
   await page.mouse.click(cx - 140, cy + 120);
   await page.mouse.click(cx + 140, cy + 120);
