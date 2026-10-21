@@ -302,7 +302,7 @@ c.addEventListener("dblclick",e=>{if(tool==="wall"&&wallGeometryMethod==="contin
 c.addEventListener("contextmenu",e=>{e.preventDefault();finish()});
 function zoomAt(clientX,clientY,factor){
  const rect=c.getBoundingClientRect(),mx=clientX-rect.left,my=clientY-rect.top;
- if(view==="3d"){const next=Math.max(.2,Math.min(5,camera3d.zoom*factor));if(next!==camera3d.zoom){const anchor=screenToWorld3d({x:mx,y:my},camera3d.targetZ),cyaw=Math.cos(camera3d.yaw),syaw=Math.sin(camera3d.yaw),rx=anchor.x*cyaw-anchor.y*syaw,ry=anchor.x*syaw+anchor.y*cyaw,screenX=(mx-c.clientWidth/2-origin.x)/(scale*.72),screenY=(my-c.clientHeight*.58-origin.y)/(scale*.72),sp=Math.sin(camera3d.pitch),safeSp=Math.max(.12,Math.abs(sp))*(sp<0?-1:1);camera3d.zoom=next;const f=scale*.72*next;camera3d.panX=rx-screenX/f;camera3d.panY=ry-screenY/(f*safeSp)}}
+ if(view==="3d"){const next=Math.max(.2,Math.min(5,camera3d.zoom*factor));if(next!==camera3d.zoom){const anchor=screenToWorld3d({x:mx,y:my},camera3d.targetZ),cyaw=Math.cos(camera3d.yaw),syaw=Math.sin(camera3d.yaw),rx=anchor.x*cyaw-anchor.y*syaw,ry=anchor.x*syaw+anchor.y*cyaw,screenX=mx-c.clientWidth/2-origin.x,screenY=my-c.clientHeight*.58-origin.y,sp=Math.sin(camera3d.pitch),safeSp=Math.max(.12,Math.abs(sp))*(sp<0?-1:1);camera3d.zoom=next;const f=scale*.72*next;camera3d.panX=rx-screenX/f;camera3d.panY=ry-screenY/(f*safeSp)}}
  else{const next=Math.max(1,Math.min(180,scale*factor)),actual=next/scale,cx=mx-c.clientWidth/2,cy=my-c.clientHeight/2;origin.x=cx-(cx-origin.x)*actual;origin.y=cy-(cy-origin.y)*actual;scale=next}
  redraw();updateZoomReadout?.();
 }
