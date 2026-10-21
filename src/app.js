@@ -33,34 +33,44 @@ function nearestElement(q){
  const candidates=els().filter(e=>isLayerVisible(e)&&(view!=="floor"||e.storyId===story().id));
  const hitTolerance=Math.max(.12,10/Math.max(1,scale));
  let best=null,bestScore=Infinity;
- // Hosted openings are distinct selectable elements. Test them before their host
- // wall and measure against the actual visible symbol (leaf/swing arc or sash),
- // otherwise a click away from the wall centreline incorrectly falls through to Wall.
+ // Hit-test hosted openings in the same screen-space geometry used by redraw().
+ // spos() reverses model Y, so deriving symbol normals in model coordinates can
+ // put the hit target on the opposite side from the rendered swing/sash.
+ const screenQ=spos(q),pixelTolerance=10;
  const openings=candidates.filter(el=>el.type==="door"||el.type==="window");
  for(const el of openings){
   const host=candidates.find(v=>v.id===el.hostWallId&&v.type==="wall");
   if(!host)continue;
   const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy);
   if(len<1e-8)continue;
-  const ux=dx/len,uy=dy/len,nx=-uy,ny=ux;
   const start=el.offset||0,width=el.width||0,end=start+width;
   if(!(width>0))continue;
-  const a={x:host.start.x+ux*start,y:host.start.y+uy*start};
-  const b={x:host.start.x+ux*end,y:host.start.y+uy*end};
-  const side=el.swingDirection==="outside"?-1:1;
-  const hinge=el.type==="door"&&el.hingeSide==="right"?b:a;
-  const closedFree=el.type==="door"&&el.hingeSide==="right"?a:b;
-  const openFree={x:hinge.x+nx*side*width,y:hinge.y+ny*side*width};
-  const symbolDistance=el.type==="door"
-   ?Math.min(pointSegmentDistance(q,hinge,openFree),Math.abs(Math.hypot(q.x-hinge.x,q.y-hinge.y)-width))
-   :Math.min(pointSegmentDistance(q,{x:a.x+nx*side*(host.thickness/2+.025),y:a.y+ny*side*(host.thickness/2+.025)},{x:b.x+nx*side*(host.thickness/2+.025),y:b.y+ny*side*(host.thickness/2+.025)}),
-             pointSegmentDistance(q,{x:a.x-nx*side*(host.thickness/2+.025),y:a.y-ny*side*(host.thickness/2+.025)},{x:b.x-nx*side*(host.thickness/2+.025),y:b.y-ny*side*(host.thickness/2+.025)}));
-  const symbolTolerance=Math.max(hitTolerance,.09);
-  const openingAlong=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/len;
-  const overlapsOpening=openingAlong>=start-hitTolerance&&openingAlong<=end+hitTolerance;
-  const withinOpening=overlapsOpening&&Math.abs((q.x-host.start.x)*dy-(q.y-host.start.y)*dx)/len<=host.thickness/2+symbolTolerance;
-  if(symbolDistance<=symbolTolerance||withinOpening){
-   const score=(symbolDistance<=symbolTolerance?symbolDistance:hitTolerance*.5)-1;
+  const aModel={x:host.start.x+dx*start/len,y:host.start.y+dy*start/len};
+  const bModel={x:host.start.x+dx*end/len,y:host.start.y+dy*end/len};
+  const a=spos(aModel),b=spos(bModel);
+  const sdx=b.x-a.x,sdy=b.y-a.y,slen=Math.hypot(sdx,sdy);
+  if(slen<1e-6)continue;
+  const nx=-sdy/slen,ny=sdx/slen;
+  const wallPixels=Math.max(1,host.thickness*scale);
+  let symbolDistance=Infinity;
+  if(el.type==="door"){
+   const g=doorSwingGeometry(a,b,{hingeSide:el.hingeSide,swingDirection:el.swingDirection});
+   const arcRadius=g.radius,radial=Math.abs(Math.hypot(screenQ.x-g.hinge.x,screenQ.y-g.hinge.y)-arcRadius);
+   const angle=Math.atan2(screenQ.y-g.hinge.y,screenQ.x-g.hinge.x);
+   const norm=v=>((v%(Math.PI*2))+(Math.PI*2))%(Math.PI*2);
+   const arcSpan=g.anticlockwise?norm(g.startAngle-angle)+norm(angle-g.endAngle)<=norm(g.startAngle-g.endAngle)+1e-6:norm(angle-g.startAngle)<=norm(g.endAngle-g.startAngle)+1e-6;
+   symbolDistance=Math.min(pointSegmentDistance(screenQ,g.hinge,g.openFree),arcSpan?radial:Infinity);
+  }else{
+   const offset=wallPixels*.28;
+   symbolDistance=Math.min(
+    pointSegmentDistance(screenQ,{x:a.x+nx*offset,y:a.y+ny*offset},{x:b.x+nx*offset,y:b.y+ny*offset}),
+    pointSegmentDistance(screenQ,{x:a.x-nx*offset,y:a.y-ny*offset},{x:b.x-nx*offset,y:b.y-ny*offset})
+   );
+  }
+  const along=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/(len||1);
+  const withinOpening=along>=start-hitTolerance&&along<=end+hitTolerance;
+  if(withinOpening&&symbolDistance<=pixelTolerance){
+   const score=symbolDistance-1000;
    if(score<bestScore){best=el;bestScore=score}
   }
  }
