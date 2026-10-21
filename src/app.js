@@ -43,10 +43,14 @@ function nearestElement(q){
    const along=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/len;
    const perpendicular=Math.abs((q.x-host.start.x)*dy-(q.y-host.start.y)*dx)/len;
    const start=el.offset||0,end=start+(el.width||0);
+   // Opening symbols extend away from the host wall (door swing arc / window sash).
+   // Hit-test the visible symbol footprint, not just the thin wall opening line.
+   const symbolReach=Math.max(hitTolerance,(el.width||0)*.8);
    const tolerance=Math.max(hitTolerance,host.thickness/2+.06);
-   if(along>=start-hitTolerance&&along<=end+hitTolerance&&perpendicular<=tolerance){
+   if(along>=start-hitTolerance&&along<=end+hitTolerance&&perpendicular<=Math.max(tolerance,symbolReach)){
     d=perpendicular;
-    score=d-.15;
+    // Prefer the opening over its host wall anywhere inside the opening symbol.
+    score=d-Math.max(.15,(el.width||0)*.8);
    }
   }else if(el.type==="wall"||el.type==="beam"){
    const half=(el.type==="wall"?el.thickness:el.width||0)/2;
