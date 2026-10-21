@@ -128,11 +128,11 @@ export function validateProject(data) {
   for (const el of data?.elements ?? []) {
     if (!el.id || ids.has(el.id)) errors.push(`Missing or duplicate element id: ${el.id ?? "(missing)"}`);
     ids.add(el.id);
-    if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "room"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
+    if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "gridline", "room"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
     if (data?.version === MODEL_VERSION && el.storyId && !storyIds.has(el.storyId)) errors.push(`Element ${el.id} references unknown story: ${el.storyId}`);
     const finitePoint = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
     const positive = n => Number.isFinite(n) && n > 0;
-    if (["wall","beam","dimension"].includes(el.type)) {
+    if (["wall","beam","dimension","gridline"].includes(el.type)) {
       if (!finitePoint(el.start) || !finitePoint(el.end)) errors.push(`Element ${el.id} has invalid endpoints`);
       else if (distance(el.start, el.end) <= 1e-6 && el.type !== "dimension") errors.push(`Element ${el.id} has zero length`);
     }
