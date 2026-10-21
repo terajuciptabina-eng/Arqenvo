@@ -116,40 +116,43 @@ try {
   const openingCanvas = openingPage.locator("#canvas");
   await openingPage.locator('[data-tool="wall"]').click();
   await openingPage.locator("#wallGeometryMethod").selectOption("single");
-  const openingRect = await openingCanvas.boundingBox();
-  assert.ok(openingRect, "Floor-plan canvas must be visible for opening tests");
-  cx = openingRect.x + openingRect.width / 2;
-  cy = openingRect.y + openingRect.height / 2;
-  // Keep model-space offsets constant while the canvas is resized by tool context changes.
-  const pointOnCanvas = async (dx, dy, action = "click") => {
-    const bounds = await openingCanvas.boundingBox();
-    assert.ok(bounds, "Canvas remains visible during element placement");
-    const px = bounds.x + bounds.width / 2 + dx;
-    const py = bounds.y + bounds.height / 2 + dy;
-    if (action === "move") await openingPage.mouse.move(px, py);
-    else await openingPage.mouse.click(px, py);
+  // Drive clicks from fixed model-space coordinates, not canvas-relative coordinates:
+  // changing tools can resize the canvas and shift its centre.
+  const modelPoint = async (wx, wy, action = "click") => {
+    const pt = await openingPage.evaluate(({ wx, wy }) => {
+      const canvas = document.querySelector("#canvas");
+      const rect = canvas.getBoundingClientRect();
+      const scale = Number(document.querySelector("#scaleSelect")?.value || 36);
+      return {
+        x: rect.left + canvas.clientWidth / 2 + wx * scale,
+        y: rect.top + canvas.clientHeight / 2 - wy * scale
+      };
+    }, { wx, wy });
+    if (action === "move") await openingPage.mouse.move(pt.x, pt.y);
+    else await openingPage.mouse.click(pt.x, pt.y);
   };
-  await pointOnCanvas(-140, 120);
-  await pointOnCanvas(140, 120);
-  // Place openings on the host wall centreline first; avoid grid/snap ambiguity at the symbol offset.
+  const wallY = -3.5;
+  await modelPoint(-4, wallY);
+  await modelPoint(4, wallY);
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall created"));
   await openingPage.locator('[data-tool="door"]').click();
-  await pointOnCanvas(0, 120);
-  await pointOnCanvas(0, 90, "move");
+  await modelPoint(0, wallY);
+  await modelPoint(0, wallY + .8, "move");
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"));
   await openingPage.locator('[data-tool="select"]').click();
-  await pointOnCanvas(0, 120);
+  await modelPoint(0, wallY);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("door ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /door ·/i,
     "Clicking the door symbol should select the door rather than its host wall");
 
   await openingPage.locator('[data-tool="window"]').click();
-  await pointOnCanvas(55, 120);
-  await pointOnCanvas(55, 90, "move");
+  await modelPoint(2, wallY);
+  await modelPoint(2, wallY + .8, "move");
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"));
   await openingPage.locator('[data-tool="select"]').click();
-  await pointOnCanvas(55, 120);
+  await modelPoint(2, wallY);
   await openingPage.waitForFunction(() => document.querySelector("#elementProperties")?.textContent.includes("window ·"));
   assert.match(await openingPage.locator("#elementProperties").textContent(), /window ·/i,
     "Clicking the window symbol should select the window rather than its host wall");
