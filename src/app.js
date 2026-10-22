@@ -235,7 +235,9 @@ const markerPoint=line=>{const sides=line.markerSides||{};return sides.start?lin
 const outwardFromMarker=line=>{const marker=markerPoint(line),other=marker===line.start?line.end:line.start;return unit(other,marker)};
 const placeDimension=(d,lineA,lineB,offset)=>{const baseA=markerPoint(lineA),baseB=markerPoint(lineB),nA=outwardFromMarker(lineA),nB=outwardFromMarker(lineB),n={x:nA.x+nB.x,y:nA.y+nB.y},len=Math.hypot(n.x,n.y)||1,normal={x:n.x/len,y:n.y/len};d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x+normal.x*offset,y:baseA.y+normal.y*offset};d.end={x:baseB.x+normal.x*offset,y:baseB.y+normal.y*offset}};
 for(const d of dims){
-const offset=Math.max(0,Number(d.gridDimensionOffset??1000)/1000);
+const fallbackOffset=d.gridDimension==="total"?2500:1000;
+const storedOffset=Number(d.gridDimensionOffset);
+const offset=(Number.isFinite(storedOffset)&&storedOffset>=1500?storedOffset:fallbackOffset)/1000;
 if(d.gridDimensionAxis==="vertical"&&d.gridDimension==="chain"){
 const i=Number(d.gridDimensionIndex),a=vertical[i],b=vertical[i+1];if(!a||!b)continue;placeDimension(d,a,b,offset);
 }else if(d.gridDimensionAxis==="horizontal"&&d.gridDimension==="chain"){
