@@ -150,7 +150,13 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.locator('[data-tool="select"]').click();
   // Clear any selection left by placement before asserting a fresh hit-test result.
-  await modelPoint(7, 3);
+  // Clear selection on blank canvas coordinates independent of current world transform.
+  await openingPage.evaluate(() => {
+    const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect();
+    const x=rect.left+rect.width-24,y=rect.top+24;
+    canvas.dispatchEvent(new PointerEvent("pointerdown",{pointerId:991,clientX:x,clientY:y,button:0,buttons:1,bubbles:true}));
+    canvas.dispatchEvent(new PointerEvent("pointerup",{pointerId:991,clientX:x,clientY:y,button:0,buttons:0,bubbles:true}));
+  });
   await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Click the visible Door swing arc in screen coordinates derived from the real host wall.
