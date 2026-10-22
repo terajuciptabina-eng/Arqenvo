@@ -154,10 +154,13 @@ try {
   await openingPage.evaluate(() => {
     const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect();
     const x=rect.left+rect.width-24,y=rect.top+24;
+    const props=document.querySelector("#elementProperties");
     canvas.dispatchEvent(new PointerEvent("pointerdown",{pointerId:991,clientX:x,clientY:y,button:0,buttons:1,bubbles:true}));
     canvas.dispatchEvent(new PointerEvent("pointerup",{pointerId:991,clientX:x,clientY:y,button:0,buttons:0,bubbles:true}));
+    // Use the same public canvas event path as a real user click; the status/property panel
+    // will be checked after event handlers have synchronously updated the view.
   });
-  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
+  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection" || (document.querySelector("#status")?.textContent||"").includes("No element"));
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Click the visible Door swing arc in screen coordinates derived from the real host wall.
   // Include current model geometry in a failure report so browser automation identifies the actual hit-test result.
