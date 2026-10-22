@@ -228,6 +228,7 @@ const vertical=spacing.verticalLines,horizontal=spacing.horizontalLines;
 const unit=(a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}};
 for(const d of dims){
 const offset=Math.max(0,Number(d.gridDimensionOffset??1000)/1000);
+const totalOffset=offset+1500/1000;
 if(d.gridDimensionAxis==="vertical"&&d.gridDimension==="chain"){
 const i=Number(d.gridDimensionIndex),a=vertical[i],b=vertical[i+1];if(!a||!b)continue;
 const dir=unit(a.start,a.end),baseA=a.end,baseB=b.end;
@@ -243,7 +244,7 @@ const a=vertical[0],b=vertical[vertical.length-1];if(!a||!b)continue;
 const dir=unit(a.start,a.end),baseA=a.end,baseB=b.end;d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x-dir.x*offset,y:baseA.y-dir.y*offset};d.end={x:baseB.x-dir.x*offset,y:baseB.y-dir.y*offset};
 }else if(d.gridDimension==="total"&&(d.gridDimensionAxis==="horizontal"||(!d.gridDimensionAxis&&Math.abs(d.end.x-d.start.x)<Math.abs(d.end.y-d.start.y)))){
 const a=horizontal[0],b=horizontal[horizontal.length-1];if(!a||!b)continue;
-const baseA=a.end,baseB=b.end;d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x+offset,y:baseA.y};d.end={x:baseB.x+offset,y:baseB.y};
+const baseA=a.end,baseB=b.end;d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x+totalOffset,y:baseA.y};d.end={x:baseB.x+totalOffset,y:baseB.y};
 }
 }
 }scheduleAutoSave();$("status").textContent=spacing?"Grid System spacing updated":"Parameters applied to "+list.length+" elements";redraw();renderProperties()};$("applyMultiProps").onclick=applyMultiProps;$("applyGridSpacing")?.addEventListener("click",applyMultiProps);for(const id of ["editGridVertical","editGridHorizontal"]){const input=$(id);if(input)input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();applyMultiProps()}})}
