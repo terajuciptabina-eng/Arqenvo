@@ -228,28 +228,28 @@ let cumulative=0;const original=lines.map(line=>({start:{...line.start},end:{...
 for(let i=0;i<lines.length;i++){if(i)cumulative+=distances[i-1];const src=original[i],target=lines[i],desired={x:first.start.x+normal.x*cumulative,y:first.start.y+normal.y*cumulative},dx=desired.x-src.start.x,dy=desired.y-src.start.y;target.start={x:src.start.x+dx,y:src.start.y+dy};target.end={x:src.end.x+dx,y:src.end.y+dy}}
 };
 moveAxis(spacing.verticalLines,spacing.vertical,"vertical");moveAxis(spacing.horizontalLines,spacing.horizontal,"horizontal");
+// Grid dimensions intentionally keep their annotation baseline where it was placed.
+// Their witness points are references to the resized gridlines, not part of the annotation layout.
+// Grid dimensions intentionally keep their annotation baseline where it was placed.
+// Their witness points are references to the resized gridlines, not part of the annotation layout.
 const dims=gridMembers.filter(e=>e.type==="dimension"&&e.gridDimension);
 const vertical=spacing.verticalLines,horizontal=spacing.horizontalLines;
 const unit=(a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}};
 const markerPoint=line=>{const sides=line.markerSides||{};return sides.start?line.start:sides.end?line.end:line.start};
-const outwardFromMarker=line=>{const marker=markerPoint(line),other=marker===line.start?line.end:line.start;return unit(other,marker)};
-const placeDimension=(d,lineA,lineB,offset,axis,baselineLine)=>{const baseA=markerPoint(lineA),baseB=markerPoint(lineB),baseline=markerPoint(baselineLine||lineA),nA=outwardFromMarker(baselineLine||lineA),nB=outwardFromMarker(baselineLine||lineA),n={x:nA.x+nB.x,y:nA.y+nB.y},len=Math.hypot(n.x,n.y)||1,normal={x:n.x/len,y:n.y/len},anchor={x:baseline.x+normal.x*offset,y:baseline.y+normal.y*offset};d.witnessStart={...baseA};d.witnessEnd={...baseB};if(axis==="vertical"){d.start={x:baseA.x+normal.x*offset,y:anchor.y};d.end={x:baseB.x+normal.x*offset,y:anchor.y}}else{d.start={x:anchor.x,y:baseA.y+normal.y*offset};d.end={x:anchor.x,y:baseB.y+normal.y*offset}}};
 for(const d of dims){
-// Keep grid dimension annotation geometry anchored where the user placed it when grid spacing changes.
-// Repositioning through placeDimension() here made every dimension jump as its reference gridlines moved.
-continue;
-const fallbackOffset=d.gridDimension==="total"?2500:1000;
-const storedOffset=Number(d.gridDimensionOffset);
-const offset=(Number.isFinite(storedOffset)&&storedOffset>=1500?storedOffset:fallbackOffset)/1000;
-if(d.gridDimensionAxis==="vertical"&&d.gridDimension==="chain"){
-const i=Number(d.gridDimensionIndex),a=vertical[i],b=vertical[i+1];if(!a||!b)continue;placeDimension(d,a,b,offset,"vertical",vertical[0]);
-}else if(d.gridDimensionAxis==="horizontal"&&d.gridDimension==="chain"){
-const i=Number(d.gridDimensionIndex),a=horizontal[i],b=horizontal[i+1];if(!a||!b)continue;placeDimension(d,a,b,offset,"horizontal",horizontal[0]);
-}else if(d.gridDimension==="total"&&(d.gridDimensionAxis==="vertical"||(!d.gridDimensionAxis&&Math.abs(d.end.x-d.start.x)>=Math.abs(d.end.y-d.start.y)))){
-const a=vertical[0],b=vertical[vertical.length-1];if(!a||!b)continue;placeDimension(d,a,b,offset,"vertical",vertical[0]);
-}else if(d.gridDimension==="total"&&(d.gridDimensionAxis==="horizontal"||(!d.gridDimensionAxis&&Math.abs(d.end.x-d.start.x)<Math.abs(d.end.y-d.start.y)))){
-const a=horizontal[0],b=horizontal[horizontal.length-1];if(!a||!b)continue;placeDimension(d,a,b,offset,"horizontal",horizontal[0]);
+const axis=d.gridDimensionAxis;
+const lines=axis==="vertical"?vertical:axis==="horizontal"?horizontal:null;
+if(!lines?.length)continue;
+let firstIndex=0,lastIndex=lines.length-1;
+if(d.gridDimension==="chain"){
+firstIndex=Number(d.gridDimensionIndex);
+lastIndex=firstIndex+1;
 }
+const lineA=lines[firstIndex],lineB=lines[lastIndex];
+if(!lineA||!lineB)continue;
+const baseA=markerPoint(lineA),baseB=markerPoint(lineB);
+// Only update witness endpoints. Keep dimension start/end fixed so the annotation doesn't drift.
+d.witnessStart={...baseA};d.witnessEnd={...baseB};
 }
 }scheduleAutoSave();$("status").textContent=spacing?"Grid System spacing updated":"Parameters applied to "+list.length+" elements";redraw();renderProperties()};$("applyMultiProps").onclick=applyMultiProps;$("applyGridSpacing")?.addEventListener("click",applyMultiProps);for(const id of ["editGridVertical","editGridHorizontal"]){const input=$(id);if(input)input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();applyMultiProps()}})}
 return}
