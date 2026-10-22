@@ -235,6 +235,9 @@ const markerPoint=line=>{const sides=line.markerSides||{};return sides.start?lin
 const outwardFromMarker=line=>{const marker=markerPoint(line),other=marker===line.start?line.end:line.start;return unit(other,marker)};
 const placeDimension=(d,lineA,lineB,offset,axis,baselineLine)=>{const baseA=markerPoint(lineA),baseB=markerPoint(lineB),baseline=markerPoint(baselineLine||lineA),nA=outwardFromMarker(baselineLine||lineA),nB=outwardFromMarker(baselineLine||lineA),n={x:nA.x+nB.x,y:nA.y+nB.y},len=Math.hypot(n.x,n.y)||1,normal={x:n.x/len,y:n.y/len},anchor={x:baseline.x+normal.x*offset,y:baseline.y+normal.y*offset};d.witnessStart={...baseA};d.witnessEnd={...baseB};if(axis==="vertical"){d.start={x:baseA.x+normal.x*offset,y:anchor.y};d.end={x:baseB.x+normal.x*offset,y:anchor.y}}else{d.start={x:anchor.x,y:baseA.y+normal.y*offset};d.end={x:anchor.x,y:baseB.y+normal.y*offset}}};
 for(const d of dims){
+// Keep grid dimension annotation geometry anchored where the user placed it when grid spacing changes.
+// Repositioning through placeDimension() here made every dimension jump as its reference gridlines moved.
+continue;
 const fallbackOffset=d.gridDimension==="total"?2500:1000;
 const storedOffset=Number(d.gridDimensionOffset);
 const offset=(Number.isFinite(storedOffset)&&storedOffset>=1500?storedOffset:fallbackOffset)/1000;
