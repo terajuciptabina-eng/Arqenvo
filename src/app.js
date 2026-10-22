@@ -238,10 +238,10 @@ const i=Number(d.gridDimensionIndex),a=horizontal[i],b=horizontal[i+1];if(!a||!b
 const dir=unit(a.start,a.end),normal={x:-dir.y,y:dir.x},baseA=a.start,baseB=b.start;
 d.witnessStart={...baseA};d.witnessEnd={...baseB};
 d.start={x:baseA.x+normal.x*offset,y:baseA.y+normal.y*offset};d.end={x:baseB.x+normal.x*offset,y:baseB.y+normal.y*offset};
-}else if(d.gridDimension==="total"&&!d.gridDimensionAxis){
+}else if(d.gridDimension==="total"&&(d.gridDimensionAxis==="vertical"||(!d.gridDimensionAxis&&Math.abs(d.end.x-d.start.x)>=Math.abs(d.end.y-d.start.y)))){
 const a=vertical[0],b=vertical[vertical.length-1];if(!a||!b)continue;
 const dir=unit(a.start,a.end),baseA=a.end,baseB=b.end;d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x-dir.x*offset,y:baseA.y-dir.y*offset};d.end={x:baseB.x-dir.x*offset,y:baseB.y-dir.y*offset};
-}else if(d.gridDimension==="total"&&d.gridDimensionAxis!=="vertical"){
+}else if(d.gridDimension==="total"&&(d.gridDimensionAxis==="horizontal"||(!d.gridDimensionAxis&&Math.abs(d.end.x-d.start.x)<Math.abs(d.end.y-d.start.y)))){
 const a=horizontal[0],b=horizontal[horizontal.length-1];if(!a||!b)continue;
 const dir=unit(a.start,a.end),normal={x:-dir.y,y:dir.x},baseA=a.start,baseB=b.start;d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x+normal.x*offset,y:baseA.y+normal.y*offset};d.end={x:baseB.x+normal.x*offset,y:baseB.y+normal.y*offset};
 }
