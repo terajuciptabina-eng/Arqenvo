@@ -153,9 +153,9 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Click the visible Door swing arc in screen coordinates derived from the real host wall.
-  // The wall and opening geometry are checked above; this assertion checks the visible symbol hit target.
+  // Include current model geometry in a failure report so browser automation identifies the actual hit-test result.
   await modelPoint(0.566, wallY + 0.566);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { throw new Error(`Door symbol selection failed; status="${await openingPage.locator("#status").textContent()}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,400)}"; ${error.message}`); });
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { const diag=await openingPage.evaluate(()=>({status:document.querySelector("#status")?.textContent,selection:document.querySelector("#selectionInfo")?.textContent,tool:document.querySelector("#toolName")?.value,props:document.querySelector("#elementProperties")?.textContent,project:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>["wall","door","window"].includes(e.type)).map(e=>({id:e.id,type:e.type,start:e.start,end:e.end,offset:e.offset,width:e.width,hostWallId:e.hostWallId,storyId:e.storyId,hingeSide:e.hingeSide,swingDirection:e.swingDirection}))})); throw new Error(`Door symbol selection failed; diag=${JSON.stringify(diag)}; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
     "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
   // Clicking within the opening itself must also choose the opening element, not Wall.
