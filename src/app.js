@@ -17,6 +17,8 @@ const openingPlacement=createOpeningPlacement();
 let provisionalDrawingSnapshot=null,provisionalDrawingTool=null,provisionalDrawingActive=false,provisionalWallClosed=false;
 const els=()=>p.elements, story=()=>p.stories.find(s=>s.id===activeStoryId)||p.stories[0], chosen=()=>els().filter(e=>selected.has(e.id)),groupKey=e=>e?.groupId||e?.gridSystemId||null,groupMembers=e=>{const key=groupKey(e);return key&&!groupsSuspended?els().filter(v=>groupKey(v)===key):[e]};
 const wpos=q=>({x:(q.x-c.clientWidth/2-origin.x)/scale,y:(c.clientHeight/2+origin.y-q.y)/scale});
+// Read-only viewport transform for deterministic browser smoke geometry helpers.
+try{Object.defineProperty(window,"__arqenvoViewport",{configurable:true,get:()=>({origin:{...origin},scale,canvasWidth:c.clientWidth,canvasHeight:c.clientHeight})})}catch{}
 const spos=q=>({x:c.clientWidth/2+origin.x+q.x*scale,y:c.clientHeight/2+origin.y-q.y*scale});
 const AUTOSAVE_KEY="arqenvo.autosave.v2";
 let autosaveTimer=null;
