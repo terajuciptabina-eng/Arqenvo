@@ -152,9 +152,10 @@ try {
   await modelPoint(7, 3);
   await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
-  // The new host-wall hit test must resolve the full opening span, including a point on its centreline.
-  await modelPoint(0.45, wallY);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { throw new Error(`Door opening selection failed; status="${await openingPage.locator("#status").textContent()}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,400)}"; ${error.message}`); });
+  // Click the visible Door swing arc in screen coordinates derived from the real host wall.
+  // The wall and opening geometry are checked above; this assertion checks the visible symbol hit target.
+  await modelPoint(0.566, wallY + 0.566);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { throw new Error(`Door symbol selection failed; status="${await openingPage.locator("#status").textContent()}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,400)}"; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
     "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
   // Clicking within the opening itself must also choose the opening element, not Wall.
