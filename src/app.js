@@ -216,13 +216,19 @@ const applyMultiProps=()=>{const inputs=[...host.querySelectorAll("[data-multi-p
 const moveAxis=(lines,distances,axis)=>{
 if(lines.length<2)return;
 const first={start:{...lines[0].start},end:{...lines[0].end}},vx=first.end.x-first.start.x,vy=first.end.y-first.start.y,len=Math.hypot(vx,vy)||1;
-// Grid interval values are positive axis distances. The perpendicular's sign must follow
-// the grid-system coordinate basis: vertical gridlines advance along +X, horizontal
-// gridlines advance along +Y. Using one normal for both axes reverses the horizontal
-// grid sequence after Apply Grid Distances.
+// Project the axis normal from the first line's direction so rotated grid systems retain
+// the same orientation while distances are recalculated from a stable origin.
 const normal=axis==="vertical"?{x:vy/len,y:-vx/len}:{x:-vy/len,y:vx/len};
-let cumulative=0;const original=lines.map(line=>({start:{...line.start},end:{...line.end}}));
-for(let i=0;i<lines.length;i++){if(i)cumulative+=distances[i-1];const src=original[i],target=lines[i],desired={x:first.start.x+normal.x*cumulative,y:first.start.y+normal.y*cumulative},dx=desired.x-src.start.x,dy=desired.y-src.start.y;target.start={x:src.start.x+dx,y:src.start.y+dy};target.end={x:src.end.x+dx,y:src.end.y+dy}}
+let cumulative=0;
+for(let i=1;i<lines.length;i++){
+ cumulative+=distances[i-1];
+ const target=lines[i],current={start:{...target.start},end:{...target.end}};
+ const signedPosition=(current.start.x-first.start.x)*normal.x+(current.start.y-first.start.y)*normal.y;
+ const desiredPosition=cumulative;
+ const delta=desiredPosition-signedPosition,dx=normal.x*delta,dy=normal.y*delta;
+ target.start={x:current.start.x+dx,y:current.start.y+dy};
+ target.end={x:current.end.x+dx,y:current.end.y+dy};
+}
 };
 moveAxis(spacing.verticalLines,spacing.vertical,"vertical");moveAxis(spacing.horizontalLines,spacing.horizontal,"horizontal");
 // Grid dimensions preserve their independent annotation placement; only their witness points
