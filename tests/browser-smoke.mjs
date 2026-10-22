@@ -123,7 +123,7 @@ try {
       const canvas = document.querySelector("#canvas");
       const rect = canvas.getBoundingClientRect();
       const scale = Number(document.querySelector("#scaleSelect")?.value || 36);
-      const transform = window.__arqenvoTestTransform || {origin:{x:0,y:0},scale};
+      const transform = window.__arqenvoViewport || {origin:{x:0,y:0},scale};
       return {
         x: rect.left + canvas.clientWidth / 2 + (transform.origin?.x||0) + wx * (transform.scale||scale),
         y: rect.top + canvas.clientHeight / 2 + (transform.origin?.y||0) - wy * (transform.scale||scale)
