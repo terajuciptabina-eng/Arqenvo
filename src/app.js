@@ -231,28 +231,19 @@ moveAxis(spacing.verticalLines,spacing.vertical,"vertical");moveAxis(spacing.hor
 const dims=gridMembers.filter(e=>e.type==="dimension"&&e.gridDimension);
 const vertical=spacing.verticalLines,horizontal=spacing.horizontalLines;
 const unit=(a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}};
+const markerPoint=line=>{const sides=line.markerSides||{};return sides.start?line.start:sides.end?line.end:line.start};
+const outwardFromMarker=line=>{const marker=markerPoint(line),other=marker===line.start?line.end:line.start;return unit(other,marker)};
+const placeDimension=(d,lineA,lineB,offset)=>{const baseA=markerPoint(lineA),baseB=markerPoint(lineB),nA=outwardFromMarker(lineA),nB=outwardFromMarker(lineB),n={x:nA.x+nB.x,y:nA.y+nB.y},len=Math.hypot(n.x,n.y)||1,normal={x:n.x/len,y:n.y/len};d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x+normal.x*offset,y:baseA.y+normal.y*offset};d.end={x:baseB.x+normal.x*offset,y:baseB.y+normal.y*offset}};
 for(const d of dims){
 const offset=Math.max(0,Number(d.gridDimensionOffset??1000)/1000);
-const totalOffset=offset;
 if(d.gridDimensionAxis==="vertical"&&d.gridDimension==="chain"){
-const i=Number(d.gridDimensionIndex),a=vertical[i],b=vertical[i+1];if(!a||!b)continue;
-const dir=unit(a.start,a.end),baseA=a.end,baseB=b.end;
-d.witnessStart={...baseA};d.witnessEnd={...baseB};
-d.start={x:baseA.x-dir.x*offset,y:baseA.y-dir.y*offset};d.end={x:baseB.x-dir.x*offset,y:baseB.y-dir.y*offset};
+const i=Number(d.gridDimensionIndex),a=vertical[i],b=vertical[i+1];if(!a||!b)continue;placeDimension(d,a,b,offset);
 }else if(d.gridDimensionAxis==="horizontal"&&d.gridDimension==="chain"){
-const i=Number(d.gridDimensionIndex),a=horizontal[i],b=horizontal[i+1];if(!a||!b)continue;
-// Horizontal grid labels (A–D) sit at the left/start endpoints.
- // Keep the dimension chain just to the right of those bubbles, not at the far
- // right ends of the gridlines.
-const baseA=a.start,baseB=b.start;
-d.witnessStart={...baseA};d.witnessEnd={...baseB};
-d.start={x:baseA.x+offset,y:baseA.y};d.end={x:baseB.x+offset,y:baseB.y};
+const i=Number(d.gridDimensionIndex),a=horizontal[i],b=horizontal[i+1];if(!a||!b)continue;placeDimension(d,a,b,offset);
 }else if(d.gridDimension==="total"&&(d.gridDimensionAxis==="vertical"||(!d.gridDimensionAxis&&Math.abs(d.end.x-d.start.x)>=Math.abs(d.end.y-d.start.y)))){
-const a=vertical[0],b=vertical[vertical.length-1];if(!a||!b)continue;
-const dir=unit(a.start,a.end),baseA=a.end,baseB=b.end;d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x-dir.x*offset,y:baseA.y-dir.y*offset};d.end={x:baseB.x-dir.x*offset,y:baseB.y-dir.y*offset};
+const a=vertical[0],b=vertical[vertical.length-1];if(!a||!b)continue;placeDimension(d,a,b,offset);
 }else if(d.gridDimension==="total"&&(d.gridDimensionAxis==="horizontal"||(!d.gridDimensionAxis&&Math.abs(d.end.x-d.start.x)<Math.abs(d.end.y-d.start.y)))){
-const a=horizontal[0],b=horizontal[horizontal.length-1];if(!a||!b)continue;
-const baseA=a.start,baseB=b.start;d.witnessStart={...baseA};d.witnessEnd={...baseB};d.start={x:baseA.x+totalOffset,y:baseA.y};d.end={x:baseB.x+totalOffset,y:baseB.y};
+const a=horizontal[0],b=horizontal[horizontal.length-1];if(!a||!b)continue;placeDimension(d,a,b,offset);
 }
 }
 }scheduleAutoSave();$("status").textContent=spacing?"Grid System spacing updated":"Parameters applied to "+list.length+" elements";redraw();renderProperties()};$("applyMultiProps").onclick=applyMultiProps;$("applyGridSpacing")?.addEventListener("click",applyMultiProps);for(const id of ["editGridVertical","editGridHorizontal"]){const input=$(id);if(input)input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();applyMultiProps()}})}
