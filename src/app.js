@@ -228,13 +228,10 @@ let cumulative=0;const original=lines.map(line=>({start:{...line.start},end:{...
 for(let i=0;i<lines.length;i++){if(i)cumulative+=distances[i-1];const src=original[i],target=lines[i],desired={x:first.start.x+normal.x*cumulative,y:first.start.y+normal.y*cumulative},dx=desired.x-src.start.x,dy=desired.y-src.start.y;target.start={x:src.start.x+dx,y:src.start.y+dy};target.end={x:src.end.x+dx,y:src.end.y+dy}}
 };
 moveAxis(spacing.verticalLines,spacing.vertical,"vertical");moveAxis(spacing.horizontalLines,spacing.horizontal,"horizontal");
-// Grid dimensions intentionally keep their annotation baseline where it was placed.
-// Their witness points are references to the resized gridlines, not part of the annotation layout.
-// Grid dimensions intentionally keep their annotation baseline where it was placed.
-// Their witness points are references to the resized gridlines, not part of the annotation layout.
+// Grid dimensions preserve their independent annotation placement; only their witness points
+// follow the resized gridlines, keeping extension lines connected without shifting dimension lines.
 const dims=gridMembers.filter(e=>e.type==="dimension"&&e.gridDimension);
 const vertical=spacing.verticalLines,horizontal=spacing.horizontalLines;
-const unit=(a,b)=>{const dx=b.x-a.x,dy=b.y-a.y,l=Math.hypot(dx,dy)||1;return{x:dx/l,y:dy/l}};
 const markerPoint=line=>{const sides=line.markerSides||{};return sides.start?line.start:sides.end?line.end:line.start};
 for(const d of dims){
 const axis=d.gridDimensionAxis;
