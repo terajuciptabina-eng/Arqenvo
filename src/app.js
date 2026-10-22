@@ -247,19 +247,23 @@ if(!lineA||!lineB)continue;
 const baseA=markerPoint(lineA),baseB=markerPoint(lineB);
 // Grid dimensions are parametric annotations. Keep their measured endpoints attached to the
 // corresponding gridlines; preserve the authored offset from the first axis line.
-const offsetMm=Number(d.gridDimensionOffset);
-const offset=(Number.isFinite(offsetMm)&&offsetMm>0?offsetMm:(d.gridDimension==="total"?2500:1000))/1000;
-const baseLine=lines[0],baseMarker=markerPoint(baseLine),baseOther=baseMarker===baseLine.start?baseLine.end:baseLine.start;
-const dx=baseMarker.x-baseOther.x,dy=baseMarker.y-baseOther.y,len=Math.hypot(dx,dy)||1;
-const normal={x:dx/len,y:dy/len};
-const anchor={x:baseMarker.x+normal.x*offset,y:baseMarker.y+normal.y*offset};
+// Move both endpoints of the dimension line and witness lines by the same displacement
+// derived from the corresponding grid markers. This keeps the annotation offset and dimension
+// value attached to the grid system while preserving the baseline orientation.
+const baseStart=d.start?{...d.start}:null,baseEnd=d.end?{...d.end}:null;
+const oldA=d.witnessStart?{...d.witnessStart}:baseA,oldB=d.witnessEnd?{...d.witnessEnd}:baseB;
+const shiftA={x:baseA.x-oldA.x,y:baseA.y-oldA.y},shiftB={x:baseB.x-oldB.x,y:baseB.y-oldB.y};
 d.witnessStart={...baseA};d.witnessEnd={...baseB};
-if(axis==="vertical"){
- d.start={x:baseA.x+normal.x*offset,y:anchor.y};
- d.end={x:baseB.x+normal.x*offset,y:anchor.y};
-}else{
- d.start={x:anchor.x,y:baseA.y+normal.y*offset};
- d.end={x:anchor.x,y:baseB.y+normal.y*offset};
+if(baseStart&&baseEnd){
+  if(axis==="vertical"){
+    const move={x:(shiftA.x+shiftB.x)/2,y:(shiftA.y+shiftB.y)/2};
+    d.start={x:baseStart.x+move.x,y:baseStart.y+move.y};
+    d.end={x:baseEnd.x+move.x,y:baseEnd.y+move.y};
+  }else{
+    const move={x:(shiftA.x+shiftB.x)/2,y:(shiftA.y+shiftB.y)/2};
+    d.start={x:baseStart.x+move.x,y:baseStart.y+move.y};
+    d.end={x:baseEnd.x+move.x,y:baseEnd.y+move.y};
+  }
 }
 }
 }scheduleAutoSave();$("status").textContent=spacing?"Grid System spacing updated":"Parameters applied to "+list.length+" elements";redraw();renderProperties()};$("applyMultiProps").onclick=applyMultiProps;$("applyGridSpacing")?.addEventListener("click",applyMultiProps);for(const id of ["editGridVertical","editGridHorizontal"]){const input=$(id);if(input)input.addEventListener("keydown",event=>{if(event.key==="Enter"){event.preventDefault();applyMultiProps()}})}
