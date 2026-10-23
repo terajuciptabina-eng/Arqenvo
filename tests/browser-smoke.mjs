@@ -89,6 +89,12 @@ try {
     "Continuous wall must not auto-close when cursor returns near its first point");
   await page.keyboard.press("Enter");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  const committedWallCount = await page.evaluate(() => JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.filter(el => el.type === "wall").length || 0);
+  await page.mouse.move(cx + 260, cy + 260);
+  await page.waitForTimeout(100);
+  const afterEnterWallCount = await page.evaluate(() => JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.filter(el => el.type === "wall").length || 0);
+  assert.equal(afterEnterWallCount, committedWallCount,
+    "Moving the cursor after Enter must not continue or append wall geometry");
   // Enter finishes an open chain without adding a closing segment.
   await page.mouse.click(cx + 150, cy + 140);
   await page.mouse.click(cx + 230, cy + 140);
