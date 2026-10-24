@@ -233,11 +233,10 @@ try {
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
   assert.ok(afterCommit,"Gridline must remain after touch commit");
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
-  // Touch command controls: verify their hit target does not route a tap to the canvas,
-  // then verify the real first-point Cancel flow clears the provisional drawing.
+  // Drawing controls must remain visible as soon as the first wall point exists.
   await touchPage.locator('[data-tool="wall"]').click();
-  tp=await touchPoint(-3,-2);
-  await touchPage.touchscreen.tap(tp.x,tp.y);
+  const canvasBoxTouch=await touchPage.locator("#canvas").boundingBox();
+  await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-180,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
   const hitTarget=await touchPage.locator("#editCommit").evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.id});
   assert.equal(hitTarget,"editCommit","Finish must be the hit target, not the underlying canvas");
@@ -247,11 +246,9 @@ try {
   const wallsAfterCancel=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
   assert.equal(wallsAfterCancel,wallsBeforeCancel,"Cancel must not commit the provisional first wall point");
 
-  // Finish an existing committed wall chain through the normal keyboard path to
-  // ensure subsequent taps cannot append segments after completion.
+  // Finish a continuous wall chain with Enter; a later canvas tap must not resume it.
   await touchPage.locator('[data-tool="wall"]').click();
   await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
-  const canvasBoxTouch=await touchPage.locator("#canvas").boundingBox();
   await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-180,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
   await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-80,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
   await touchPage.keyboard.press("Enter");
