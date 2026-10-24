@@ -497,14 +497,6 @@ try {
   const movedRoof=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
   assert.ok(movedRoof.boundary[0].x!==roofResult.boundary[0].x||movedRoof.boundary[0].y!==roofResult.boundary[0].y,`A selected Roof vertex should be editable; before=${JSON.stringify(roofResult.boundary[0])}, after=${JSON.stringify(movedRoof.boundary[0])}, status=${await roofPage.locator("#status").textContent()}, handle=${JSON.stringify(handleHit)}`);
 
-  assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
-  console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
-} finally {
-  await browser.close();
-  await new Promise(resolve => server.close(resolve));
-}
-
-
   // Regression: Enter confirmation is idempotent and never appends an extra point after commit.
   const enterPage=await browser.newPage({viewport:{width:1100,height:800}});
   enterPage.setDefaultTimeout(8000);
@@ -529,3 +521,10 @@ try {
   assert.ok(["No selection",""].includes((enterAfter.selection||"").trim()),"Confirmation must clear element selection");
   assert.equal(enterAfter.active,false,"Confirmation must end the active drawing state");
   await enterPage.close();
+
+  assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
+  console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
+} finally {
+  await browser.close();
+  await new Promise(resolve => server.close(resolve));
+}
