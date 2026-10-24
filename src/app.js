@@ -544,8 +544,14 @@ function commitAndDeselect(reason="Enter"){
   $("status").textContent=elementTool.charAt(0).toUpperCase()+elementTool.slice(1)+" drawing committed";committed=true;
  }else committed=finishActiveDrawing(reason);
  if(!committed)return false;
- clearSelection();releasedTouchEditPending=false;releasedTouchEditSnapshot=null;releasedTouchEditKind=null;
- renderProperties();redraw();updateEditActions();return true;
+ releasedTouchEditPending=false;releasedTouchEditSnapshot=null;releasedTouchEditKind=null;
+ clearSelection();
+ renderProperties();
+ const info=$("selectionInfo");
+ if(info)info.textContent="No selection";
+ const count=$("contextSelectionCount");
+ if(count)count.textContent="0 elements";
+ redraw();updateEditActions();return true;
 }
 window.addEventListener("keydown",e=>{
  if(e.key==="Enter"&&!/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName||"")&&!e.target?.isContentEditable&&!pendingGridSystem&&(activeEditGesture()||releasedTouchEditPending||pendingOpeningPlacement||hasActiveDrawing()||provisionalDrawingActive||(view==="3d"&&draft.length>0))){

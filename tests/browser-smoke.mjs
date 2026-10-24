@@ -439,7 +439,7 @@ try {
   await confirmPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
   await confirmPoint(6,4);
   await confirmPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
-  await confirmPage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent==="No selection");
+  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Blank paper commit must synchronize the Info Box");
   await confirmPage.close();
 
   const {openingPlacementDirection}=await import("../src/core/authoring.js");
