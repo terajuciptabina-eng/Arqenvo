@@ -313,14 +313,14 @@ try {
   await modelPoint(0, wallY);
   const openingPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
   assert.equal(openingPreview?.anchor,"center","Opening preview should preserve the chosen Center anchor mode");
-  assert.ok(Math.abs((openingPreview?.offset||0)+ (openingPreview?.width||0)/2)<0.2,`Center anchor should align opening midpoint with initial click; preview=${JSON.stringify(openingPreview)}, diagnostics=${JSON.stringify(await openingPage.evaluate(()=>window.__arqenvoDebug?.getSettings()))}`);
+  assert.ok(Math.abs((openingPreview?.offset||0)+ (openingPreview?.width||0)/2-4)<0.2,`Center anchor should align the opening midpoint with x=0, which is 4 m from the host wall start at x=-4; preview=${JSON.stringify(openingPreview)}, diagnostics=${JSON.stringify(await openingPage.evaluate(()=>window.__arqenvoDebug?.getSettings()))}`);
   await modelPoint(0, wallY + .8, "move");
   await modelPoint(1.7, wallY + 1.2); // Blank paper click confirms cursor-selected opening orientation.
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.waitForFunction(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return !!(els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door"))},{},{timeout:3000});
   const placedDoor=await openingPage.evaluate(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door")});
   assert.ok(placedDoor,"Door should be stored after a paper-space confirmation click");
-  assert.ok(Math.abs((placedDoor.offset+placedDoor.width/2)-0)<0.2,`Default Center anchor should centre the opening at the first clicked wall position x=0; found midpoint=${placedDoor.offset+placedDoor.width/2}, offset=${placedDoor.offset}, width=${placedDoor.width}`);
+  assert.ok(Math.abs((placedDoor.offset+placedDoor.width/2)-4)<0.2,`Default Center anchor should centre the opening at x=0 (4 m along a wall starting at x=-4); found distance from wall start=${placedDoor.offset+placedDoor.width/2}, offset=${placedDoor.offset}, width=${placedDoor.width}`);
   assert.equal(placedDoor.swingDirection,"inside","Cursor placed on the positive side of the wall should choose inside swing");
   // Anchor selector exposes usable edge modes and keeps Center as the default.
   await openingPage.locator("#openingAlignment").selectOption("left");
