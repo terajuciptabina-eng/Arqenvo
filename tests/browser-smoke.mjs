@@ -471,14 +471,16 @@ try {
   await roofPoint(0,0);
   await roofPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="roof")).catch(async error=>{throw new Error(`Magic Wand roof failed: status="${await roofPage.locator("#status").textContent()}"; tool="${await roofPage.locator("#toolName").inputValue()}"; stored=${JSON.stringify(await roofPage.evaluate(()=>({walls:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").map(w=>({start:w.start,end:w.end})),allTypes:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.map(e=>e.type)})))}; ${error.message}`)});
   const roofResult=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
-  // Manual Roof regression: select Roof, place a four-point footprint and confirm with Enter.
+  // Manual Roof regression: set offset before drawing, then create a four-point footprint.
   await roofPage.locator('[data-tool="roof"]').click();
+  await roofPage.locator("#roofOffset").fill("1.25");
   const manualRoofPoints=[[-2.5,-1.5],[2.5,-1.5],[2.5,1.5],[-2.5,1.5]];
   for(const [wx,wy] of manualRoofPoints) await roofPoint(wx,wy);
   await roofPage.keyboard.press("Enter");
-  await roofPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="roof").length===2).catch(async error=>{throw new Error(`Manual Roof did not commit: status="${await roofPage.locator("#status").textContent()}"; draft=${JSON.stringify(await roofPage.evaluate(()=>window.__arqenvoViewport||null))}; ${error.message}`)});
+  await roofPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="roof").length===2).catch(async error=>{throw new Error(`Manual Roof did not commit: status="${await roofPage.locator("#status").textContent()}"; ${error.message}`)});
   const manuallyCreatedRoof=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="roof")[1]);
   assert.equal(manuallyCreatedRoof.boundary.length,4,"Manual Roof must retain the four clicked footprint points");
+  assert.equal(manuallyCreatedRoof.offset,1.25,"Manual Roof must retain the pre-creation offset");
   assert.equal(manuallyCreatedRoof.sourceWallIds.length,0,"Manually drawn Roof must not pretend to be wall-linked");
 
   assert.equal(roofResult.boundary.length,4,"Magic Wand should generate a roof that follows the closed wall footprint");
@@ -533,17 +535,22 @@ try {
   assert.equal(enterAfter.active,false,"Confirmation must end the active drawing state");
   await enterPage.close();
 
-  // Roof parameters are editable from the selected element Properties panel.
+  // Roof parameters, including vertical Offset, are editable after creation.
   await roofPage.locator('[data-tool="select"]').click();
   await roofPage.waitForTimeout(50);
-  const roofCenterPoint=await roofPage.evaluate(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");const c=document.querySelector("#canvas"),b=c.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:b.left+c.clientWidth/2+(t?.origin.x||0)+(r.boundary.reduce((s,p)=>s+p.x,0)/r.boundary.length)*(t?.scale||36),y:b.top+c.clientHeight/2+(t?.origin.y||0)-(r.boundary.reduce((s,p)=>s+p.y,0)/r.boundary.length)*(t?.scale||36)}});
+  const roofCenterPoint=await roofPage.evaluate(()=>{const c=document.querySelector("#canvas"),b=c.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:b.left+c.clientWidth/2+(t?.origin.x||0),y:b.top+c.clientHeight/2+(t?.origin.y||0)}});
   await roofPage.mouse.click(roofCenterPoint.x,roofCenterPoint.y);
   await roofPage.waitForFunction(()=>document.querySelector('#elementProperties input[readonly]')?.value?.toLowerCase().includes("roof"));
   await roofPage.locator('#elementProperties [data-prop="pitch"]').fill("25");
   await roofPage.locator('#elementProperties [data-prop="elevation"]').fill("3.4");
+  await roofPage.locator('#elementProperties [data-prop="offset"]').fill("2.75");
   await roofPage.locator('#elementProperties [data-prop="thickness"]').fill("0.22");
   await roofPage.locator("#applyProps").click();
-  await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return r?.pitch===25&&r?.elevation===3.4&&r?.thickness===.22});
+  await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return r?.pitch===25&&r?.elevation===3.4&&r?.offset===2.75&&r?.thickness===.22});
+  // Verify the same offset changes the 3D roof base elevation.
+  await roofPage.locator("#threeTab").click();
+  const baseZ=await roofPage.evaluate(()=>{const p=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}"),roof=p.elements.find(e=>e.type==="roof");return (p.stories.find(s=>s.id===roof.storyId)?.elevation||0)+roof.elevation+roof.offset});
+  assert.equal(baseZ,6.15,"Roof Offset must add to the roof's base Z elevation");
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
 } finally {
