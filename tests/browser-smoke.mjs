@@ -431,7 +431,7 @@ try {
   await roofPage.mouse.up();
   await roofPage.waitForTimeout(150);
   const movedRoof=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
-  assert.ok(movedRoof.boundary[0].x!==roofResult.boundary[0].x||movedRoof.boundary[0].y!==roofResult.boundary[0].y,"A selected Roof vertex should be editable");
+  assert.ok(movedRoof.boundary[0].x!==roofResult.boundary[0].x||movedRoof.boundary[0].y!==roofResult.boundary[0].y,`A selected Roof vertex should be editable; before=${JSON.stringify(roofResult.boundary[0])}, after=${JSON.stringify(movedRoof.boundary[0])}, status=${await roofPage.locator("#status").textContent()}, cursor=${JSON.stringify(vertexScreen)}`);
 
 
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
