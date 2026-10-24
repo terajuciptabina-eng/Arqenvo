@@ -217,9 +217,10 @@ try {
   // is used only to move/release that already-registered pointer because Playwright touchscreen.tap is tap-only.
   await c.dispatchEvent("pointerdown",{pointerId:5101,pointerType:"touch",clientX:startPoint.x,clientY:startPoint.y,button:0,buttons:1,bubbles:true});
   await c.dispatchEvent("pointermove",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:1,bubbles:true});
-  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
+  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent?.includes("Gridline selected"));
   // Releasing the registered touch pointer must preserve the explicit finish choice.
   await c.dispatchEvent("pointerup",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:0,bubbles:true});
+  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true");
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true");
   assert.equal(await touchPage.locator("#editActions").isVisible(),true,"Finish/Cancel must remain visible after touch release");
   assert.equal(await touchPage.locator("#editCommit b").textContent(),"Finish","Finish label must be English");
