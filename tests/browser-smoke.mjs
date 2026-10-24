@@ -421,7 +421,7 @@ try {
   await roofPage.locator("#floorTab").click();
   await roofPage.locator('[data-tool="select"]').click();
   const roofCenter=await roofPage.evaluate(()=>{const roof=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return{x:roof.boundary.reduce((s,p)=>s+p.x,0)/roof.boundary.length,y:roof.boundary.reduce((s,p)=>s+p.y,0)/roof.boundary.length}});
-  await roofPoint(roofCenter.x,roofCenter.y);
+  await roofPoint(roofCenter.x*0.6+roofResult.boundary[0].x*0.4,roofCenter.y*0.6+roofResult.boundary[0].y*0.4);
   await roofPage.waitForFunction(()=>document.querySelector("#elementProperties input[readonly]")?.value?.toLowerCase().includes("roof"));
   const roofCanvas=await roofPage.locator("#canvas").boundingBox();
   const vertexScreen=await roofPage.evaluate(()=>{const roof=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"),p=roof.boundary[0],cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+p.x*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-p.y*(t?.scale||36)}});
