@@ -206,10 +206,13 @@ try {
   const projectElements = async () => touchPage.evaluate(() => JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[]);
   const actionsVisible = async () => touchPage.locator("#editActions").evaluate(el => !el.hidden && el.getAttribute("aria-hidden")!=="true");
   const pointerSequence = async (startPt,endPt,pointerId) => {
-    const canvas=touchPage.locator("#canvas");
-    await canvas.dispatchEvent("pointerdown",{pointerId,pointerType:"touch",clientX:startPt.x,clientY:startPt.y,button:0,buttons:1,bubbles:true});
-    await canvas.dispatchEvent("pointermove",{pointerId,pointerType:"touch",clientX:endPt.x,clientY:endPt.y,button:0,buttons:1,bubbles:true});
-    await canvas.dispatchEvent("pointerup",{pointerId,pointerType:"touch",clientX:endPt.x,clientY:endPt.y,button:0,buttons:0,bubbles:true});
+    await touchPage.evaluate(({startPt,endPt,pointerId}) => {
+      const canvas=document.querySelector("#canvas");
+      const init={pointerId,pointerType:"touch",button:0,bubbles:true,cancelable:true};
+      canvas.dispatchEvent(new PointerEvent("pointerdown",{...init,clientX:startPt.x,clientY:startPt.y,buttons:1}));
+      canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPt.x,clientY:endPt.y,buttons:1}));
+      canvas.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPt.x,clientY:endPt.y,buttons:0}));
+    },{startPt,endPt,pointerId});
   };
 
   // Existing element edit: release must not hide actions; Finish then commits.
