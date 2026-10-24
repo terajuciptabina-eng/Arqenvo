@@ -221,7 +221,7 @@ try {
     canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPoint.x,clientY:endPoint.y,buttons:1}));
     canvas.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPoint.x,clientY:endPoint.y,buttons:0}));
   },{startPoint,endPoint});
-  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true");
+  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true").catch(async error=>{throw new Error(`Touch release did not enter pending completion: status="${await touchPage.locator("#status").textContent()}"; actions=${JSON.stringify(await touchPage.locator("#editActions").evaluate(el=>({hidden:el.hidden,pending:el.dataset.pendingTouchCompletion,aria:el.getAttribute("aria-hidden")})))}; state=${JSON.stringify(await touchPage.evaluate(()=>({pointer:window.__arqenvoTouchState||null,gridlineCount:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="gridline").length})))}; ${error.message}`)});
   assert.equal(await touchPage.locator("#editActions").isVisible(),true,"Finish/Cancel must remain visible after touch release");
   assert.equal(await touchPage.locator("#editCommit b").textContent(),"Finish","Finish label must be English");
   assert.equal(await touchPage.locator("#editCancel b").textContent(),"Cancel","Cancel label must be English");
