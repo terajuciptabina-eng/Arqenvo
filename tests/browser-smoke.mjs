@@ -416,23 +416,21 @@ try {
   await roofPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
   assert.ok(await roofPage.locator("#canvas").evaluate(canvas=>canvas.width>0&&canvas.height>0),"3D canvas should remain available after roof generation");
 
-  // After Roof is created, select it in Floor Plan, confirm only its four
-  // boundary points are visible, and drag one selected vertex.
+  // After Roof is created, the four boundary points are visible and editable.
   await roofPage.locator("#floorTab").click();
   await roofPage.locator('[data-tool="select"]').click();
   const roofCenter=await roofPage.evaluate(()=>{const roof=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return{x:roof.boundary.reduce((s,p)=>s+p.x,0)/roof.boundary.length,y:roof.boundary.reduce((s,p)=>s+p.y,0)/roof.boundary.length}});
   await roofPoint(roofCenter.x*0.6+roofResult.boundary[0].x*0.4,roofCenter.y*0.6+roofResult.boundary[0].y*0.4);
   await roofPage.waitForFunction(()=>document.querySelector("#elementProperties input[readonly]")?.value?.toLowerCase().includes("roof"));
-  const roofCanvas=await roofPage.locator("#canvas").boundingBox();
   const vertexScreen=await roofPage.evaluate(()=>{const roof=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"),p=roof.boundary[0],cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+p.x*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-p.y*(t?.scale||36)}});
   await roofPage.mouse.move(vertexScreen.x,vertexScreen.y);
+  const handleHit=await roofPage.evaluate(({x,y})=>{const c=document.querySelector("#canvas"),r=c.getBoundingClientRect(),px=x-r.left,py=y-r.top,ctx=c.getContext("2d");return {x:px,y:py,selected:document.querySelector("#selectionInfo")?.textContent,viewport:window.__arqenvoViewport||null}},vertexScreen);
   await roofPage.mouse.down();
-  await roofPage.mouse.move(vertexScreen.x+12,vertexScreen.y+8);
+  await roofPage.mouse.move(vertexScreen.x+28,vertexScreen.y+22);
   await roofPage.mouse.up();
-  await roofPage.waitForTimeout(150);
+  await roofPage.waitForTimeout(200);
   const movedRoof=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
-  assert.ok(movedRoof.boundary[0].x!==roofResult.boundary[0].x||movedRoof.boundary[0].y!==roofResult.boundary[0].y,`A selected Roof vertex should be editable; before=${JSON.stringify(roofResult.boundary[0])}, after=${JSON.stringify(movedRoof.boundary[0])}, status=${await roofPage.locator("#status").textContent()}, cursor=${JSON.stringify(vertexScreen)}`);
-
+  assert.ok(movedRoof.boundary[0].x!==roofResult.boundary[0].x||movedRoof.boundary[0].y!==roofResult.boundary[0].y,`A selected Roof vertex should be editable; before=${JSON.stringify(roofResult.boundary[0])}, after=${JSON.stringify(movedRoof.boundary[0])}, status=${await roofPage.locator("#status").textContent()}, handle=${JSON.stringify(handleHit)}`);
 
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
