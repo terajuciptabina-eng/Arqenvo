@@ -449,6 +449,28 @@ try {
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:1}),"inside","Cursor above a horizontal wall chooses inside swing");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:-1}),"outside","Cursor below a horizontal wall chooses outside swing");
 
+  // Mobile/tablet Touch: Magic Wand one-shot and 3D zoom buttons.
+  const mobilePage=await browser.newPage({viewport:{width:820,height:1180},hasTouch:true,isMobile:true});
+  mobilePage.setDefaultTimeout(8000);mobilePage.on("pageerror",error=>pageErrors.push(error.message));
+  await mobilePage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await mobilePage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  assert.equal(await mobilePage.locator("#mobileMagicWand").isVisible(),true,"Touch layout should show a visible Magic Wand shortcut");
+  await mobilePage.locator('[data-tool="wall"]').click();
+  await mobilePage.locator("#mobileMagicWand").click();
+  assert.equal(await mobilePage.locator("#toolName").inputValue(),"magicwand","Touch Magic Wand button should activate the tool");
+  assert.equal(await mobilePage.locator("#mobileMagicWand").getAttribute("aria-pressed"),"true","Magic Wand touch control should expose active state");
+  await mobilePage.locator("#threeTab").click();
+  await mobilePage.waitForFunction(()=>window.__arqenvoDebug?.getView()==="3d");
+  assert.equal(await mobilePage.locator("#mobile3dZoom").isVisible(),true,"3D touch zoom controls should be visible in 3D mode");
+  const zoomBefore=await mobilePage.evaluate(()=>window.__arqenvoDebug?.getZoom());
+  await mobilePage.locator("#mobile3dZoomIn").click();
+  const zoomAfterIn=await mobilePage.evaluate(()=>window.__arqenvoDebug?.getZoom());
+  assert.ok(zoomAfterIn>zoomBefore,"Mobile 3D zoom-in should increase camera zoom");
+  await mobilePage.locator("#mobile3dZoomOut").click();
+  const zoomAfterOut=await mobilePage.evaluate(()=>window.__arqenvoDebug?.getZoom());
+  assert.ok(zoomAfterOut<zoomAfterIn,"Mobile 3D zoom-out should decrease camera zoom");
+  await mobilePage.close();
+
   // Space temporarily activates Magic Wand and restores the prior tool on release.
   const spacePage=await browser.newPage({viewport:{width:1100,height:800}});
   spacePage.setDefaultTimeout(8000);
