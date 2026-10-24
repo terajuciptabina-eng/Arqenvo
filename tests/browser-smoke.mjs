@@ -279,7 +279,7 @@ try {
   // on the canvas margin, not a synthetic event that bypasses Playwright's mouse input.
   const canvasBox = await openingPage.locator("#canvas").boundingBox();
   await openingPage.mouse.click(canvasBox.x + canvasBox.width - 24, canvasBox.y + 24);
-  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection" || (document.querySelector("#status")?.textContent||"").includes("No element"));
+  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.includes("No selection") || !(document.querySelector("#elementProperties input[readonly]")));
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Click the visible Door swing arc in screen coordinates derived from the real host wall.
   // Include current model geometry in a failure report so browser automation identifies the actual hit-test result.
