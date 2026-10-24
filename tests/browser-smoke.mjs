@@ -431,7 +431,7 @@ try {
   await confirmPage.locator('[data-tool="select"]').click();
   const wallMid=await confirmPage.evaluate(()=>{const wall=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall");const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+(wall.start.x+wall.end.x)/2*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-(wall.start.y+wall.end.y)/2*(t?.scale||36)}});
   await confirmPage.mouse.click(wallMid.x,wallMid.y);
-  await confirmPage.waitForFunction(()=>document.querySelector("#elementProperties input[readonly]")?.value?.toLowerCase().includes("wall ·"));
+  await confirmPage.waitForFunction(()=>document.querySelector("#elementProperties input[readonly]")?.value?.toLowerCase().includes("wall")).catch(async error=>{throw new Error(`Wall selection failed at ${JSON.stringify(await confirmPage.evaluate(()=>({canvas:document.querySelector("#canvas").getBoundingClientRect().toJSON(),info:document.querySelector("#selectionInfo")?.textContent,props:document.querySelector("#elementProperties")?.textContent,status:document.querySelector("#status")?.textContent,wall:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall"),viewport:window.__arqenvoViewport})))}; ${error.message}`)});
   await confirmPage.mouse.move(wallMid.x,wallMid.y);
   await confirmPage.mouse.down();
   await confirmPage.mouse.move(wallMid.x+24,wallMid.y+12,{steps:4});
