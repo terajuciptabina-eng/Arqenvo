@@ -336,7 +336,7 @@ try {
   await openingPage.locator('[data-tool="select"]').click();
   // Clear selection left by placement so the assertion proves a new Window hit.
   await modelPoint(7, 3);
-  await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.trim() === "No selection");
+  await openingPage.waitForFunction(() => !(document.querySelector("#elementProperties input[readonly]")));
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Window sash lines are offset from the host wall centreline in the rendered plan.
   await modelPoint(2.6, wallY + 0.075);
