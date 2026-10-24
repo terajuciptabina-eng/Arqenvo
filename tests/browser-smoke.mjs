@@ -309,14 +309,32 @@ try {
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("committed") || document.querySelector("#undo")?.disabled === false);
   await openingPage.locator('[data-tool="door"]').click();
+  assert.equal(await openingPage.locator("#openingAlignment").inputValue(),"center","Door anchor should default to Center");
   await modelPoint(0, wallY);
+  const openingPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
+  assert.equal(openingPreview?.anchor,"center","Opening preview should preserve the chosen Center anchor mode");
+  assert.ok(Math.abs((openingPreview?.offset||0)+ (openingPreview?.width||0)/2-4)<0.2,`Center anchor should align the opening midpoint with x=0, which is 4 m from the host wall start at x=-4; preview=${JSON.stringify(openingPreview)}, diagnostics=${JSON.stringify(await openingPage.evaluate(()=>window.__arqenvoDebug?.getSettings()))}`);
   await modelPoint(0, wallY + .8, "move");
   await modelPoint(1.7, wallY + 1.2); // Blank paper click confirms cursor-selected opening orientation.
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
   await openingPage.waitForFunction(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return !!(els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door"))},{},{timeout:3000});
   const placedDoor=await openingPage.evaluate(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door")});
   assert.ok(placedDoor,"Door should be stored after a paper-space confirmation click");
+  assert.ok(Math.abs((placedDoor.offset+placedDoor.width/2)-4)<0.2,`Default Center anchor should centre the opening at x=0 (4 m along a wall starting at x=-4); found distance from wall start=${placedDoor.offset+placedDoor.width/2}, offset=${placedDoor.offset}, width=${placedDoor.width}`);
   assert.equal(placedDoor.swingDirection,"inside","Cursor placed on the positive side of the wall should choose inside swing");
+  // Anchor selector exposes usable edge modes and keeps Center as the default.
+  await openingPage.locator("#openingAlignment").selectOption("left");
+  await modelPoint(1, wallY);
+  const leftPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
+  assert.equal(leftPreview?.offset,0,"Left edge anchor should start the opening at the host-wall start");
+  await openingPage.keyboard.press("Escape");
+  await openingPage.locator("#openingAlignment").selectOption("right");
+  await modelPoint(1, wallY);
+  const rightPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
+  assert.ok(Math.abs((rightPreview?.offset||0)+ (rightPreview?.width||0)-8)<1e-6,"Right edge anchor should end the opening at the host-wall end");
+  await openingPage.keyboard.press("Escape");
+  await openingPage.locator("#openingAlignment").selectOption("center");
+
   await openingPage.locator('[data-tool="select"]').click();
   // Clear any selection left by placement using a genuine browser pointer sequence
   // on the canvas margin, not a synthetic event that bypasses Playwright's mouse input.
@@ -448,6 +466,28 @@ try {
   const {openingPlacementDirection}=await import("../src/core/authoring.js");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:1}),"inside","Cursor above a horizontal wall chooses inside swing");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:-1}),"outside","Cursor below a horizontal wall chooses outside swing");
+
+  // Mobile/tablet Touch: Magic Wand one-shot and 3D zoom buttons.
+  const mobilePage=await browser.newPage({viewport:{width:820,height:1180},hasTouch:true,isMobile:true});
+  mobilePage.setDefaultTimeout(8000);mobilePage.on("pageerror",error=>pageErrors.push(error.message));
+  await mobilePage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await mobilePage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  assert.equal(await mobilePage.locator("#mobileMagicWand").isVisible(),true,"Touch layout should show a visible Magic Wand shortcut");
+  await mobilePage.locator('[data-tool="wall"]').click();
+  await mobilePage.locator("#mobileMagicWand").click();
+  assert.equal(await mobilePage.locator("#toolName").inputValue(),"magicwand","Touch Magic Wand button should activate the tool");
+  assert.equal(await mobilePage.locator("#mobileMagicWand").getAttribute("aria-pressed"),"true","Magic Wand touch control should expose active state");
+  await mobilePage.locator("#threeTab").click();
+  await mobilePage.waitForFunction(()=>window.__arqenvoDebug?.getView()==="3d");
+  assert.equal(await mobilePage.locator("#mobile3dZoom").isVisible(),true,"3D touch zoom controls should be visible in 3D mode");
+  const zoomBefore=await mobilePage.evaluate(()=>window.__arqenvoDebug?.getZoom());
+  await mobilePage.locator("#mobile3dZoomIn").click();
+  const zoomAfterIn=await mobilePage.evaluate(()=>window.__arqenvoDebug?.getZoom());
+  assert.ok(zoomAfterIn>zoomBefore,"Mobile 3D zoom-in should increase camera zoom");
+  await mobilePage.locator("#mobile3dZoomOut").click();
+  const zoomAfterOut=await mobilePage.evaluate(()=>window.__arqenvoDebug?.getZoom());
+  assert.ok(zoomAfterOut<zoomAfterIn,"Mobile 3D zoom-out should decrease camera zoom");
+  await mobilePage.close();
 
   // Space temporarily activates Magic Wand and restores the prior tool on release.
   const spacePage=await browser.newPage({viewport:{width:1100,height:800}});
