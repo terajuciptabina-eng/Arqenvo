@@ -317,8 +317,21 @@ try {
   await openingPage.waitForFunction(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return !!(els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door"))},{},{timeout:3000});
   const placedDoor=await openingPage.evaluate(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door")});
   assert.ok(placedDoor,"Door should be stored after a paper-space confirmation click");
-  assert.ok(Math.abs((placedDoor.offset+placedDoor.width/2))<0.2,`Default Center anchor should center a new Door around the clicked wall position; found offset=${placedDoor.offset}, width=${placedDoor.width}`);
+  assert.ok(Math.abs((placedDoor.offset+placedDoor.width/2)-0)<0.2,`Default Center anchor should centre the opening at the first clicked wall position x=0; found midpoint=${placedDoor.offset+placedDoor.width/2}, offset=${placedDoor.offset}, width=${placedDoor.width}`);
   assert.equal(placedDoor.swingDirection,"inside","Cursor placed on the positive side of the wall should choose inside swing");
+  // Anchor selector exposes usable edge modes and keeps Center as the default.
+  await openingPage.locator("#openingAlignment").selectOption("left");
+  await modelPoint(1, wallY);
+  const leftPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
+  assert.equal(leftPreview?.offset,0,"Left edge anchor should start the opening at the host-wall start");
+  await openingPage.keyboard.press("Escape");
+  await openingPage.locator("#openingAlignment").selectOption("right");
+  await modelPoint(1, wallY);
+  const rightPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
+  assert.ok(Math.abs((rightPreview?.offset||0)+ (rightPreview?.width||0)-8)<1e-6,"Right edge anchor should end the opening at the host-wall end");
+  await openingPage.keyboard.press("Escape");
+  await openingPage.locator("#openingAlignment").selectOption("center");
+
   await openingPage.locator('[data-tool="select"]').click();
   // Clear any selection left by placement using a genuine browser pointer sequence
   // on the canvas margin, not a synthetic event that bypasses Playwright's mouse input.
