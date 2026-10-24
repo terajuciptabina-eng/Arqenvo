@@ -408,7 +408,30 @@ try {
 
   
 
-// Roof/Magic Wand end-to-end: draw a closed wall footprint, confirm, then
+// Confirmation semantics: Enter clears the selected element; blank canvas confirms a move.
+  const confirmPage=await browser.newPage({viewport:{width:1280,height:900}});
+  confirmPage.setDefaultTimeout(8000);
+  await confirmPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await confirmPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await confirmPage.locator("#snapToggle").click();
+  await confirmPage.locator("#gridQuick").selectOption("0.1");
+  await confirmPage.locator('[data-tool="wall"]').click();
+  await confirmPage.locator("#wallGeometryMethod").selectOption("single");
+  const confirmPoint=async(wx,wy)=>{const pt=await confirmPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await confirmPage.mouse.click(pt.x,pt.y)};
+  await confirmPoint(-2,-1);await confirmPoint(2,-1);
+  await confirmPage.locator('[data-tool="select"]').click();
+  const wallMid=await confirmPage.evaluate(()=>{const wall=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="wall"),cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+(wall.start.x+wall.end.x)/2*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-(wall.start.y+wall.end.y)/2*(t?.scale||36)}});
+  await confirmPage.mouse.click(wallMid.x,wallMid.y);
+  await confirmPage.keyboard.press("Enter");
+  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent==="Element edit committed"||document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  assert.equal(await confirmPage.evaluate(()=>document.querySelector("#selectionInfo")?.textContent?.includes("No selection")||!document.querySelector("#elementProperties input[readonly]")),true,"Enter confirmation must clear element selection");
+  await confirmPage.close();
+
+  const {openingPlacementDirection}=await import("../src/core/authoring.js");
+  assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:1}),"inside","Cursor above a horizontal wall chooses inside swing");
+  assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:-1}),"outside","Cursor below a horizontal wall chooses outside swing");
+
+  // Roof/Magic Wand end-to-end: draw a closed wall footprint, confirm, then
   // generate a persistent roof from the reference loop and ensure Enter cleared selection.
   const roofPage=await browser.newPage({viewport:{width:1280,height:900}});
   roofPage.setDefaultTimeout(8000);
