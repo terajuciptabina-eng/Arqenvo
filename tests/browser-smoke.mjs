@@ -253,11 +253,11 @@ try {
   await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
   const canvasBoxTouch=await touchPage.locator("#canvas").boundingBox();
   await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-180,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
-  await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-80,canvasBox.y+canvasBox.height/2+100);
+  await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-80,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
   await touchPage.keyboard.press("Enter");
   await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
   const committedWalls=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
-  await touchPage.locator("#canvas").click({position:{x:canvasBox.width/2+100,y:canvasBox.height/2+100}});
+  await touchPage.locator("#canvas").click({position:{x:canvasBoxTouch.width/2+100,y:canvasBoxTouch.height/2+100}});
   assert.equal(await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0),committedWalls,"A tap after Finish must not append wall geometry");
 
   await touchPage.close();
