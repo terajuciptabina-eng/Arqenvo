@@ -313,7 +313,7 @@ try {
   await modelPoint(0, wallY);
   const openingPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
   assert.equal(openingPreview?.anchor,"center","Opening preview should preserve the chosen Center anchor mode");
-  assert.ok(Math.abs((openingPreview?.offset||0)+ (openingPreview?.width||0)/2)<0.2,"Center anchor should align opening midpoint with the initial click position");
+  assert.ok(Math.abs((openingPreview?.offset||0)+ (openingPreview?.width||0)/2)<0.2,`Center anchor should align opening midpoint with initial click; preview=${JSON.stringify(openingPreview)}, diagnostics=${JSON.stringify(await openingPage.evaluate(()=>window.__arqenvoDebug?.getSettings()))}`);
   await modelPoint(0, wallY + .8, "move");
   await modelPoint(1.7, wallY + 1.2); // Blank paper click confirms cursor-selected opening orientation.
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
