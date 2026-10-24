@@ -633,9 +633,12 @@ for(const id of ["trackerDistance","trackerAngle"]){$(id).addEventListener("keyd
 document.addEventListener("pointerdown",event=>{
  if(c.contains(event.target)||event.target.closest("#editActions,.menu,.context-toolbar,.top,#toolbox,.tabs,.quick-options,.inspector,#dynamicTracker"))return;
  if(pendingGridSystem)return;
+ // Do not treat clicks on descendants of the drawing workspace as an outside click.
+ // Pointer selection is handled by the canvas listener; this guard prevents unrelated
+ // descendants from cancelling a pending Door/Window placement before hit testing.
+ if(event.target.closest(".workspace,.canvaswrap,#canvas"))return;
  if(releasedTouchEditPending||activeEditGesture()||pendingOpeningPlacement||hasActiveDrawing()){
   const outsideTarget=event.target;
-  // Switching tools is a deliberate command, not a paper-space confirmation gesture.
   if(outsideTarget.closest("[data-tool],[data-tool-command],#wallGeometryMethod,#contextToolbar"))return;
   commitAndDeselect("Outside click");
  }
