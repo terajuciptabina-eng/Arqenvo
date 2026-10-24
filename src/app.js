@@ -646,8 +646,8 @@ $("gridToggle").addEventListener("click",e=>{gridVisible=!gridVisible;e.currentT
 const zoomCamera3d=factor=>{camera3d.zoom=Math.max(.2,Math.min(5,camera3d.zoom*factor));redraw();updateZoomReadout()};
 $("zoomIn").addEventListener("click",()=>{if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before zooming";return}if(view==="3d")zoomCamera3d(1.15);else scale=Math.min(180,scale*1.15);redraw();updateZoomReadout()});
 $("zoomOut").addEventListener("click",()=>{if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before zooming";return}if(view==="3d")zoomCamera3d(1/1.15);else scale=Math.max(1,scale/1.15);redraw();updateZoomReadout()});
-$("mobileZoomIn")?.addEventListener("click",()=>{if(view==="3d")zoomCamera3d(1.2)});
-$("mobileZoomOut")?.addEventListener("click",()=>{if(view==="3d")zoomCamera3d(1/1.2)});
+$("mobileZoomIn")?.addEventListener("click",()=>{setView("3d");zoomCamera3d(1.2)});
+$("mobileZoomOut")?.addEventListener("click",()=>{setView("3d");zoomCamera3d(1/1.2)});
 $("zoomFit").addEventListener("click",fitFloorPlan);
 $("scaleSelect").value=String(scale);syncGridOptions();updateZoomReadout();
 window.addEventListener("beforeunload",()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch{}});
