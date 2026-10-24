@@ -522,6 +522,17 @@ try {
   assert.equal(enterAfter.active,false,"Confirmation must end the active drawing state");
   await enterPage.close();
 
+  // Roof parameters are editable from the selected element Properties panel.
+  await roofPage.locator('[data-tool="select"]').click();
+  await roofPage.waitForTimeout(50);
+  const roofCenterPoint=await roofPage.evaluate(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");const c=document.querySelector("#canvas"),b=c.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:b.left+c.clientWidth/2+(t?.origin.x||0)+(r.boundary.reduce((s,p)=>s+p.x,0)/r.boundary.length)*(t?.scale||36),y:b.top+c.clientHeight/2+(t?.origin.y||0)-(r.boundary.reduce((s,p)=>s+p.y,0)/r.boundary.length)*(t?.scale||36)}});
+  await roofPage.mouse.click(roofCenterPoint.x,roofCenterPoint.y);
+  await roofPage.waitForFunction(()=>document.querySelector('#elementProperties input[readonly]')?.value?.toLowerCase().includes("roof"));
+  await roofPage.locator('#elementProperties [data-prop="pitch"]').fill("25");
+  await roofPage.locator('#elementProperties [data-prop="elevation"]').fill("3.4");
+  await roofPage.locator('#elementProperties [data-prop="thickness"]').fill("0.22");
+  await roofPage.locator("#applyProps").click();
+  await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return r?.pitch===25&&r?.elevation===3.4&&r?.thickness===.22});
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
 } finally {
