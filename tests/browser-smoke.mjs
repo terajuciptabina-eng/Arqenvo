@@ -193,7 +193,7 @@ try {
   await gridPage.close();
 
 
-  // Touch devices commit a real dragged Gridline using the on-canvas Selesai control.
+  // Touch users must be able to explicitly finish and cancel an existing whole-element drag.
   const touchPage = await browser.newPage({ viewport: { width: 900, height: 1100 }, hasTouch: true, isMobile: true });
   touchPage.setDefaultTimeout(8000);
   touchPage.on("pageerror", error => pageErrors.push(error.message));
@@ -208,17 +208,25 @@ try {
   tp=await touchPoint(2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
   await touchPage.waitForTimeout(800);
   await touchPage.locator('[data-tool="select"]').click();
-  const start=await touchPoint(0,0),end=await touchPoint(0,0.7);
-  await touchPage.touchscreen.tap(start.x,start.y);
+  const before=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
+  assert.ok(before,"Touch test must create a Gridline");
+  const startPoint=await touchPoint(0,0);
+  const endPoint=await touchPoint(0,0.7);
+  const c=touchPage.locator("#canvas");
+  // The app's pointerdown sequence selects the line and starts its edit gesture; synthetic touch dispatch
+  // is used only to move/release that already-registered pointer because Playwright touchscreen.tap is tap-only.
+  await c.dispatchEvent("pointerdown",{pointerId:5101,pointerType:"touch",clientX:startPoint.x,clientY:startPoint.y,button:0,buttons:1,bubbles:true});
+  await c.dispatchEvent("pointermove",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:1,bubbles:true});
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
-  await touchPage.touchscreen.tap(start.x,start.y);
-  await touchPage.touchscreen.tap(end.x,end.y);
-  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Moving") || document.querySelector("#editActions")?.hidden===false);
   await touchPage.locator("#editCommit").click();
   await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent==="Element edit committed");
+  await touchPage.mouse.move(20,20);
+  await touchPage.waitForTimeout(800);
   assert.equal(await touchPage.locator("#editActions").isHidden(),true,"Selesai must hide contextual edit actions");
-  const afterTouchCommit=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
-  assert.ok(afterTouchCommit,"Gridline should remain after touch commit");
+  const afterCommit=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
+  assert.ok(afterCommit,"Gridline must remain after touch commit");
+  assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
+  assert.notDeepEqual(afterCommit,before,"Committed touch drag must retain the edited Gridline geometry");
   await touchPage.close();
 
   // Archicad-style element picking: run opening regression in a clean editor state so
