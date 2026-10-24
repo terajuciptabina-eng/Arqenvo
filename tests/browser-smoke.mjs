@@ -244,6 +244,12 @@ try {
   await gridPoint(-2, 1, "move");
   await gridPage.keyboard.press("Enter");
   await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Gridline endpoint move committed");
+  const gridPositionAfterEnter = await gridPage.evaluate(() => { const raw=localStorage.getItem("arqenvo.autosave.v2"); const project=raw?JSON.parse(raw):{}; const line=project.elements?.find(el=>el.type==="gridline"); return line?{start:line.start,end:line.end}:null; });
+  await gridPoint(-1, 2, "move");
+  await gridPage.waitForTimeout(80);
+  const gridPositionAfterPointerMove = await gridPage.evaluate(() => { const raw=localStorage.getItem("arqenvo.autosave.v2"); const project=raw?JSON.parse(raw):{}; const line=project.elements?.find(el=>el.type==="gridline"); return line?{start:line.start,end:line.end}:null; });
+  assert.deepEqual(gridPositionAfterPointerMove, gridPositionAfterEnter,
+    "An existing Gridline edit must be committed by Enter; pointer movement afterward must not keep moving it");
   await gridPoint(-1, 2, "move");
   assert.equal(await gridPage.locator("#status").textContent(), "Gridline endpoint move committed",
     "Moving the pointer after Enter must not continue moving the Gridline endpoint");
