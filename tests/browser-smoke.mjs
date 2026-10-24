@@ -385,6 +385,33 @@ try {
   await modelPoint(2.6, wallY);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
 
+
+  // Roof/Magic Wand end-to-end: draw a closed wall footprint, confirm, then
+  // generate a persistent roof from the reference loop and ensure Enter cleared selection.
+  const roofPage=await browser.newPage({viewport:{width:1280,height:900}});
+  roofPage.setDefaultTimeout(8000);
+  roofPage.on("pageerror",error=>pageErrors.push(error.message));
+  await roofPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await roofPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await roofPage.locator("#snapToggle").click();
+  await roofPage.locator("#gridQuick").selectOption("0.1");
+  await roofPage.locator('[data-tool="wall"]').click();
+  await roofPage.locator("#wallGeometryMethod").selectOption("single");
+  const roofPoint=async(wx,wy)=>{const pt=await roofPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await roofPage.mouse.click(pt.x,pt.y)};
+  await roofPoint(-3,-2);await roofPoint(3,-2);await roofPoint(3,2);await roofPoint(-3,2);await roofPoint(-3,-2);
+  await roofPage.keyboard.press("Enter");
+  await roofPage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent==="No selection");
+  await roofPage.locator('[data-tool="magicwand"]').click();
+  await roofPoint(0,0);
+  await roofPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="roof"));
+  const roofResult=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
+  assert.equal(roofResult.boundary.length,4,"Magic Wand should generate a roof that follows the closed wall footprint");
+  assert.equal(roofResult.sourceWallIds.length,4,"Roof should retain links to its four reference walls");
+  await roofPage.locator("#threeTab").click();
+  await roofPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
+  assert.ok(await roofPage.locator("#canvas").evaluate(canvas=>canvas.width>0&&canvas.height>0),"3D canvas should remain available after roof generation");
+  await roofPage.close();
+
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
 } finally {
