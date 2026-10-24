@@ -218,6 +218,8 @@ try {
   await touchPage.locator("#canvas").dispatchEvent("pointermove",{pointerId:5101,pointerType:"touch",clientX:end.x,clientY:end.y,button:0,buttons:1,bubbles:true});
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
   await touchPage.locator("#editCommit").click();
+  await touchPage.mouse.move(20,20);
+  await touchPage.waitForTimeout(800);
   await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent==="Element edit committed");
   assert.equal(await touchPage.locator("#editActions").isHidden(),true,"Selesai must hide contextual edit actions");
   const afterTouchCommit=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
