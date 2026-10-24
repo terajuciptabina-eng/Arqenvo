@@ -436,6 +436,9 @@ function updatePendingOpening(q){
  const wall=els().find(v=>v.id===pendingOpeningPlacement.wallId);
  if(!wall){openingPlacement.cancel();pendingOpeningPlacement=null;redraw();return}
  pendingOpeningPlacement=openingPlacement.aim(q,wall.start,wall.end);
+ if(pendingOpeningPlacement.anchor==="center")pendingOpeningPlacement.offset=Math.max(0,(wallLength(wall)-pendingOpeningPlacement.width)/2);
+ else if(pendingOpeningPlacement.anchor==="left")pendingOpeningPlacement.offset=0;
+ else if(pendingOpeningPlacement.anchor==="right")pendingOpeningPlacement.offset=Math.max(0,wallLength(wall)-pendingOpeningPlacement.width);
  const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1;
  const projection=((q.x-wall.start.x)*dx+(q.y-wall.start.y)*dy)/len;
  const center=pendingOpeningPlacement.offset+pendingOpeningPlacement.width/2;
