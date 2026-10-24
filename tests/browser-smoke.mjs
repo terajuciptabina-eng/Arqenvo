@@ -228,6 +228,9 @@ try {
   const startPt=await touchPoint(0,0),endPt=await touchPoint(0,0.7);
   await touchPage.evaluate(({startPt,endPt})=>{
     const canvas=document.querySelector("#canvas");
+    const rect=canvas.getBoundingClientRect();
+    const localStart={x:startPt.x-rect.left,y:startPt.y-rect.top};
+    const localEnd={x:endPt.x-rect.left,y:endPt.y-rect.top};
     const init={pointerId:5101,pointerType:"touch",button:0,bubbles:true,cancelable:true};
     canvas.dispatchEvent(new PointerEvent("pointerdown",{...init,clientX:startPt.x,clientY:startPt.y,buttons:1}));
     canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPt.x,clientY:endPt.y,buttons:1}));
