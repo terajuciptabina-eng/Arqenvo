@@ -252,7 +252,7 @@ try {
   assert.deepEqual(afterCommit.start,before.start,"Whole Gridline drag keeps the original start point fixed");
   assert.deepEqual(afterCommit.end,before.end,"Whole Gridline drag keeps the original end point fixed");
 
-  // Release a second element edit, then cancel and restore its saved geometry.
+  // Cancel a second pending edit without starting another pointer lifecycle.
   const baselineCancel=await projectElements().then(items=>items.find(e=>e.type==="gridline"));
   const cancelStart=await touchPoint(0,0),cancelEnd=await touchPoint(0,0.6);
   await touchPage.evaluate(({startPt,endPt})=>{
