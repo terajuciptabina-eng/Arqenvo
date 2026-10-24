@@ -35,6 +35,7 @@ function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnaps
 function restore(json){p=deserializeProject(json);selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));redraw();renderProperties();updateHistoryButtons()}
 function updateHistoryButtons(){$("undo").disabled=!modelHistory.canUndo;$("redo").disabled=!modelHistory.canRedo}
 function syncSelection(){const validIds=new Set(els().map(e=>e.id));selected=new Set([...selected].filter(id=>validIds.has(id)));return chosen()}function selectOnly(id){const validIds=new Set(els().map(e=>e.id));const hit=id&&els().find(e=>e.id===id);selected=id&&validIds.has(id)?new Set(groupMembers(hit).map(e=>e.id)):new Set();renderProperties();const list=syncSelection();const info=$("selectionInfo");if(info)info.textContent=list.length?list.length+" selected · "+list.map(e=>e.type).join(", "):"No selection";const count=$("contextSelectionCount");if(count)count.textContent=list.length+" element"+(list.length===1?"":"s")}
+function clearSelection(){selected.clear();selectOnly(null);const info=$("selectionInfo");if(info)info.textContent="No selection";const count=$("contextSelectionCount");if(count)count.textContent="0 elements"}
 function elementLayer(el){return el.layer||({"wall":"A-WALL","slab":"A-SLAB","roof":"A-ROOF","column":"A-COLS","beam":"A-BEAM","door":"A-DOOR","window":"A-WIND","dimension":"A-DIMS","room":"A-ROOM"}[el.type]||"A-MISC")}
 function isLayerVisible(el){return !hiddenLayers.has(elementLayer(el))}
 function nearestElement(q){
@@ -543,7 +544,7 @@ function commitAndDeselect(reason="Enter"){
   $("status").textContent=elementTool.charAt(0).toUpperCase()+elementTool.slice(1)+" drawing committed";committed=true;
  }else committed=finishActiveDrawing(reason);
  if(!committed)return false;
- selected.clear();releasedTouchEditPending=false;releasedTouchEditSnapshot=null;releasedTouchEditKind=null;
+ clearSelection();releasedTouchEditPending=false;releasedTouchEditSnapshot=null;releasedTouchEditKind=null;
  renderProperties();redraw();updateEditActions();return true;
 }
 window.addEventListener("keydown",e=>{
