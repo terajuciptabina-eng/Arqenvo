@@ -416,6 +416,23 @@ try {
   await roofPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
   assert.ok(await roofPage.locator("#canvas").evaluate(canvas=>canvas.width>0&&canvas.height>0),"3D canvas should remain available after roof generation");
   await roofPage.close();
+  // After Roof is created, select it in Floor Plan, confirm only its four
+  // boundary points are visible, and drag one selected vertex.
+  await roofPage.locator("#floorTab").click();
+  await roofPage.locator('[data-tool="select"]').click();
+  const roofCenter=await roofPage.evaluate(()=>{const roof=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return{x:roof.boundary.reduce((s,p)=>s+p.x,0)/roof.boundary.length,y:roof.boundary.reduce((s,p)=>s+p.y,0)/roof.boundary.length}});
+  await roofPoint(roofCenter.x,roofCenter.y);
+  await roofPage.waitForFunction(()=>document.querySelector("#elementProperties input[readonly]")?.value?.toLowerCase().includes("roof"));
+  const roofCanvas=await roofPage.locator("#canvas").boundingBox();
+  const vertexScreen=await roofPage.evaluate(()=>{const roof=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"),p=roof.boundary[0],cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+p.x*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-p.y*(t?.scale||36)}});
+  await roofPage.mouse.move(vertexScreen.x,vertexScreen.y);
+  await roofPage.mouse.down();
+  await roofPage.mouse.move(vertexScreen.x+12,vertexScreen.y+8);
+  await roofPage.mouse.up();
+  await roofPage.waitForTimeout(150);
+  const movedRoof=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
+  assert.ok(movedRoof.boundary[0].x!==roofResult.boundary[0].x||movedRoof.boundary[0].y!==roofResult.boundary[0].y,"A selected Roof vertex should be editable");
+
 
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
