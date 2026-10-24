@@ -126,6 +126,13 @@ try {
     const line=project.elements?.find(el=>el.type==="gridline");
     return line?{start:line.start,end:line.end}:null;
   });
+  const readLastWall = async () => gridPage.evaluate(() => {
+    const raw=localStorage.getItem("arqenvo.autosave.v2");
+    const project=raw?JSON.parse(raw):{};
+    const walls=project.elements?.filter(el=>el.type==="wall")||[];
+    const wall=walls[walls.length-1];
+    return wall?{start:wall.start,end:wall.end}:null;
+  });
   await gridPage.locator('[data-tool="gridline"]').click();
   await gridPoint(-2, 0);
   await gridPoint(2, 0);
@@ -159,6 +166,27 @@ try {
   const endpointAfterPointer = await readGridline();
   assert.deepEqual(endpointAfterPointer, endpointAfterEnter,
     "Moving the pointer after Enter must not keep editing an existing Gridline endpoint");
+  await gridPage.mouse.up();
+
+  // Existing Wall endpoints must also stop tracking pointer movement after Enter.
+  await gridPage.locator('[data-tool="wall"]').click();
+  await gridPage.locator("#wallGeometryMethod").selectOption("single");
+  await gridPoint(0, 3);
+  await gridPoint(3, 3);
+  await gridPage.waitForTimeout(800);
+  await gridPage.locator('[data-tool="select"]').click();
+  await gridPoint(0, 3, "move");
+  await gridPage.mouse.down();
+  await gridPoint(0, 4, "move");
+  await gridPage.keyboard.press("Enter");
+  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed");
+  await gridPage.waitForTimeout(800);
+  const wallAfterEnter = await readLastWall();
+  await gridPoint(1, 5, "move");
+  await gridPage.waitForTimeout(850);
+  const wallAfterPointer = await readLastWall();
+  assert.deepEqual(wallAfterPointer, wallAfterEnter,
+    "Moving the pointer after Enter must not keep editing an existing Wall endpoint");
   await gridPage.mouse.up();
   await gridPage.close();
 
