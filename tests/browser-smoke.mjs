@@ -408,7 +408,7 @@ try {
 
   
 
-// Confirmation semantics: Enter clears selection; clicking empty paper commits a move.
+// Confirmation semantics: Enter clears selection; clicking blank paper confirms an active element edit.
   const confirmPage=await browser.newPage({viewport:{width:1280,height:900}});
   confirmPage.setDefaultTimeout(8000);
   await confirmPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
@@ -419,33 +419,23 @@ try {
   await confirmPage.locator('[data-tool="wall"]').click();
   await confirmPage.locator("#wallGeometryMethod").selectOption("single");
   await confirmPoint(-2,-1);await confirmPoint(2,-1);
-  await confirmPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="wall"));
+  await confirmPage.keyboard.press("Enter");
+  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Confirming a drawing should leave no element selected");
+  const storedWall=await confirmPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall"));
+  assert.ok(storedWall,"Confirmed wall must remain in the model");
   await confirmPage.locator('[data-tool="select"]').click();
   const wallMid=await confirmPage.evaluate(()=>{const wall=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall");const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+(wall.start.x+wall.end.x)/2*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-(wall.start.y+wall.end.y)/2*(t?.scale||36)}});
+  await confirmPage.mouse.click(wallMid.x,wallMid.y);
+  await confirmPage.waitForFunction(()=>document.querySelector("#elementProperties input[readonly]")?.value?.toLowerCase().includes("wall ·"));
   await confirmPage.mouse.move(wallMid.x,wallMid.y);
   await confirmPage.mouse.down();
-  await confirmPage.mouse.move(wallMid.x+22,wallMid.y,{steps:4});
-  await confirmPage.mouse.up();
-  const activeBeforeEnter=await confirmPage.evaluate(()=>({actionsHidden:document.querySelector("#editActions")?.hidden,selection:document.querySelector("#selectionInfo")?.textContent,status:document.querySelector("#status")?.textContent,view:window.__arqenvoViewport}));
-  if(activeBeforeEnter.actionsHidden!==false) await confirmPage.evaluate(()=>{const wall=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall");const canvas=document.querySelector("#canvas"),r=canvas.getBoundingClientRect(),t=window.__arqenvoViewport;const x=r.left+canvas.clientWidth/2+(t?.origin.x||0)+(wall.start.x+wall.end.x)/2*(t?.scale||36),y=r.top+canvas.clientHeight/2+(t?.origin.y||0)-(wall.start.y+wall.end.y)/2*(t?.scale||36);canvas.dispatchEvent(new PointerEvent("pointerdown",{pointerId:991,pointerType:"mouse",clientX:x,clientY:y,button:0,buttons:1,bubbles:true}));canvas.dispatchEvent(new PointerEvent("pointermove",{pointerId:991,pointerType:"mouse",clientX:x+22,clientY:y,button:0,buttons:1,bubbles:true}));canvas.dispatchEvent(new PointerEvent("pointerup",{pointerId:991,pointerType:"mouse",clientX:x+22,clientY:y,button:0,buttons:0,bubbles:true}))});
-  await confirmPage.keyboard.press("Enter");
-  await confirmPage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent?.includes("No selection")||!document.querySelector("#elementProperties input[readonly]"));
-  assert.equal(await confirmPage.locator("#editActions").isHidden(),true,"Enter should finish the move and hide contextual actions");
-  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Enter confirmation must clear element selection");
-
-  // Re-select and move the wall, then click empty paper to commit without Enter.
-  const newMid=await confirmPage.evaluate(()=>{const wall=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall");const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+(wall.start.x+wall.end.x)/2*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-(wall.start.y+wall.end.y)/2*(t?.scale||36)}});
-  await confirmPage.mouse.click(newMid.x,newMid.y);
-  await confirmPage.waitForFunction(()=>document.querySelector("#elementProperties input[readonly]")?.value?.toLowerCase().includes("wall ·"));
-  const beforeOutside=await confirmPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall")?.start);
-  await confirmPage.mouse.move(newMid.x,newMid.y);
-  await confirmPage.mouse.down();
-  await confirmPage.mouse.move(newMid.x+18,newMid.y+9,{steps:3});
+  await confirmPage.mouse.move(wallMid.x+24,wallMid.y+12,{steps:4});
   await confirmPage.mouse.up();
   await confirmPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
   await confirmPoint(6,4);
   await confirmPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
-  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Clicking empty paper must commit and clear selection");
+  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Clicking blank paper must commit the edit and clear selection");
   await confirmPage.close();
 
   const {openingPlacementDirection}=await import("../src/core/authoring.js");
