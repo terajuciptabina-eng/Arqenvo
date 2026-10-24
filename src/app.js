@@ -12,7 +12,7 @@ const modelHistory=new ModelHistory({limit:80});
 let pendingHistorySnapshot=null,historyCommitQueued=false;
 const escapeHtml=value=>String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("\\'","&#39;");
 let p=createProject(), tool="select", view="floor", draft=[], floorDrawGesture=null, selected=new Set(), scale=36, origin={x:0,y:0}, mouse=null, activeStoryId=p.stories[0].id, isPanning=false, panStart=null, spaceHeld=false, wallGeometryMethod="continuous", wallChainStart=null, wallChainPoints=[], wallChainHasSegment=false, trackerDistanceOverride=null, trackerAngleOverride=null, activeSnapPoint=null, openingHingeSide="left", openingSwingDirection="inside", pendingOpeningPlacement=null, openingMoveGesture=null;
-let wallPointMoveGesture=null, gridlineMoveGesture=null, gridlinePointMoveGesture=null, pendingGridSystem=null;
+let wallPointMoveGesture=null, gridlineMoveGesture=null, gridlinePointMoveGesture=null, genericMoveGesture=null, pendingGridSystem=null;
 const openingPlacement=createOpeningPlacement();
 let provisionalDrawingSnapshot=null,provisionalDrawingTool=null,provisionalDrawingActive=false,provisionalWallClosed=false;
 const els=()=>p.elements, story=()=>p.stories.find(s=>s.id===activeStoryId)||p.stories[0], chosen=()=>els().filter(e=>selected.has(e.id)),groupKey=e=>e?.groupId||e?.gridSystemId||null,groupMembers=e=>{const key=groupKey(e);return key&&!groupsSuspended?els().filter(v=>groupKey(v)===key):[e]};
