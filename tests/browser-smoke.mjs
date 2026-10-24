@@ -386,7 +386,9 @@ try {
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
 
 
-  // Roof/Magic Wand end-to-end: draw a closed wall footprint, confirm, then
+  
+
+// Roof/Magic Wand end-to-end: draw a closed wall footprint, confirm, then
   // generate a persistent roof from the reference loop and ensure Enter cleared selection.
   const roofPage=await browser.newPage({viewport:{width:1280,height:900}});
   roofPage.setDefaultTimeout(8000);
@@ -400,7 +402,7 @@ try {
   const roofPoint=async(wx,wy)=>{const pt=await roofPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await roofPage.mouse.click(pt.x,pt.y)};
   await roofPoint(-3,-2);await roofPoint(3,-2);await roofPoint(3,2);await roofPoint(-3,2);await roofPoint(-3,-2);
   await roofPage.keyboard.press("Enter");
-  await roofPage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent==="No selection");
+  await roofPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
   await roofPage.locator('[data-tool="magicwand"]').click();
   await roofPoint(0,0);
   await roofPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="roof"));
