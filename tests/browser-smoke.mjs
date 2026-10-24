@@ -313,6 +313,9 @@ try {
   await modelPoint(0, wallY + .8, "move");
   await modelPoint(1.7, wallY + 1.2); // Blank paper click confirms cursor-selected opening orientation.
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Door placed"), null, { timeout: 8000 }).catch(async error => { throw new Error(`Door placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
+  const placedDoor=await openingPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="door"));
+  assert.ok(placedDoor,"Door should be stored after a paper-space confirmation click");
+  assert.equal(placedDoor.swingDirection,"inside","Cursor placed on the positive side of the wall should choose inside swing");
   await openingPage.locator('[data-tool="select"]').click();
   // Clear any selection left by placement using a genuine browser pointer sequence
   // on the canvas margin, not a synthetic event that bypasses Playwright's mouse input.
@@ -372,6 +375,14 @@ try {
   await modelPoint(2, wallY + .8, "move");
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"), null, {timeout:8000}).catch(async error => { throw new Error(`Window placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
+  const placedWindow=await openingPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="window"));
+  assert.ok(placedWindow,"Window should be stored after Enter confirmation");
+  await openingPage.locator("#threeTab").click();
+  await openingPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
+  const window3dCheck=await openingPage.evaluate(()=>({window:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="window"),canvas:document.querySelector("#canvas")?.width>0&&document.querySelector("#canvas")?.height>0}));
+  assert.equal(window3dCheck.window,true,"Window element should remain in the model in 3D view");
+  assert.equal(window3dCheck.canvas,true,"3D view should render after a Window is placed");
+  await openingPage.locator("#floorTab").click();
   await openingPage.locator('[data-tool="select"]').click();
   // Clear selection left by placement so the assertion proves a new Window hit.
   await modelPoint(7, 3);
