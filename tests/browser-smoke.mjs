@@ -213,15 +213,32 @@ try {
   const startPoint=await touchPoint(0,0);
   const endPoint=await touchPoint(0,0.7);
   const c=touchPage.locator("#canvas");
-  // Run one continuous pointer lifecycle against the gridline. Keep the same pointer
-  // active from down through move and release so the app receives a real edit gesture.
-  await touchPage.evaluate(({startPoint,endPoint})=>{
+  // Use one real touch lifecycle so the browser generates trusted pointer ids and
+  // pointer capture semantics the same way an iPhone/iPad does.
+  await touchPage.evaluate(() => {
     const canvas=document.querySelector("#canvas");
-    const init={pointerId:5101,pointerType:"touch",button:0,bubbles:true,cancelable:true};
+    window.__touchEditRegression={down:null,move:null,up:null};
+    for (const type of ["pointerdown","pointermove","pointerup","pointercancel"]) {
+      canvas.addEventListener(type,e=>{
+        window.__touchEditRegression[type==="pointercancel"?"cancel":type.slice(7)] = {
+          pointerId:e.pointerId,pointerType:e.pointerType,isTrusted:e.isTrusted,
+          x:e.clientX,y:e.clientY,buttons:e.buttons
+        };
+      },{capture:true,once:false});
+    }
+  });
+  await touchPage.touchscreen.tap(startPoint.x,startPoint.y);
+  await touchPage.waitForFunction(()=>window.__touchEditRegression?.down?.pointerType==="touch" && window.__touchEditRegression?.up?.pointerType==="touch");
+  // Playwright's touchscreen API is tap-only, so a follow-up pointermove sequence uses
+  // the actual last pointerId observed from the trusted touch lifecycle.
+  const livePointer=await touchPage.evaluate(()=>window.__touchEditRegression?.down?.pointerId);
+  await touchPage.evaluate(({startPoint,endPoint,pointerId})=>{
+    const canvas=document.querySelector("#canvas");
+    const init={pointerId,pointerType:"touch",button:0,bubbles:true,cancelable:true};
     canvas.dispatchEvent(new PointerEvent("pointerdown",{...init,clientX:startPoint.x,clientY:startPoint.y,buttons:1}));
     canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPoint.x,clientY:endPoint.y,buttons:1}));
     canvas.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPoint.x,clientY:endPoint.y,buttons:0}));
-  },{startPoint,endPoint});
+  },{startPoint,endPoint,pointerId:livePointer});
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true");
   assert.equal(await touchPage.locator("#editActions").isVisible(),true,"Finish/Cancel must remain visible after touch release");
   assert.equal(await touchPage.locator("#editCommit b").textContent(),"Finish","Finish label must be English");
