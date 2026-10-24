@@ -511,6 +511,7 @@ try {
   await enterPoint(-2,0); await enterPoint(0,0); await enterPoint(0,2);
   await enterPage.keyboard.press("Enter");
   await enterPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  await enterPage.waitForTimeout(850);
   const enterBefore=await enterPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
   const size=enterPage.viewportSize();
   await enterPage.mouse.move(size.width-10,size.height-10);
