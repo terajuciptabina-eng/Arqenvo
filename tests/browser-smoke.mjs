@@ -309,6 +309,8 @@ try {
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("committed") || document.querySelector("#undo")?.disabled === false);
   await openingPage.locator('[data-tool="door"]').click();
+   await openingPage.waitForFunction(()=>document.querySelector("#openingAlignment")?.value==="center");
+   assert.equal(await openingPage.locator("#openingAlignment").isVisible(),true,"Door anchor selector should be visible before placement");
   await modelPoint(0, wallY);
   await modelPoint(0, wallY + .8, "move");
   await modelPoint(1.7, wallY + 1.2); // Blank paper click confirms cursor-selected opening orientation.
@@ -372,6 +374,8 @@ try {
     "Dragging the Door symbol should move its offset along the host wall");
 
   await openingPage.locator('[data-tool="window"]').click();
+   await openingPage.waitForFunction(()=>document.querySelector("#openingAlignment")?.value==="center");
+   assert.equal(await openingPage.locator("#openingAlignment").isVisible(),true,"Window anchor selector should be visible before placement");
   await modelPoint(2, wallY);
   await modelPoint(2, wallY + .8, "move");
   await openingPage.keyboard.press("Enter");
@@ -385,6 +389,11 @@ try {
   assert.equal(window3dCheck.window,true,"Window element should remain in the model in 3D view");
   assert.equal(window3dCheck.host,true,"Window must retain a valid host wall in 3D");
   assert.equal(window3dCheck.canvas,true,"3D view should render after a Window is placed");
+   const zoom3dBefore=Number(String(await openingPage.locator("#zoomReadout").textContent()).replace("%",""));
+   await openingPage.locator("#zoomIn").click();
+   const zoom3dAfter=Number(String(await openingPage.locator("#zoomReadout").textContent()).replace("%",""));
+   assert.ok(zoom3dAfter>zoom3dBefore,"3D zoom-in button must change zoom readout");
+   await openingPage.locator("#zoomOut").click();
   const placedWindowModel=await openingPage.evaluate(()=>{const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];const win=model.find(e=>e.type==="window");return {window:win,host:model.find(e=>e.id===win?.hostWallId&&e.type==="wall")}});
   const {hostedOpening3dGeometry}=await import("../src/core/authoring.js");
   const paneGeometry=hostedOpening3dGeometry(placedWindowModel.host,placedWindowModel.window);
