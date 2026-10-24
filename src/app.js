@@ -344,7 +344,7 @@ function setTool(t){if(provisionalDrawingActive)cancelProvisionalDrawing();if(pe
 
 function activeEditGesture(){return gridlinePointMoveGesture||gridlineMoveGesture||wallPointMoveGesture||openingMoveGesture||genericMoveGesture}
 function hasActiveDrawing(){return !!(provisionalDrawingActive||draft.length>0||wallChainHasSegment||pendingOpeningPlacement)}
-function finishElementEditGesture(action="commit"){
+function finishElementEditGesture(action="commit"){releasedTouchEditPending=false;
  const gestures=[gridlinePointMoveGesture,gridlineMoveGesture,wallPointMoveGesture,openingMoveGesture,genericMoveGesture].filter(Boolean);
  if(!gestures.length)return false;
  const gesture=gestures[0];
