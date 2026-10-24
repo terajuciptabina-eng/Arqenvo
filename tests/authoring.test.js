@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, openingPlacementDirection } from "../src/core/authoring.js";
+import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, openingPlacementDirection, findClosedWallLoops } from "../src/core/authoring.js";
 
 test("door swing geometry pivots at the hinge and uses opening width as radius", () => {
   const g = doorSwingGeometry({x:10,y:20},{x:11,y:20},{hingeSide:"left",swingDirection:"inside"});
@@ -74,4 +74,11 @@ test("hosted window pane is centred on wall thickness and keeps sill height", ()
 
 test("hosted 3D opening rejects a component outside its wall", () => {
   assert.throws(()=>hostedOpening3dGeometry({start:{x:0,y:0},end:{x:2,y:0},thickness:.15},{type:"door",offset:1.8,width:.9,height:2,sill:0}),/fit/);
+});
+
+test("Magic Wand finds closed wall references and ignores open or branched networks",()=>{
+ const loop=[{id:"a",type:"wall",start:{x:0,y:0},end:{x:4,y:0}},{id:"b",type:"wall",start:{x:4,y:0},end:{x:4,y:3}},{id:"c",type:"wall",start:{x:4,y:3},end:{x:0,y:3}},{id:"d",type:"wall",start:{x:0,y:3},end:{x:0,y:0}}];
+ const found=findClosedWallLoops([...loop,{id:"open",type:"wall",start:{x:6,y:0},end:{x:7,y:0}}]);
+ assert.equal(found.length,1);assert.equal(found[0].area,12);assert.equal(found[0].boundary.length,4);assert.deepEqual([...found[0].wallIds].sort(),["a","b","c","d"]);
+ assert.equal(findClosedWallLoops([...loop,{id:"branch",type:"wall",start:{x:2,y:0},end:{x:2,y:-2}}]).length,0);
 });

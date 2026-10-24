@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { createProject, createWall, createSlab, createColumn, createBeam, addOpening, wallLength, grossWallArea, netWallArea, polygonArea, polygonPerimeter, createStory, validateProject, serializeProject, deserializeProject, elementSchedule } from "../src/core/model.js";
+import { createProject, createWall, createSlab, createColumn, createBeam, createRoof, addOpening, wallLength, grossWallArea, netWallArea, polygonArea, polygonPerimeter, createStory, validateProject, serializeProject, deserializeProject, elementSchedule } from "../src/core/model.js";
 
 test("project has one ground story and metric units", () => {
  const p=createProject("Test House"); assert.equal(p.project.name,"Test House"); assert.equal(p.project.units,"m"); assert.equal(p.stories.length,1);
@@ -67,4 +67,11 @@ test("project validation rejects hosted door/window elements without host links"
  const p=createProject();
  p.elements.push({id:"door-1",type:"door",storyId:p.stories[0].id,hostWallId:"missing",offset:0,width:.9,height:2.1,sill:0});
  assert.ok(validateProject(p).errors.some(error=>error.includes("has no host wall")));
+});
+
+test("Roof persists its wall-derived boundary and parameters",()=>{
+ const p=createProject("Roof"),boundary=[{x:0,y:0},{x:4,y:0},{x:4,y:3},{x:0,y:3}],roof=createRoof(boundary,{storyId:p.stories[0].id,elevation:3,pitch:30,sourceWallIds:["a","b","c","d"]});
+ p.elements.push(roof);assert.equal(validateProject(p).valid,true);assert.equal(elementSchedule(p).find(e=>e.type==="roof").area,12);
+ const loaded=deserializeProject(serializeProject(p));assert.deepEqual(loaded.elements[0].boundary,boundary);assert.equal(loaded.elements[0].pitch,30);
+ assert.throws(()=>createRoof([{x:0,y:0},{x:1,y:0}],{}),/boundary/);
 });

@@ -102,6 +102,15 @@ export function createBeam(start, end, options = {}) {
     buildingMaterial: options.buildingMaterial ?? "Reinforced Concrete", layer: options.layer ?? "A-BEAM",
     properties: { loadBearing: true, ...options.properties } };
 }
+
+export function createRoof(boundary, options = {}) {
+  if (!Array.isArray(boundary) || boundary.length < 3 || boundary.some(p => !p || !Number.isFinite(p.x) || !Number.isFinite(p.y)) || polygonArea(boundary) <= 1e-8) throw new RangeError("Roof needs a valid closed boundary with at least three points");
+  const thickness=options.thickness??0.18,elevation=options.elevation??3,pitch=options.pitch??30;
+  if (!(thickness>0)||!Number.isFinite(elevation)||elevation<0||!Number.isFinite(pitch)||pitch<0||pitch>70) throw new RangeError("Roof thickness, elevation or pitch is invalid");
+  const points=boundary.map(p=>point(p.x,p.y));if(points.length>3&&distance(points[0],points[points.length-1])<1e-8)points.pop();
+  return {id:options.id??makeId("roof"),type:"roof",storyId:options.storyId??DEFAULT_STORY.id,boundary:points,thickness,elevation,pitch,sourceWallIds:Array.isArray(options.sourceWallIds)?[...options.sourceWallIds]:[],buildingMaterial:options.buildingMaterial??"Roof - Generic",layer:options.layer??"A-ROOF",properties:{loadBearing:false,...options.properties}};
+}
+
 export function createStory(name, elevation, height = 3) {
   if (!name?.trim() || !Number.isFinite(elevation) || !(height > 0)) throw new TypeError("Story needs a name, finite elevation and positive height");
   return { id: makeId("story"), name: name.trim(), elevation, height };
@@ -128,7 +137,7 @@ export function validateProject(data) {
   for (const el of data?.elements ?? []) {
     if (!el.id || ids.has(el.id)) errors.push(`Missing or duplicate element id: ${el.id ?? "(missing)"}`);
     ids.add(el.id);
-    if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "gridline", "room"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
+    if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "gridline", "room", "roof"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
     if (data?.version === MODEL_VERSION && el.storyId && !storyIds.has(el.storyId)) errors.push(`Element ${el.id} references unknown story: ${el.storyId}`);
     const finitePoint = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
     const positive = n => Number.isFinite(n) && n > 0;
@@ -144,6 +153,7 @@ export function validateProject(data) {
       }
     }
     if (el.type === "slab" && (!Array.isArray(el.boundary) || el.boundary.length < 3 || el.boundary.some(v => !finitePoint(v)) || polygonArea(el.boundary) <= 1e-8 || !positive(el.thickness))) errors.push(`Slab ${el.id} has invalid boundary or thickness`);
+    if (el.type === "roof" && (!Array.isArray(el.boundary) || el.boundary.length < 3 || el.boundary.some(v=>!finitePoint(v)) || polygonArea(el.boundary)<=1e-8 || !positive(el.thickness) || !Number.isFinite(el.elevation) || el.elevation<0 || !Number.isFinite(el.pitch) || el.pitch<0 || el.pitch>70)) errors.push(`Roof ${el.id} has invalid boundary or parameters`);
     if (el.type === "column" && (!finitePoint(el.position) || !positive(el.width) || !positive(el.depth) || !positive(el.height))) errors.push(`Column ${el.id} has invalid position or dimensions`);
     if (el.type === "beam" && (!positive(el.width) || !positive(el.depth))) errors.push(`Beam ${el.id} has invalid width or depth`);
     if (["door","window"].includes(el.type)) {
@@ -188,7 +198,7 @@ export function elementSchedule(project) {
   return project.elements.map(e => ({
     id: e.id, type: e.type, story: project.stories.find(s => s.id === e.storyId)?.name ?? "Unassigned",
     length: e.type === "wall" || e.type === "beam" ? Number((e.type === "wall" ? wallLength(e) : distance(e.start, e.end)).toFixed(3)) : null,
-    area: e.type === "slab" ? Number(polygonArea(e.boundary).toFixed(3)) : e.type === "wall" ? Number(netWallArea(e).toFixed(3)) : null,
+    area: e.type === "slab" || e.type === "roof" ? Number(polygonArea(e.boundary).toFixed(3)) : e.type === "wall" ? Number(netWallArea(e).toFixed(3)) : null,
     material: e.buildingMaterial ?? "",
   }));
 }
