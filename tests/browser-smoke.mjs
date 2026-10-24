@@ -462,6 +462,23 @@ try {
   assert.equal(await confirmPage.locator("#editActions").evaluate(el=>el.hidden),true,"Desktop mouse release should not leave edit actions open");
   await confirmPage.close();
 
+  // Mobile 3D zoom controls: touch-sized buttons must change the actual camera readout.
+  const mobileZoomPage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+  mobileZoomPage.setDefaultTimeout(8000);
+  mobileZoomPage.on("pageerror",error=>pageErrors.push(error.message));
+  await mobileZoomPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await mobileZoomPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await mobileZoomPage.locator("#threeTab").click();
+  await mobileZoomPage.waitForFunction(()=>getComputedStyle(document.querySelector("#mobile3dZoom")).display!=="none");
+  const mobileZoomBefore=Number((await mobileZoomPage.locator("#mobile3dZoomReadout").textContent()).replace("%",""));
+  await mobileZoomPage.locator("#mobileZoomIn").tap();
+  const mobileZoomAfter=Number((await mobileZoomPage.locator("#mobile3dZoomReadout").textContent()).replace("%",""));
+  assert.ok(mobileZoomAfter>mobileZoomBefore,"Mobile 3D Zoom In should increase camera zoom");
+  await mobileZoomPage.locator("#mobileZoomOut").tap();
+  const mobileZoomRestored=Number((await mobileZoomPage.locator("#mobile3dZoomReadout").textContent()).replace("%",""));
+  assert.ok(mobileZoomRestored<mobileZoomAfter,"Mobile 3D Zoom Out should decrease camera zoom");
+  await mobileZoomPage.close();
+
   const {openingPlacementDirection}=await import("../src/core/authoring.js");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:1}),"inside","Cursor above a horizontal wall chooses inside swing");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:-1}),"outside","Cursor below a horizontal wall chooses outside swing");
