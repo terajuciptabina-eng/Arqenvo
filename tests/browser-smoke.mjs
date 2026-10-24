@@ -376,7 +376,8 @@ try {
   await modelPoint(2, wallY + .8, "move");
   await openingPage.keyboard.press("Enter");
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"), null, {timeout:8000}).catch(async error => { throw new Error(`Window placement failed; status="${await openingPage.locator("#status").textContent()}"; tool="${await openingPage.locator("#toolName").inputValue().catch(()=>"unknown")}"; properties="${(await openingPage.locator("#elementProperties").textContent()).slice(0,300)}"; ${error.message}`); });
-  const placedWindow=await openingPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="window"));
+  await openingPage.waitForFunction(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return !!(els.find(e=>e.type==="window")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="window"))},{},{timeout:3000});
+  const placedWindow=await openingPage.evaluate(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return els.find(e=>e.type==="window")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="window")});
   assert.ok(placedWindow,"Window should be stored after Enter confirmation");
   await openingPage.locator("#threeTab").click();
   await openingPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
