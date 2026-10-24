@@ -218,11 +218,13 @@ try {
   await c.dispatchEvent("pointerdown",{pointerId:5101,pointerType:"touch",clientX:startPoint.x,clientY:startPoint.y,button:0,buttons:1,bubbles:true});
   await c.dispatchEvent("pointermove",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:1,bubbles:true});
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
+  await c.dispatchEvent("pointerup",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:0,bubbles:true});
+  assert.equal(await touchPage.locator("#editActions").isVisible(),true,"Finish/Cancel must remain visible after touch release");
+  assert.equal(await touchPage.locator("#editCommit b").textContent(),"Finish","Finish label must be English");
+  assert.equal(await touchPage.locator("#editCancel b").textContent(),"Cancel","Cancel label must be English");
   await touchPage.locator("#editCommit").click();
   await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent==="Element edit committed");
-  await touchPage.mouse.move(20,20);
-  await touchPage.waitForTimeout(800);
-  assert.equal(await touchPage.locator("#editActions").isHidden(),true,"Selesai must hide contextual edit actions");
+  assert.equal(await touchPage.locator("#editActions").isHidden(),true,"Finish should hide the controls after confirmation");
   const afterCommit=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
   assert.ok(afterCommit,"Gridline must remain after touch commit");
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
