@@ -213,15 +213,15 @@ try {
   const startPoint=await touchPoint(0,0);
   const endPoint=await touchPoint(0,0.7);
   const c=touchPage.locator("#canvas");
-  // Register a touch-move listener and verify the move starts a Gridline edit before
-  // letting the actual pointer lifecycle release. Use a native mouse drag to exercise
-  // the same element gesture logic deterministically; touch release persistence is
-  // asserted below using the browser's touch-generated pointer events.
-  await touchPage.mouse.move(startPoint.x,startPoint.y);
-  await touchPage.mouse.down();
-  await touchPage.mouse.move(endPoint.x,endPoint.y,{steps:5});
-  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent?.includes("Moving Gridline"));
-  await touchPage.mouse.up();
+  // Playwright's real touch API is tap-only, so set up the existing Gridline edit
+  // through a tracked pointer, then explicitly release it as touch after movement.
+  await touchPage.evaluate(({startPoint,endPoint})=>{
+    const canvas=document.querySelector("#canvas");
+    const init={pointerId:5101,pointerType:"touch",button:0,bubbles:true,cancelable:true,isPrimary:true};
+    canvas.dispatchEvent(new PointerEvent("pointerdown",{...init,clientX:startPoint.x,clientY:startPoint.y,buttons:1}));
+    canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPoint.x,clientY:endPoint.y,buttons:1}));
+    canvas.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPoint.x,clientY:endPoint.y,buttons:0}));
+  },{startPoint,endPoint});
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true");
   assert.equal(await touchPage.locator("#editActions").isVisible(),true,"Finish/Cancel must remain visible after touch release");
   assert.equal(await touchPage.locator("#editCommit b").textContent(),"Finish","Finish label must be English");
