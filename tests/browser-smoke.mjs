@@ -235,7 +235,7 @@ try {
   assert.equal(await actionsVisible(),true,"Finish/Cancel must be visible during an active element edit");
   assert.match(await touchPage.locator("#status").textContent(),/Moving Gridline|Gridline selected/,"Touch sequence must activate a Gridline edit before release");
   // Capture release state exactly as Safari/iOS reports it; the canvas may be the release target.
-  await touchPage.evaluate(({endPt})=>window.dispatchEvent(new PointerEvent("pointerup",{pointerId:5101,pointerType:"touch",clientX:endPt.x,clientY:endPt.y,button:0,buttons:0,bubbles:true})),{endPt});
+  await touchPage.evaluate(({endPt})=>document.querySelector("#canvas").dispatchEvent(new PointerEvent("pointerup",{pointerId:5101,pointerType:"touch",clientX:endPt.x,clientY:endPt.y,button:0,buttons:0,bubbles:true})),{endPt});
   assert.equal(await actionsVisible(),true,`Finish/Cancel must remain visible after touch release during element edit; status="${await touchPage.locator("#status").textContent()}"; selection="${await touchPage.locator("#selectionInfo").textContent()}"; visible="${await touchPage.locator("#editActions").isVisible()}"; intent/state=${JSON.stringify(await touchPage.evaluate(()=>({hidden:document.querySelector("#editActions")?.hidden,aria:document.querySelector("#editActions")?.getAttribute("aria-hidden"),tool:document.querySelector("#toolName")?.value})))}`);
   assert.ok((await touchPage.locator("#editCommit").innerText()).includes("Finish"),"Finish button label must be English");
   await touchPage.locator("#editCommit").tap();
@@ -254,7 +254,7 @@ try {
     const init={pointerId:5102,pointerType:"touch",button:0,bubbles:true,cancelable:true};
     canvas.dispatchEvent(new PointerEvent("pointerdown",{...init,clientX:startPt.x,clientY:startPt.y,buttons:1}));
     canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPt.x,clientY:endPt.y,buttons:1}));
-    window.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPt.x,clientY:endPt.y,buttons:0}));
+    canvas.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPt.x,clientY:endPt.y,buttons:0}));
   },{startPt:cancelStart,endPt:cancelEnd});
   assert.equal(await actionsVisible(),true,"Finish/Cancel must remain visible after release before cancel");
   await touchPage.locator("#editCancel").tap();
