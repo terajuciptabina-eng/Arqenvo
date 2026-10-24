@@ -457,11 +457,9 @@ try {
   await confirmPage.mouse.down();
   await confirmPage.mouse.move(wallMid.x+24,wallMid.y+12,{steps:4});
   await confirmPage.mouse.up();
-  // Desktop mouse edits commit on pointer release; the finish toolbar is touch-only.
-  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Moved 1 element"));
-  assert.equal(await confirmPage.locator("#editActions").evaluate(el=>el.hidden),true,"Desktop drag should not leave the touch finish toolbar open");
-  await confirmPoint(6,4);
-  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Blank paper click must synchronize the Info Box");
+  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Element edit committed"));
+  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Desktop mouse release should commit and clear selection");
+  assert.equal(await confirmPage.locator("#editActions").evaluate(el=>el.hidden),true,"Desktop mouse release should not leave edit actions open");
   await confirmPage.close();
 
   const {openingPlacementDirection}=await import("../src/core/authoring.js");
