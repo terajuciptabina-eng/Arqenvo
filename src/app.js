@@ -369,7 +369,7 @@ function updateContextUI(){
  show("wallGeometryControl",tool==="wall");
  if($("wallGeometryMethod")&&document.activeElement!==$("wallGeometryMethod"))$("wallGeometryMethod").value=wallGeometryMethod;
  show("openingHingeControl",tool==="door"||tool==="window");
- show("openingSwingControl",tool==="door"||tool==="window");show("openingAlignmentControl",tool==="door"||tool==="window");if($("openingHinge")&&document.activeElement!==$("openingHinge"))$("openingHinge").value=openingHingeSide;if($("openingSwing")&&document.activeElement!==$("openingSwing"))$("openingSwing").value=openingSwingDirection;if($("openingAlignment")&&document.activeElement!==$("openingAlignment"))$("openingAlignment").value=openingAlignment;if($("openingAlignment")&&document.activeElement!==$("openingAlignment"))$("openingAlignment").value=openingAlignment;
+ show("openingSwingControl",tool==="door"||tool==="window");show("openingAlignmentControl",tool==="door"||tool==="window");if($("openingHinge")&&document.activeElement!==$("openingHinge"))$("openingHinge").value=openingHingeSide;if($("openingSwing")&&document.activeElement!==$("openingSwing"))$("openingSwing").value=openingSwingDirection;if($("openingAlignment")&&document.activeElement!==$("openingAlignment"))$("openingAlignment").value=openingAlignment;
  show("roofPitchControl",tool==="roof"||tool==="magicwand");
  show("roofOffsetControl",tool==="roof"||tool==="magicwand");
  if($("roofPitch")&&document.activeElement!==$("roofPitch"))$("roofPitch").value=String($("roofPitch").dataset.current||"30");
