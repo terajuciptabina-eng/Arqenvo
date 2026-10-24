@@ -381,9 +381,16 @@ try {
   assert.ok(placedWindow,"Window should be stored after Enter confirmation");
   await openingPage.locator("#threeTab").click();
   await openingPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
-  const window3dCheck=await openingPage.evaluate(()=>({window:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="window"),canvas:document.querySelector("#canvas")?.width>0&&document.querySelector("#canvas")?.height>0}));
+  const window3dCheck=await openingPage.evaluate(()=>{const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];const windowElement=model.find(e=>e.type==="window");const host=windowElement&&model.find(e=>e.type==="wall"&&e.id===windowElement.hostWallId);return {window:!!windowElement,host:!!host,canvas:document.querySelector("#canvas")?.width>0&&document.querySelector("#canvas")?.height>0,windowId:windowElement?.id||null,hostId:windowElement?.hostWallId||null}});
   assert.equal(window3dCheck.window,true,"Window element should remain in the model in 3D view");
+  assert.equal(window3dCheck.host,true,"Window must retain a valid host wall in 3D");
   assert.equal(window3dCheck.canvas,true,"3D view should render after a Window is placed");
+  const placedWindowModel=await openingPage.evaluate(()=>{const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];const win=model.find(e=>e.type==="window");return {window:win,host:model.find(e=>e.id===win?.hostWallId&&e.type==="wall")}});
+  const {hostedOpening3dGeometry}=await import("../src/core/authoring.js");
+  const paneGeometry=hostedOpening3dGeometry(placedWindowModel.host,placedWindowModel.window);
+  assert.equal(paneGeometry.type,"window","Window must use the window-pane 3D geometry path");
+  assert.equal(paneGeometry.boundary.length,4,"Window pane must have a renderable four-point boundary");
+  assert.ok(paneGeometry.height>0&&paneGeometry.thickness>0,"Window pane must have visible height and thickness");
   await openingPage.locator("#floorTab").click();
   await openingPage.locator('[data-tool="select"]').click();
   // Clear selection left by placement so the assertion proves a new Window hit.
@@ -425,6 +432,8 @@ try {
   const roofResult=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
   assert.equal(roofResult.boundary.length,4,"Magic Wand should generate a roof that follows the closed wall footprint");
   assert.equal(roofResult.sourceWallIds.length,4,"Roof should retain links to its four reference walls");
+  assert.equal(roofResult.type,"roof","Magic Wand is a feature; it must create a Roof element, not a Magic Wand element");
+  assert.equal(roofResult.sourceWallIds.every(id=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.some(el=>el.id===id&&el.type==="wall")),true,"Magic Wand roof must stay linked to existing reference walls");
   await roofPage.locator("#threeTab").click();
   await roofPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
   assert.ok(await roofPage.locator("#canvas").evaluate(canvas=>canvas.width>0&&canvas.height>0),"3D canvas should remain available after roof generation");
