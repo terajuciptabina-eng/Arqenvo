@@ -233,20 +233,28 @@ try {
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
   assert.ok(afterCommit,"Gridline must remain after touch commit");
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
-  // Drawing controls must remain visible as soon as the first wall point exists.
+  // Verify that mobile contextual controls are a topmost, tappable layer.
+  const hitTarget=await touchPage.locator("#editCommit").evaluate(el=>{
+    const bar=document.querySelector("#editActions");
+    bar.hidden=false;bar.setAttribute("aria-hidden","false");
+    const r=el.getBoundingClientRect();
+    return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.id;
+  });
+  assert.equal(hitTarget,"editCommit","Finish must be the hit target, not the underlying canvas");
+  await touchPage.locator("#editActions").evaluate(el=>{el.hidden=true;el.setAttribute("aria-hidden","true")});
+
+  // A first wall point is provisional. Cancel must clear it without adding a wall.
   await touchPage.locator('[data-tool="wall"]').click();
   const canvasBoxTouch=await touchPage.locator("#canvas").boundingBox();
   await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-180,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
-  const hitTarget=await touchPage.locator("#editCommit").evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.id});
-  assert.equal(hitTarget,"editCommit","Finish must be the hit target, not the underlying canvas");
   const wallsBeforeCancel=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
   await touchPage.locator("#editCancel").click();
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
   const wallsAfterCancel=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
   assert.equal(wallsAfterCancel,wallsBeforeCancel,"Cancel must not commit the provisional first wall point");
 
-  // Finish a continuous wall chain with Enter; a later canvas tap must not resume it.
+  // Finish a continuous wall chain. A later tap must not append geometry.
   await touchPage.locator('[data-tool="wall"]').click();
   await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
   await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-180,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
