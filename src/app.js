@@ -430,7 +430,7 @@ function beginOpeningPlacement(q){
  if(!candidate||candidate.d>.35){$("status").textContent=`Click within 350 mm of a host wall · cursor (${q.x.toFixed(2)}, ${q.y.toFixed(2)}) · nearest ${candidate?candidate.d.toFixed(2)+" m at "+candidate.w.start.x.toFixed(2)+","+candidate.w.start.y.toFixed(2)+" to "+candidate.w.end.x.toFixed(2)+","+candidate.w.end.y.toFixed(2):"no wall on active story"}`;return false}
  const w=candidate.w,len=wallLength(w),width=tool==="door"?.9:1.2,dx=w.end.x-w.start.x,dy=w.end.y-w.start.y,wallLen=Math.hypot(dx,dy)||1;
  const projection=((q.x-w.start.x)*dx+(q.y-w.start.y)*dy)/wallLen;
- const offset=openingAlignment==="left"?0:openingAlignment==="right"?Math.max(0,len-width):Math.max(0,(len-width)/2);
+ const anchor=openingAlignment||$("openingAlignment")?.value||"center";openingAlignment=anchor;const offset=anchor==="left"?0:anchor==="right"?Math.max(0,len-width):Math.max(0,(len-width)/2);
  pendingOpeningPlacement=openingPlacement.begin({wallId:w.id,storyId:w.storyId,type:tool,offset,width,height:tool==="door"?2.1:1.2,sill:tool==="door"?0:.9,hingeSide:openingHingeSide,swingDirection:openingSwingDirection,anchor:openingAlignment,anchorPoint:{x:q.x,y:q.y},cursor:{x:q.x,y:q.y}});
  $("status").textContent="Move cursor to choose opening side, then press Enter to place "+tool+" · Esc cancels";
  redraw();return true
