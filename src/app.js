@@ -498,7 +498,7 @@ c.addEventListener("pointerup",e=>{if(genericMoveGesture&&genericMoveGesture.poi
    if(didMove){scheduleAutoSave();renderProperties()}
   }else finishElementEditGesture("cancel");
  }
- floorTouchPointers.delete(e.pointerId);floorTouchGesture=null;floorTouchPointers.clear();
+ threeTouchPointers.delete(e.pointerId);threeTouchGesture=null;pending3dPointer=null;orbiting=false;lastCameraPointer=null;floorTouchPointers.delete(e.pointerId);floorTouchGesture=null;floorTouchPointers.clear();
  if(!releasedTouchEditPending){floorDrawGesture=null;isPanning=false;panStart=null}
  orbiting=false;lastCameraPointer=null;pending3dPointer=null;c.style.cursor="";redraw();updateEditActions()
 });
@@ -642,7 +642,9 @@ $("snapToggle").addEventListener("click",e=>{p.settings=p.settings||{};p.setting
 $("gridToggle").addEventListener("click",e=>{gridVisible=!gridVisible;e.currentTarget.classList.toggle("active",gridVisible);e.currentTarget.setAttribute("aria-pressed",String(gridVisible));redraw()});
 $("zoomIn").addEventListener("click",()=>{if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before zooming";return}if(view==="3d")camera3d.zoom=Math.min(5,camera3d.zoom*1.15);else scale=Math.min(180,scale*1.15);redraw();updateZoomReadout()});
 $("zoomOut").addEventListener("click",()=>{if(view==="floor"&&draft.length){$("status").textContent="Finish the current element or press Esc before zooming";return}if(view==="3d")camera3d.zoom=Math.max(.2,camera3d.zoom/1.15);else scale=Math.max(1,scale/1.15);redraw();updateZoomReadout()});
-$("zoomFit").addEventListener("click",fitFloorPlan);
+$("zoomFit").addEventListener("click",()=>{if(view==="3d")fit3d();else fitFloorPlan()});
+const mobileWandButton=$("mobileMagicWand");if(mobileWandButton)mobileWandButton.addEventListener("click",()=>{const previous=tool==="magicwand"?"select":tool;setTool("magicwand");spaceMagicWandReturnTool=previous;spaceMagicWandActive=true;spaceHeld=false;$("contextToolName").textContent="Magic Wand (tap once)";$("contextToolHint").textContent="Tap inside a closed wall loop to create a Roof; then return to "+previous;updateZoomReadout()});
+$("mobile3dZoomIn")?.addEventListener("click",()=>{camera3d.zoom=Math.min(5,camera3d.zoom*1.2);redraw();updateZoomReadout()});$("mobile3dZoomOut")?.addEventListener("click",()=>{camera3d.zoom=Math.max(.2,camera3d.zoom/1.2);redraw();updateZoomReadout()});$("mobile3dFit")?.addEventListener("click",()=>{fit3d();updateZoomReadout()});
 try{Object.defineProperty(window,"__arqenvoDebug",{configurable:true,value:{getView:()=>view,getTool:()=>tool,getZoom:()=>camera3d.zoom,getOpeningAlignment:()=>openingAlignment,getOpeningPlacement:()=>pendingOpeningPlacement?{...pendingOpeningPlacement}:null}})}catch{}
 $("scaleSelect").value=String(scale);syncGridOptions();updateZoomReadout();
 window.addEventListener("beforeunload",()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch{}});
