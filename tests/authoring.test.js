@@ -84,3 +84,12 @@ test("Magic Wand finds closed wall references and ignores open or branched netwo
  assert.equal(withBranch.length,1,"A branch should not erase the valid closed wall perimeter");
  assert.equal(withBranch[0].area,12);
 });
+
+
+test("roof model preserves editable pitch, eaves elevation, thickness and wall references", () => {
+ const roof=createRoof([{x:0,y:0},{x:5,y:0},{x:5,y:4},{x:0,y:4}],{elevation:3.2,pitch:25,thickness:.22,sourceWallIds:["w1","w2","w3","w4"]});
+ assert.equal(roof.elevation,3.2);
+ assert.equal(roof.pitch,25);
+ assert.equal(roof.thickness,.22);
+ assert.deepEqual(roof.sourceWallIds,["w1","w2","w3","w4"]);
+});
