@@ -349,7 +349,7 @@ function finishElementEditGesture(action="commit"){
  if(action==="cancel"){
   if(gesture===gridlinePointMoveGesture){const el=els().find(v=>v.id===gesture.elementId&&v.type==="gridline");if(el)el[gesture.end]={...gesture.startPoint}}
   else if(gesture===gridlineMoveGesture){if(gesture.groupStarts){for(const original of gesture.groupStarts){const member=els().find(v=>v.id===original.id);if(!member)continue;if(original.start&&original.end){member.start={...original.start};member.end={...original.end}}if(original.position)member.position={...original.position};if(original.boundary)member.boundary=original.boundary.map(pt=>({...pt}));if(original.witnessStart)member.witnessStart={...original.witnessStart};if(original.witnessEnd)member.witnessEnd={...original.witnessEnd}}}else{const el=els().find(v=>v.id===gesture.elementId&&v.type==="gridline");if(el){el.start={...gesture.start.start};el.end={...gesture.start.end}}}}
-  else if(gesture===wallPointMoveGesture){const wall=els().find(v=>v.id===gesture.wallId&&v.type==="wall");if(wall)wall[gesture.end]={...gesture.startPoint}}
+  else if(gesture===wallPointMoveGesture){const wall=els().find(v=>v.id===gesture.wallId&&v.type==="wall");if(wall){wall[gesture.end]={...gesture.startPoint};if(wall.gridSystemId)syncGridSystemDimensions(wall.gridSystemId)}}
   else if(gesture===genericMoveGesture){for(const original of gesture.startElements||[]){const el=els().find(v=>v.id===original.id);if(!el)continue;const geo=original.geometry;for(const key of ["start","end","position","boundary","offset","openings"]){if(geo[key]===null||geo[key]===undefined){delete el[key];continue}el[key]=structuredClone(geo[key])}}}
   else if(gesture===openingMoveGesture){const el=els().find(v=>v.id===gesture.elementId);if(el){el.offset=gesture.startOffset;const wall=els().find(v=>v.id===gesture.hostWallId&&v.type==="wall"),opening=wall?.openings?.find(o=>o.id===el.id);if(opening)opening.offset=gesture.startOffset}}
   $("status").textContent="Element edit cancelled";
@@ -360,11 +360,8 @@ function finishElementEditGesture(action="commit"){
  const pointerIds=new Set(gestures.map(g=>g.pointerId).filter(Number.isFinite));
  for(const pointerId of pointerIds){try{if(c.hasPointerCapture?.(pointerId))c.releasePointerCapture(pointerId)}catch{}}
  genericMoveGesture=null;gridlinePointMoveGesture=null;gridlineMoveGesture=null;wallPointMoveGesture=null;openingMoveGesture=null;
- // Keep a brief completion state until the corresponding physical pointer is released.
- const bar=$("editActions");
- if(bar){bar.hidden=true;bar.setAttribute("aria-hidden","true")}
  isPanning=false;panStart=null;
- redraw();renderProperties();
+ redraw();renderProperties();updateEditActions();
  return true
 }function updateEditActions(){const bar=$("editActions");if(!bar)return;const active=!!activeEditGesture()||hasActiveDrawing();bar.hidden=!active;bar.setAttribute("aria-hidden",String(!active));const identity=bar.querySelector("span"),commit=bar.querySelector("#editCommit"),cancel=bar.querySelector("#editCancel");if(identity)identity.textContent=activeEditGesture()?"EDIT ELEMENT":pendingOpeningPlacement?"PLACE OPENING": "DRAW ELEMENT";if(commit){commit.setAttribute("aria-label",activeEditGesture()?"Finish editing":pendingOpeningPlacement?"Place opening":"Finish drawing");commit.innerHTML="✓ <b>Selesai</b>"}if(cancel)cancel.setAttribute("aria-label",activeEditGesture()?"Cancel editing":pendingOpeningPlacement?"Cancel opening":"Cancel drawing")}
 
