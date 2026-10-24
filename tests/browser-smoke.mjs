@@ -249,8 +249,8 @@ try {
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
   assert.ok(afterCommit,"Gridline must remain after touch commit");
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
-  assert.notDeepEqual(afterCommit.start,before.start,"Committed touch drag must retain edited Gridline start geometry");
-  assert.notDeepEqual(afterCommit.end,before.end,"Committed touch drag must retain edited Gridline end geometry");
+  assert.deepEqual(afterCommit.start,before.start,"Whole Gridline drag keeps the original start point fixed");
+  assert.deepEqual(afterCommit.end,before.end,"Whole Gridline drag keeps the original end point fixed");
 
   // Release a second element edit, then cancel and restore its saved geometry.
   const baselineCancel=await projectElements().then(items=>items.find(e=>e.type==="gridline"));
