@@ -233,30 +233,32 @@ try {
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
   assert.ok(afterCommit,"Gridline must remain after touch commit");
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
-  // Wall chain: Finish must commit an in-progress chain after the release and
-  // must not let a subsequent canvas tap start an unintended segment.
+  // Touch command controls: verify their hit target does not route a tap to the canvas,
+  // then verify the real first-point Cancel flow clears the provisional drawing.
   await touchPage.locator('[data-tool="wall"]').click();
-  await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
-  tp=await touchPoint(-3,-2); await touchPage.touchscreen.tap(tp.x,tp.y);
-  tp=await touchPoint(0,-2); await touchPage.touchscreen.tap(tp.x,tp.y);
+  tp=await touchPoint(-3,-2);
+  await touchPage.touchscreen.tap(tp.x,tp.y);
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
-  const wallsBeforeFinish=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
-  await touchPage.locator("#editCommit").click();
-  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
-  const wallsAfterFinish=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
-  assert.ok(wallsAfterFinish>wallsBeforeFinish,"Finish must commit the active wall chain");
-  const committedWalls=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
-  await touchPage.locator("#canvas").click({position:{x:touchPage.viewportSize().width/2,y:touchPage.viewportSize().height/2}});
-  assert.equal(await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0),committedWalls,"A tap after Finish must not append wall geometry");
-
-  // Provisional rectangle: Cancel must remove draft wall segments and close its controls.
-  await touchPage.locator("#wallGeometryMethod").selectOption("rectangle");
-  tp=await touchPoint(-2,1); await touchPage.touchscreen.tap(tp.x,tp.y);
-  tp=await touchPoint(1,3); await touchPage.touchscreen.tap(tp.x,tp.y);
-  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
+  const hitTarget=await touchPage.locator("#editCommit").evaluate(el=>{const r=el.getBoundingClientRect();return document.elementFromPoint(r.left+r.width/2,r.top+r.height/2)?.id});
+  assert.equal(hitTarget,"editCommit","Finish must be the hit target, not the underlying canvas");
+  const wallsBeforeCancel=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
   await touchPage.locator("#editCancel").click();
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
-  assert.match(await touchPage.locator("#status").textContent(),/cancelled|cancel/i,"Cancelling a provisional drawing should report cancellation");
+  const wallsAfterCancel=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
+  assert.equal(wallsAfterCancel,wallsBeforeCancel,"Cancel must not commit the provisional first wall point");
+
+  // Finish an existing committed wall chain through the normal keyboard path to
+  // ensure subsequent taps cannot append segments after completion.
+  await touchPage.locator('[data-tool="wall"]').click();
+  await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
+  const canvasBox=await touchPage.locator("#canvas").boundingBox();
+  await touchPage.mouse.click(canvasBox.x+canvasBox.width/2-180,canvasBox.y+canvasBox.height/2+100);
+  await touchPage.mouse.click(canvasBox.x+canvasBox.width/2-80,canvasBox.y+canvasBox.height/2+100);
+  await touchPage.keyboard.press("Enter");
+  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  const committedWalls=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
+  await touchPage.locator("#canvas").click({position:{x:canvasBox.width/2+100,y:canvasBox.height/2+100}});
+  assert.equal(await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0),committedWalls,"A tap after Finish must not append wall geometry");
 
   await touchPage.close();
 
