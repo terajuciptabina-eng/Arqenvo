@@ -428,7 +428,7 @@ try {
   await roofPage.mouse.down();
   await roofPage.mouse.move(vertexScreen.x+28,vertexScreen.y+22);
   await roofPage.mouse.up();
-  await roofPage.waitForTimeout(200);
+  await roofPage.waitForFunction(({x,y})=>{const roof=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="roof");return !!roof&&(roof.boundary[0].x!==x||roof.boundary[0].y!==y)}, {x:roofResult.boundary[0].x,y:roofResult.boundary[0].y}, {timeout:3000});
   const movedRoof=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
   assert.ok(movedRoof.boundary[0].x!==roofResult.boundary[0].x||movedRoof.boundary[0].y!==roofResult.boundary[0].y,`A selected Roof vertex should be editable; before=${JSON.stringify(roofResult.boundary[0])}, after=${JSON.stringify(movedRoof.boundary[0])}, status=${await roofPage.locator("#status").textContent()}, handle=${JSON.stringify(handleHit)}`);
 
