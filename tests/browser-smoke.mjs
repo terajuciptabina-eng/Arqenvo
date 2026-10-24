@@ -233,7 +233,8 @@ try {
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
   assert.ok(afterCommit,"Gridline must remain after touch commit");
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
-  // Wall chain: Finish must close the chain and not add a stray segment.
+  // Wall chain: Finish must commit an in-progress chain after the release and
+  // must not let a subsequent canvas tap start an unintended segment.
   await touchPage.locator('[data-tool="wall"]').click();
   await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
   tp=await touchPoint(-3,-2); await touchPage.touchscreen.tap(tp.x,tp.y);
@@ -243,7 +244,10 @@ try {
   await touchPage.locator("#editCommit").click();
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
   const wallsAfterFinish=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
-  assert.ok(wallsAfterFinish>=wallsBeforeFinish,"Finishing a wall chain must retain committed segments");
+  assert.ok(wallsAfterFinish>wallsBeforeFinish,"Finish must commit the active wall chain");
+  const committedWalls=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
+  await touchPage.locator("#canvas").click({position:{x:touchPage.viewportSize().width/2,y:touchPage.viewportSize().height/2}});
+  assert.equal(await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0),committedWalls,"A tap after Finish must not append wall geometry");
 
   // Provisional rectangle: Cancel must remove draft wall segments and close its controls.
   await touchPage.locator("#wallGeometryMethod").selectOption("rectangle");
