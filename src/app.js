@@ -630,19 +630,7 @@ $("trackerAngle").addEventListener("input",e=>{trackerAngleOverride=e.target.val
 for(const id of ["trackerDistance","trackerAngle"]){$(id).addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();e.stopPropagation();const created=confirmTrackerAndDraw();if(created)e.target.blur()} });$(id).addEventListener("focus",()=>{$(id).select()})}
 // Keep keyboard navigation inside the Dynamic Tracker while drawing.
 
-document.addEventListener("pointerdown",event=>{
- if(c.contains(event.target)||event.target.closest("#editActions,.menu,.context-toolbar,.top,#toolbox,.tabs,.quick-options,.inspector,#dynamicTracker"))return;
- if(pendingGridSystem)return;
- // Do not treat clicks on descendants of the drawing workspace as an outside click.
- // Pointer selection is handled by the canvas listener; this guard prevents unrelated
- // descendants from cancelling a pending Door/Window placement before hit testing.
- if(event.target.closest(".workspace,.canvaswrap,#canvas"))return;
- if(releasedTouchEditPending||activeEditGesture()||pendingOpeningPlacement||hasActiveDrawing()){
-  const outsideTarget=event.target;
-  if(outsideTarget.closest("[data-tool],[data-tool-command],#wallGeometryMethod,#contextToolbar"))return;
-  commitAndDeselect("Outside click");
- }
-});
+
 document.addEventListener("keydown",e=>{const distance=$("trackerDistance"),angle=$("trackerAngle"),tracker=$("dynamicTracker");if(tracker.hidden||view!=="floor"||!draft.length||!["wall","beam","dimension","slab"].includes(tool))return;const inTracker=e.target===distance||e.target===angle;if(e.key==="Tab"&&e.shiftKey&&!inTracker){e.preventDefault();e.stopPropagation();distance.focus();return}if(e.key==="Tab"&&inTracker){e.preventDefault();e.stopPropagation();(e.shiftKey?(e.target===angle?distance:angle):(e.target===distance?angle:distance)).focus()}},true);
 $("wallGeometryMethod").addEventListener("change",e=>{wallGeometryMethod=e.target.value;updateContextUI();redraw();$("status").textContent="Wall geometry method: "+e.target.options[e.target.selectedIndex].text});
 $("height").addEventListener("input",()=>{if(document.activeElement!==$("contextHeight"))$("contextHeight").value=$("height").value});
