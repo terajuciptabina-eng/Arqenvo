@@ -230,7 +230,7 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .canvaswrap{min-width:0;min-height:0}
 
 /* Contextual edit commit controls for touch devices and precision tablets */
-.edit-actions{position:absolute;z-index:40;top:10px;right:10px;display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid #aab6c0;border-radius:8px;background:#272b32f5;color:#f5f7f8;box-shadow:0 5px 18px #0003;touch-action:manipulation;pointer-events:auto;opacity:1;visibility:visible}
+.edit-actions{position:absolute;z-index:2147483000;top:10px;right:10px;isolation:isolate;display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid #aab6c0;border-radius:8px;background:#272b32f5;color:#f5f7f8;box-shadow:0 5px 18px #0003;touch-action:manipulation;pointer-events:auto;opacity:1;visibility:visible}
 .edit-actions[hidden]{display:none}
 .edit-actions>span{font-size:9px;letter-spacing:.1em;font-weight:700;color:#c3cbd2;padding:0 4px}
 .edit-actions button{min-height:40px;min-width:82px;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 12px;border:1px solid #59636d;border-radius:5px;background:#373d45;color:#fff;font-size:17px;line-height:1}
@@ -238,7 +238,7 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .edit-actions #editCommit{background:#116a66;border-color:#4ba49c}
 .edit-actions #editCancel{background:#49383a;border-color:#8d5f63}
 .edit-actions button:active{transform:scale(.98)}
-@media(max-width:900px){.edit-actions{position:fixed;top:auto;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 82px);left:auto;z-index:9999;gap:8px;padding:8px;border-radius:10px;box-shadow:0 5px 22px #0005;background:#272b32f5;pointer-events:auto;touch-action:manipulation}.edit-actions button{min-width:94px;min-height:48px;font-size:18px;pointer-events:auto;touch-action:manipulation}.edit-actions button b{font-size:13px}.edit-actions>span{display:none}}
+@media(max-width:900px){.edit-actions{position:fixed;top:auto;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 82px);left:auto;z-index:2147483000;isolation:isolate;gap:8px;padding:8px;border-radius:10px;box-shadow:0 5px 22px #0005;background:#272b32f5;pointer-events:auto;touch-action:manipulation}.edit-actions button{min-width:94px;min-height:48px;font-size:18px;pointer-events:auto;touch-action:manipulation}.edit-actions button b{font-size:13px}.edit-actions>span{display:none}}
 @media(min-width:901px){.edit-actions{top:10px;right:10px}}
 
 /* Tablet and touch drafting ergonomics */
