@@ -179,7 +179,7 @@ try {
   await gridPage.mouse.down();
   await gridPoint(0, 4, "move");
   await gridPage.keyboard.press("Enter");
-  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed");
+  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed").catch(async error => { throw new Error(`Wall endpoint Enter did not commit; status="${await gridPage.locator("#status").textContent()}"; selection="${await gridPage.locator("#selectionInfo").textContent()}"; tool="${await gridPage.locator("#toolName").inputValue()}"; errors="${pageErrors.join(" | ")}"; ${error.message}`); });
   await gridPage.waitForTimeout(800);
   const wallAfterEnter = await readLastWall();
   await gridPoint(1, 5, "move");
