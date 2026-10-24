@@ -192,6 +192,39 @@ try {
   await gridPage.mouse.up();
   await gridPage.close();
 
+
+  // Touch devices commit an existing edit using the on-canvas Selesai control.
+  const touchPage = await browser.newPage({ viewport: { width: 900, height: 1100 }, hasTouch: true, isMobile: true });
+  touchPage.setDefaultTimeout(8000);
+  touchPage.on("pageerror", error => pageErrors.push(error.message));
+  await touchPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await touchPage.waitForFunction(() => document.querySelector("#canvas")?.clientWidth > 100);
+  const touchPoint = async (wx, wy) => touchPage.evaluate(({wx,wy}) => {
+    const c=document.querySelector("#canvas"),r=c.getBoundingClientRect(),t=window.__arqenvoViewport;
+    return {x:r.left+c.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+c.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)};
+  },{wx,wy});
+  await touchPage.locator('[data-tool="gridline"]').click();
+  let tp=await touchPoint(-2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
+  tp=await touchPoint(2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
+  await touchPage.waitForTimeout(800);
+  await touchPage.locator('[data-tool="select"]').click();
+  tp=await touchPoint(0,0); await touchPage.touchscreen.tap(tp.x,tp.y);
+  await touchPage.waitForFunction(()=>!document.querySelector("#editActions")?.hidden);
+  const touchBefore=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
+  // A touch drag moves the line; Selesai must keep the last point and hide the controls.
+  const start=await touchPoint(0,0),end=await touchPoint(0,0.7);
+  await touchPage.touchscreen.tap(start.x,start.y);
+  await touchPage.locator("#canvas").dispatchEvent("pointerdown",{pointerId:5101,pointerType:"touch",clientX:start.x,clientY:start.y,button:0,buttons:1,bubbles:true});
+  await touchPage.locator("#canvas").dispatchEvent("pointermove",{pointerId:5101,pointerType:"touch",clientX:end.x,clientY:end.y,button:0,buttons:1,bubbles:true});
+  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
+  await touchPage.locator("#editCommit").click();
+  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent==="Element edit committed");
+  assert.equal(await touchPage.locator("#editActions").isHidden(),true,"Selesai must hide contextual edit actions");
+  const afterTouchCommit=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
+  assert.ok(afterTouchCommit,"Gridline should remain after touch commit");
+  assert.equal(await touchPage.locator("#status").textContent(),"Element edit committed");
+  await touchPage.close();
+
   // Archicad-style element picking: run opening regression in a clean editor state so
   // earlier wall-chain/undo interactions cannot leave a stale pointer or transient canvas state.
   const openingPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
