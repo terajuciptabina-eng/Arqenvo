@@ -43,33 +43,27 @@ function nearestElement(q){
  const candidates=els().filter(e=>isLayerVisible(e)&&(view!=="floor"||e.storyId===story().id));
  const hitTolerance=Math.max(.12,10/Math.max(1,scale));
  let best=null,bestScore=Infinity;
- // Hit-test hosted openings in the same screen-space geometry used by redraw().
- // spos() reverses model Y, so deriving symbol normals in model coordinates can
- // put the hit target on the opposite side from the rendered swing/sash.
- const screenQ=spos(q),pixelTolerance=10;
+ const screenQ=spos(q),pixelTolerance=12;
  const openings=candidates.filter(el=>el.type==="door"||el.type==="window");
  for(const el of openings){
   const host=candidates.find(v=>v.id===el.hostWallId&&v.type==="wall");
   if(!host)continue;
   const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy);
   if(len<1e-8)continue;
-  const start=el.offset||0,width=el.width||0,end=start+width;
-  if(!(width>0))continue;
+  const start=Math.max(0,Number(el.offset)||0),width=Math.max(0,Number(el.width)||0),end=start+width;
+  if(width<=0)continue;
   const aModel={x:host.start.x+dx*start/len,y:host.start.y+dy*start/len};
   const bModel={x:host.start.x+dx*end/len,y:host.start.y+dy*end/len};
-  const a=spos(aModel),b=spos(bModel);
-  const sdx=b.x-a.x,sdy=b.y-a.y,slen=Math.hypot(sdx,sdy);
+  const a=spos(aModel),b=spos(bModel),sdx=b.x-a.x,sdy=b.y-a.y,slen=Math.hypot(sdx,sdy);
   if(slen<1e-6)continue;
-  const nx=-sdy/slen,ny=sdx/slen;
-  const wallPixels=Math.max(1,host.thickness*scale);
+  const nx=-sdy/slen,ny=sdx/slen,wallPixels=Math.max(1,(Number(host.thickness)||.15)*scale);
   let symbolDistance=Infinity;
   if(el.type==="door"){
    const g=doorSwingGeometry(a,b,{hingeSide:el.hingeSide,swingDirection:el.swingDirection});
-   const arcRadius=g.radius,radial=Math.abs(Math.hypot(screenQ.x-g.hinge.x,screenQ.y-g.hinge.y)-arcRadius);
-   // The visible arc is stroked in screen space. Use its radial distance with
-   // the opening interval constraint below; the canvas arc sweep direction and
-   // model-space Y inversion must not make a visible arc unpickable.
-   symbolDistance=Math.min(pointSegmentDistance(screenQ,g.hinge,g.openFree),radial);
+   const radial=Math.abs(Math.hypot(screenQ.x-g.hinge.x,screenQ.y-g.hinge.y)-g.radius);
+   const angle=Math.atan2(screenQ.y-g.hinge.y,screenQ.x-g.hinge.x);
+   const sweepContains=angleInArc(angle,g.startAngle,g.endAngle,g.anticlockwise);
+   symbolDistance=Math.min(pointSegmentDistance(screenQ,g.hinge,g.openFree),sweepContains?radial:Infinity);
   }else{
    const offset=wallPixels*.28;
    symbolDistance=Math.min(
@@ -77,12 +71,10 @@ function nearestElement(q){
     pointSegmentDistance(screenQ,{x:a.x-nx*offset,y:a.y-ny*offset},{x:b.x-nx*offset,y:b.y-ny*offset})
    );
   }
-  const along=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/(len||1);
+  const along=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/len;
   const withinOpening=along>=start-hitTolerance&&along<=end+hitTolerance;
-  // Resolve the hosted opening before its wall so a click on the leaf/arc or within
-  // the opening interval cannot be swallowed by the host Wall hit test.
   if(withinOpening||symbolDistance<=pixelTolerance){
-   const score=(symbolDistance<=pixelTolerance?symbolDistance:pixelTolerance)-1000;
+   const score=(withinOpening?0:pixelTolerance+symbolDistance)-1000;
    if(score<bestScore){best=el;bestScore=score}
   }
  }
@@ -91,7 +83,7 @@ function nearestElement(q){
   if(el.type==="door"||el.type==="window")continue;
   let d=Infinity;
   if(el.type==="wall"||el.type==="beam"){
-   const half=(el.type==="wall"?el.thickness:el.width||0)/2;
+   const half=(el.type==="wall"?(Number(el.thickness)||.15):(Number(el.width)||0))/2;
    d=Math.max(0,pointSegmentDistance(q,el.start,el.end)-half);
   }else if(el.type==="column"){
    d=Math.max(0,Math.hypot(q.x-el.position.x,q.y-el.position.y)-Math.max(el.width||0,el.depth||0)/2);
@@ -104,6 +96,11 @@ function nearestElement(q){
   if(d<=hitTolerance&&d<bestScore){best=el;bestScore=d}
  }
  return best
+}
+function angleInArc(angle,start,end,anticlockwise){
+ const normalize=value=>((value%(2*Math.PI))+2*Math.PI)%(2*Math.PI);
+ const a=normalize(angle),s=normalize(start),e=normalize(end);
+ return anticlockwise ? normalize(s-a)<=normalize(s-e)+1e-8 : normalize(a-s)<=normalize(e-s)+1e-8;
 }
 function snapPoint(q,radius){activeSnapPoint=null;if(p.settings?.snap===false)return q;const threshold=radius??(10/Math.max(1,scale));let best=null,bestDistance=threshold,bestKind="";const consider=(point,kind)=>{if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;const d=Math.hypot(q.x-point.x,q.y-point.y);if(d<bestDistance){best={x:point.x,y:point.y};bestDistance=d;bestKind=kind}};for(const el of els()){if(!isLayerVisible(el)||(view==="floor"&&el.storyId!==story().id))continue;if(el.type==="wall"||el.type==="beam"){consider(el.start,"endpoint");consider(el.end,"endpoint");consider({x:(el.start.x+el.end.x)/2,y:(el.start.y+el.end.y)/2},"midpoint");const dx=el.end.x-el.start.x,dy=el.end.y-el.start.y,len2=dx*dx+dy*dy;if(len2>1e-9){const t=Math.max(0,Math.min(1,((q.x-el.start.x)*dx+(q.y-el.start.y)*dy)/len2));if(t>0.025&&t<0.975)consider({x:el.start.x+t*dx,y:el.start.y+t*dy},"nearest")}}if(el.type==="column")consider(el.position,"center");if(el.type==="slab")for(const v of el.boundary)consider(v,"endpoint")}if(view==="floor"&&gridVisible){const step=Math.max(.1,Number($("grid")?.value)||.5),gp={x:Math.round(q.x/step)*step,y:Math.round(q.y/step)*step};consider(gp,"grid")}if(best)activeSnapPoint={...best,kind:bestKind};return best||q}
 function pointInPolygon(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){let a=poly[i],b=poly[j];if(((a.y>p.y)!==(b.y>p.y))&&(p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x))inside=!inside}return inside}
