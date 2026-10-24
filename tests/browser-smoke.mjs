@@ -449,6 +449,21 @@ try {
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:1}),"inside","Cursor above a horizontal wall chooses inside swing");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:-1}),"outside","Cursor below a horizontal wall chooses outside swing");
 
+  // Space temporarily activates Magic Wand and restores the prior tool on release.
+  const spacePage=await browser.newPage({viewport:{width:1100,height:800}});
+  spacePage.setDefaultTimeout(8000);
+  spacePage.on("pageerror",error=>pageErrors.push(error.message));
+  await spacePage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await spacePage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await spacePage.locator('[data-tool="wall"]').click();
+  await spacePage.keyboard.down("Space");
+  await spacePage.waitForFunction(()=>document.querySelector("#toolName")?.value==="magicwand");
+  assert.equal(await spacePage.locator('[data-tool="magicwand"]').evaluate(el=>el.classList.contains("active")),true,"Holding Space should activate Magic Wand temporarily");
+  await spacePage.keyboard.up("Space");
+  await spacePage.waitForFunction(()=>document.querySelector("#toolName")?.value==="wall");
+  assert.equal(await spacePage.locator('[data-tool="wall"]').evaluate(el=>el.classList.contains("active")),true,"Releasing Space should restore the prior tool");
+  await spacePage.close();
+
   // Roof/Magic Wand end-to-end: draw a closed wall footprint, confirm, then
   // generate a persistent roof from the reference loop and ensure Enter cleared selection.
   const roofPage=await browser.newPage({viewport:{width:1280,height:900}});
