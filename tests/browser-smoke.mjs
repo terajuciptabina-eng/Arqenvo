@@ -251,9 +251,9 @@ try {
   // ensure subsequent taps cannot append segments after completion.
   await touchPage.locator('[data-tool="wall"]').click();
   await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
-  const canvasBox=await touchPage.locator("#canvas").boundingBox();
-  await touchPage.mouse.click(canvasBox.x+canvasBox.width/2-180,canvasBox.y+canvasBox.height/2+100);
-  await touchPage.mouse.click(canvasBox.x+canvasBox.width/2-80,canvasBox.y+canvasBox.height/2+100);
+  const canvasBoxTouch=await touchPage.locator("#canvas").boundingBox();
+  await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-180,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
+  await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-80,canvasBox.y+canvasBox.height/2+100);
   await touchPage.keyboard.press("Enter");
   await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
   const committedWalls=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
