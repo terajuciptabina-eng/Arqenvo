@@ -158,7 +158,7 @@ try {
   await gridPage.mouse.down();
   await gridPoint(-2, 2, "move");
   await gridPage.keyboard.press("Enter");
-  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed");
+  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed").catch(async error => { throw new Error(`Wall endpoint Enter did not commit; status="${await gridPage.locator("#status").textContent()}"; selected="${await gridPage.locator("#selectionInfo").textContent()}"; errors="${pageErrors.join(" | ")}"; ${error.message}`); });
   await gridPage.waitForTimeout(800);
   const endpointAfterEnter = await readGridline();
   await gridPoint(-1, 3, "move");
