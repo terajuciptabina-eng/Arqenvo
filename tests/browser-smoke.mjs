@@ -260,7 +260,7 @@ try {
     const init={pointerId:5102,pointerType:"touch",button:0,bubbles:true,cancelable:true};
     canvas.dispatchEvent(new PointerEvent("pointerdown",{...init,clientX:startPt.x,clientY:startPt.y,buttons:1}));
     canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPt.x,clientY:endPt.y,buttons:1}));
-    canvas.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPt.x,clientY:endPt.y,buttons:0}));
+    window.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPt.x,clientY:endPt.y,buttons:0}));
   },{startPt:cancelStart,endPt:cancelEnd});
   assert.equal(await actionsVisible(),true,"Finish/Cancel must remain visible after release before cancel");
   await touchPage.locator("#editCancel").tap();
