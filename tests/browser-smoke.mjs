@@ -503,3 +503,29 @@ try {
   await browser.close();
   await new Promise(resolve => server.close(resolve));
 }
+
+
+  // Regression: Enter confirmation is idempotent and never appends an extra point after commit.
+  const enterPage=await browser.newPage({viewport:{width:1100,height:800}});
+  enterPage.setDefaultTimeout(8000);
+  enterPage.on("pageerror",error=>pageErrors.push(error.message));
+  await enterPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await enterPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await enterPage.locator("#snapToggle").click();
+  await enterPage.locator("#gridQuick").selectOption("0.1");
+  const enterPoint=async(wx,wy)=>{const pt=await enterPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await enterPage.mouse.click(pt.x,pt.y)};
+  await enterPage.locator('[data-tool="wall"]').click();
+  await enterPage.locator("#wallGeometryMethod").selectOption("continuous");
+  await enterPoint(-2,0); await enterPoint(0,0); await enterPoint(0,2);
+  await enterPage.keyboard.press("Enter");
+  await enterPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  const enterBefore=await enterPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
+  const size=enterPage.viewportSize();
+  await enterPage.mouse.move(size.width-10,size.height-10);
+  await enterPage.keyboard.press("Enter");
+  await enterPage.waitForTimeout(800);
+  const enterAfter=await enterPage.evaluate(()=>({walls:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0,selection:document.querySelector("#selectionInfo")?.textContent,active:!document.querySelector("#editActions")?.hidden}));
+  assert.equal(enterAfter.walls,enterBefore,"Enter after commit must not append geometry");
+  assert.ok(["No selection",""].includes((enterAfter.selection||"").trim()),"Confirmation must clear element selection");
+  assert.equal(enterAfter.active,false,"Confirmation must end the active drawing state");
+  await enterPage.close();
