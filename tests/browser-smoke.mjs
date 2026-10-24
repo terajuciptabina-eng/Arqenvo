@@ -433,7 +433,8 @@ try {
   assert.equal(roofResult.boundary.length,4,"Magic Wand should generate a roof that follows the closed wall footprint");
   assert.equal(roofResult.sourceWallIds.length,4,"Roof should retain links to its four reference walls");
   assert.equal(roofResult.type,"roof","Magic Wand is a feature; it must create a Roof element, not a Magic Wand element");
-  assert.equal(roofResult.sourceWallIds.every(id=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.some(el=>el.id===id&&el.type==="wall")),true,"Magic Wand roof must stay linked to existing reference walls");
+  const roofReferencesValid=await roofPage.evaluate(ids=>{const elements=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return ids.every(id=>elements.some(el=>el.id===id&&el.type==="wall"))},roofResult.sourceWallIds);
+  assert.equal(roofReferencesValid,true,"Magic Wand roof must stay linked to existing reference walls");
   await roofPage.locator("#threeTab").click();
   await roofPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
   assert.ok(await roofPage.locator("#canvas").evaluate(canvas=>canvas.width>0&&canvas.height>0),"3D canvas should remain available after roof generation");
