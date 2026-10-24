@@ -471,6 +471,16 @@ try {
   await roofPoint(0,0);
   await roofPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="roof")).catch(async error=>{throw new Error(`Magic Wand roof failed: status="${await roofPage.locator("#status").textContent()}"; tool="${await roofPage.locator("#toolName").inputValue()}"; stored=${JSON.stringify(await roofPage.evaluate(()=>({walls:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").map(w=>({start:w.start,end:w.end})),allTypes:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.map(e=>e.type)})))}; ${error.message}`)});
   const roofResult=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
+  // Manual Roof regression: select Roof, place a four-point footprint and confirm with Enter.
+  await roofPage.locator('[data-tool="roof"]').click();
+  const manualRoofPoints=[[-2.5,-1.5],[2.5,-1.5],[2.5,1.5],[-2.5,1.5]];
+  for(const [wx,wy] of manualRoofPoints) await roofPoint(wx,wy);
+  await roofPage.keyboard.press("Enter");
+  await roofPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="roof").length===2).catch(async error=>{throw new Error(`Manual Roof did not commit: status="${await roofPage.locator("#status").textContent()}"; draft=${JSON.stringify(await roofPage.evaluate(()=>window.__arqenvoViewport||null))}; ${error.message}`)});
+  const manuallyCreatedRoof=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="roof")[1]);
+  assert.equal(manuallyCreatedRoof.boundary.length,4,"Manual Roof must retain the four clicked footprint points");
+  assert.equal(manuallyCreatedRoof.sourceWallIds.length,0,"Manually drawn Roof must not pretend to be wall-linked");
+
   assert.equal(roofResult.boundary.length,4,"Magic Wand should generate a roof that follows the closed wall footprint");
   assert.equal(roofResult.sourceWallIds.length,4,"Roof should retain links to its four reference walls");
   assert.equal(roofResult.type,"roof","Magic Wand is a feature; it must create a Roof element, not a Magic Wand element");
