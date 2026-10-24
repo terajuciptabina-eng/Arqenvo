@@ -93,7 +93,7 @@ function nearestElement(q){
    d=Math.max(0,pointSegmentDistance(q,el.start,el.end)-half);
   }else if(el.type==="column"){
    d=Math.max(0,Math.hypot(q.x-el.position.x,q.y-el.position.y)-Math.max(el.width||0,el.depth||0)/2);
-  }else if(el.type==="slab"||el.type==="room"){
+  }else if(el.type==="slab"||el.type==="room"||el.type==="roof"){
    if(pointInPolygon(q,el.boundary))d=0;
    else d=Math.min(...el.boundary.map((v,i)=>pointSegmentDistance(q,v,el.boundary[(i+1)%el.boundary.length])));
   }else if(el.type==="dimension"||el.type==="gridline"){
