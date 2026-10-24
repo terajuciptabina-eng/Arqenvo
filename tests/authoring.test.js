@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { createRoof } from "../src/core/model.js";
 import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, openingPlacementDirection, findClosedWallLoops } from "../src/core/authoring.js";
 
 test("door swing geometry pivots at the hinge and uses opening width as radius", () => {
@@ -83,4 +84,13 @@ test("Magic Wand finds closed wall references and ignores open or branched netwo
  const withBranch=findClosedWallLoops([...loop,{id:"branch",type:"wall",start:{x:2,y:0},end:{x:2,y:-2}}]);
  assert.equal(withBranch.length,1,"A branch should not erase the valid closed wall perimeter");
  assert.equal(withBranch[0].area,12);
+});
+
+
+test("roof model preserves editable pitch, eaves elevation, thickness and wall references", () => {
+ const roof=createRoof([{x:0,y:0},{x:5,y:0},{x:5,y:4},{x:0,y:4}],{elevation:3.2,pitch:25,thickness:.22,sourceWallIds:["w1","w2","w3","w4"]});
+ assert.equal(roof.elevation,3.2);
+ assert.equal(roof.pitch,25);
+ assert.equal(roof.thickness,.22);
+ assert.deepEqual(roof.sourceWallIds,["w1","w2","w3","w4"]);
 });

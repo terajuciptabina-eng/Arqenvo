@@ -497,6 +497,43 @@ try {
   const movedRoof=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
   assert.ok(movedRoof.boundary[0].x!==roofResult.boundary[0].x||movedRoof.boundary[0].y!==roofResult.boundary[0].y,`A selected Roof vertex should be editable; before=${JSON.stringify(roofResult.boundary[0])}, after=${JSON.stringify(movedRoof.boundary[0])}, status=${await roofPage.locator("#status").textContent()}, handle=${JSON.stringify(handleHit)}`);
 
+  // Regression: Enter confirmation is idempotent and never appends an extra point after commit.
+  const enterPage=await browser.newPage({viewport:{width:1100,height:800}});
+  enterPage.setDefaultTimeout(8000);
+  enterPage.on("pageerror",error=>pageErrors.push(error.message));
+  await enterPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await enterPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await enterPage.locator("#snapToggle").click();
+  await enterPage.locator("#gridQuick").selectOption("0.1");
+  const enterPoint=async(wx,wy)=>{const pt=await enterPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await enterPage.mouse.click(pt.x,pt.y)};
+  await enterPage.locator('[data-tool="wall"]').click();
+  await enterPage.locator("#wallGeometryMethod").selectOption("continuous");
+  await enterPoint(-2,0); await enterPoint(0,0); await enterPoint(0,2);
+  await enterPage.keyboard.press("Enter");
+  await enterPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  await enterPage.waitForTimeout(850);
+  const enterBefore=await enterPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0);
+  const size=enterPage.viewportSize();
+  await enterPage.mouse.move(size.width-10,size.height-10);
+  await enterPage.keyboard.press("Enter");
+  await enterPage.waitForTimeout(800);
+  const enterAfter=await enterPage.evaluate(()=>({walls:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0,selection:document.querySelector("#selectionInfo")?.textContent,active:!document.querySelector("#editActions")?.hidden}));
+  assert.equal(enterAfter.walls,enterBefore,"Enter after commit must not append geometry");
+  assert.ok(["No selection",""].includes((enterAfter.selection||"").trim()),"Confirmation must clear element selection");
+  assert.equal(enterAfter.active,false,"Confirmation must end the active drawing state");
+  await enterPage.close();
+
+  // Roof parameters are editable from the selected element Properties panel.
+  await roofPage.locator('[data-tool="select"]').click();
+  await roofPage.waitForTimeout(50);
+  const roofCenterPoint=await roofPage.evaluate(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");const c=document.querySelector("#canvas"),b=c.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:b.left+c.clientWidth/2+(t?.origin.x||0)+(r.boundary.reduce((s,p)=>s+p.x,0)/r.boundary.length)*(t?.scale||36),y:b.top+c.clientHeight/2+(t?.origin.y||0)-(r.boundary.reduce((s,p)=>s+p.y,0)/r.boundary.length)*(t?.scale||36)}});
+  await roofPage.mouse.click(roofCenterPoint.x,roofCenterPoint.y);
+  await roofPage.waitForFunction(()=>document.querySelector('#elementProperties input[readonly]')?.value?.toLowerCase().includes("roof"));
+  await roofPage.locator('#elementProperties [data-prop="pitch"]').fill("25");
+  await roofPage.locator('#elementProperties [data-prop="elevation"]').fill("3.4");
+  await roofPage.locator('#elementProperties [data-prop="thickness"]').fill("0.22");
+  await roofPage.locator("#applyProps").click();
+  await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return r?.pitch===25&&r?.elevation===3.4&&r?.thickness===.22});
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
 } finally {
