@@ -17,17 +17,41 @@ export function findClosedWallLoops(walls,{tolerance=0.04,minArea=0.25}={}) {
  if(!Array.isArray(walls)||!(tolerance>0)||!(minArea>0))throw new TypeError("Wall loops need walls and positive tolerances");
  const nodes=[],edges=[];
  const nodeFor=p=>{let n=nodes.find(v=>Math.hypot(v.x-p.x,v.y-p.y)<=tolerance);if(!n){n={id:nodes.length,x:p.x,y:p.y,edges:[]};nodes.push(n)}return n};
- for(const wall of walls){if(!wall||wall.type!=="wall"||!wall.start||!wall.end||![wall.start.x,wall.start.y,wall.end.x,wall.end.y].every(Number.isFinite))continue;if(Math.hypot(wall.end.x-wall.start.x,wall.end.y-wall.start.y)<=tolerance)continue;const a=nodeFor(wall.start),b=nodeFor(wall.end);if(a.id===b.id)continue;const idx=edges.push({wallId:wall.id,a:a.id,b:b.id})-1;a.edges.push(idx);b.edges.push(idx)}
- const loops=[],visited=new Set();
- for(let first=0;first<edges.length;first++){if(visited.has(first))continue;const edgeSet=new Set(),nodeSet=new Set(),stack=[edges[first].a];while(stack.length){const id=stack.pop();if(nodeSet.has(id))continue;nodeSet.add(id);for(const idx of nodes[id].edges){edgeSet.add(idx);const edge=edges[idx];stack.push(edge.a===id?edge.b:edge.a)}}for(const idx of edgeSet)visited.add(idx);if(nodeSet.size<3||edgeSet.size!==nodeSet.size||[...nodeSet].some(id=>nodes[id].edges.length!==2))continue;
-  const start=edges[first].a,orderedNodes=[start],orderedEdges=[];let current=start,previous=-1,closed=false;
-  for(let step=0;step<=edgeSet.size;step++){const idx=nodes[current].edges.find(v=>v!==previous&&edgeSet.has(v));if(idx===undefined)break;orderedEdges.push(idx);const edge=edges[idx],next=edge.a===current?edge.b:edge.a;if(next===start){closed=true;break}if(orderedNodes.includes(next))break;orderedNodes.push(next);previous=idx;current=next}
-  if(!closed||orderedNodes.length<3||orderedEdges.length!==edgeSet.size)continue;
-  const boundary=orderedNodes.map(id=>({x:nodes[id].x,y:nodes[id].y}));let twice=0;for(let i=0;i<boundary.length;i++){const a=boundary[i],b=boundary[(i+1)%boundary.length];twice+=a.x*b.y-b.x*a.y}
-  const area=Math.abs(twice/2);if(area>=minArea)loops.push({boundary,wallIds:orderedEdges.map(i=>edges[i].wallId),area});
- }return loops;
+ for(const wall of walls){
+  if(!wall||wall.type!=="wall"||!wall.start||!wall.end||![wall.start.x,wall.start.y,wall.end.x,wall.end.y].every(Number.isFinite))continue;
+  if(Math.hypot(wall.end.x-wall.start.x,wall.end.y-wall.start.y)<=tolerance)continue;
+  const a=nodeFor(wall.start),b=nodeFor(wall.end);if(a.id===b.id)continue;
+  const idx=edges.push({wallId:wall.id,a:a.id,b:b.id})-1;a.edges.push(idx);b.edges.push(idx);
+ }
+ // A branch must not invalidate an otherwise closed perimeter. Enumerate simple
+ // cycles through connected references; normalize by edge set to avoid duplicates.
+ const cycleKeys=new Set(),loops=[];
+ const maxCycles=Math.max(500,edges.length*edges.length*8);
+ for(let seed=0;seed<edges.length;seed++){
+  const start=edges[seed].a,pathNodes=[start,edges[seed].b],pathEdges=[seed],usedNodes=new Set(pathNodes);
+  const walk=(current,previousEdge)=>{
+   if(loops.length>=maxCycles)return;
+   for(const idx of nodes[current].edges){
+    if(idx===previousEdge)continue;
+    const edge=edges[idx],next=edge.a===current?edge.b:edge.a;
+    if(next===start&&pathEdges.length>=2){
+     const cycle=[...pathEdges,idx],key=[...cycle].sort((a,b)=>a-b).join(",");
+     if(cycleKeys.has(key))continue;
+     cycleKeys.add(key);
+     const boundary=pathNodes.map(id=>({x:nodes[id].x,y:nodes[id].y}));
+     let twice=0;for(let i=0;i<boundary.length;i++){const a=boundary[i],b=boundary[(i+1)%boundary.length];twice+=a.x*b.y-b.x*a.y}
+     const area=Math.abs(twice/2);if(area>=minArea)loops.push({boundary,wallIds:cycle.map(i=>edges[i].wallId),area});
+     continue;
+    }
+    if(usedNodes.has(next)||pathEdges.length>=edges.length-1)continue;
+    usedNodes.add(next);pathNodes.push(next);pathEdges.push(idx);walk(next,idx);pathEdges.pop();pathNodes.pop();usedNodes.delete(next);
+   }
+  };
+  walk(pathNodes[1],seed);
+ }
+ // Keep the smallest valid loop for duplicate contours with identical geometry.
+ return loops;
 }
-
 /**
  * Door symbol geometry for a wall opening represented by its two jamb points.
  * Returns a hinged leaf and the exact circular arc from the closed free end
