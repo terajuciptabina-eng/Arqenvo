@@ -391,6 +391,9 @@ try {
   assert.equal(paneGeometry.type,"window","Window must use the window-pane 3D geometry path");
   assert.equal(paneGeometry.boundary.length,4,"Window pane must have a renderable four-point boundary");
   assert.ok(paneGeometry.height>0&&paneGeometry.thickness>0,"Window pane must have visible height and thickness");
+  assert.ok(paneGeometry.boundary.every(point=>Number.isFinite(point.x)&&Number.isFinite(point.y)),"Window pane 3D boundary must contain finite model coordinates");
+  const visibleWindowGeometry=await openingPage.evaluate(()=>{const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[],windowElement=model.find(e=>e.type==="window"),host=model.find(e=>e.id===windowElement?.hostWallId&&e.type==="wall");if(!host||!windowElement)return null;const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy)||1;return {span:windowElement.width,height:windowElement.height,sill:windowElement.sill||0,hostLength:len,valid:windowElement.offset>=0&&windowElement.offset+windowElement.width<=len+1e-7&&windowElement.height>0};});
+  assert.ok(visibleWindowGeometry?.valid,"Window must remain inside its wall host and produce a valid 3D pane");
   await openingPage.locator("#floorTab").click();
   await openingPage.locator('[data-tool="select"]').click();
   // Clear selection left by placement so the assertion proves a new Window hit.
@@ -471,6 +474,7 @@ try {
   assert.equal(roofResult.boundary.length,4,"Magic Wand should generate a roof that follows the closed wall footprint");
   assert.equal(roofResult.sourceWallIds.length,4,"Roof should retain links to its four reference walls");
   assert.equal(roofResult.type,"roof","Magic Wand is a feature; it must create a Roof element, not a Magic Wand element");
+  assert.ok(!JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.some(e=>e.type==="magicwand"),"Magic Wand must remain a feature, never a model element");
   const roofReferencesValid=await roofPage.evaluate(ids=>{const elements=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return ids.every(id=>elements.some(el=>el.id===id&&el.type==="wall"))},roofResult.sourceWallIds);
   assert.equal(roofReferencesValid,true,"Magic Wand roof must stay linked to existing reference walls");
   await roofPage.locator("#threeTab").click();
