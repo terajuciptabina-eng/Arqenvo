@@ -233,6 +233,7 @@ try {
     canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPt.x,clientY:endPt.y,buttons:1}));
   },{startPt,endPt});
   assert.equal(await actionsVisible(),true,"Finish/Cancel must be visible during an active element edit");
+  assert.match(await touchPage.locator("#status").textContent(),/Moving Gridline|Gridline selected/,"Touch sequence must activate a Gridline edit before release");
   // Capture release state exactly as Safari/iOS reports it; the canvas may be the release target.
   await touchPage.evaluate(({endPt})=>window.dispatchEvent(new PointerEvent("pointerup",{pointerId:5101,pointerType:"touch",clientX:endPt.x,clientY:endPt.y,button:0,buttons:0,bubbles:true})),{endPt});
   assert.equal(await actionsVisible(),true,`Finish/Cancel must remain visible after touch release during element edit; status="${await touchPage.locator("#status").textContent()}"; selection="${await touchPage.locator("#selectionInfo").textContent()}"; visible="${await touchPage.locator("#editActions").isVisible()}"; intent/state=${JSON.stringify(await touchPage.evaluate(()=>({hidden:document.querySelector("#editActions")?.hidden,aria:document.querySelector("#editActions")?.getAttribute("aria-hidden"),tool:document.querySelector("#toolName")?.value})))}`);
