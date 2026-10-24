@@ -3,7 +3,7 @@ import {detectRooms as detectClosedRooms} from "./core/rooms.js";
 import {serializeScheduleCsv} from "./core/csv.js";
 import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
-import {createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, findClosedWallLoops} from "./core/authoring.js";
+import {createOpeningPlacement, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, findClosedWallLoops} from "./core/authoring.js";
 import {ModelHistory, transactModel} from "./core/transactions.js";
 import {wallEndJoin, segmentIntersection} from "./core/geometry.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
