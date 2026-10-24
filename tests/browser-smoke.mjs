@@ -213,10 +213,8 @@ try {
   const startPoint=await touchPoint(0,0);
   const endPoint=await touchPoint(0,0.7);
   const c=touchPage.locator("#canvas");
-  // Select the existing gridline using an actual touch, then create a deterministic
-  // drag/release sequence. This avoids relying on a synthetic pointerdown to pick geometry.
-  await touchPage.touchscreen.tap(startPoint.x,startPoint.y);
-  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent?.includes("Gridline selected"));
+  // Run one continuous pointer lifecycle against the gridline. Keep the same pointer
+  // active from down through move and release so the app receives a real edit gesture.
   await touchPage.evaluate(({startPoint,endPoint})=>{
     const canvas=document.querySelector("#canvas");
     const init={pointerId:5101,pointerType:"touch",button:0,bubbles:true,cancelable:true};
