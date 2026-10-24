@@ -213,13 +213,17 @@ try {
   const startPoint=await touchPoint(0,0);
   const endPoint=await touchPoint(0,0.7);
   const c=touchPage.locator("#canvas");
-  // The app's pointerdown sequence selects the line and starts its edit gesture; synthetic touch dispatch
-  // is used only to move/release that already-registered pointer because Playwright touchscreen.tap is tap-only.
-  await c.dispatchEvent("pointerdown",{pointerId:5101,pointerType:"touch",clientX:startPoint.x,clientY:startPoint.y,button:0,buttons:1,bubbles:true});
-  await c.dispatchEvent("pointermove",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:1,bubbles:true});
+  // Select the existing gridline using an actual touch, then create a deterministic
+  // drag/release sequence. This avoids relying on a synthetic pointerdown to pick geometry.
+  await touchPage.touchscreen.tap(startPoint.x,startPoint.y);
   await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent?.includes("Gridline selected"));
-  // Releasing the registered touch pointer must preserve the explicit finish choice.
-  await c.dispatchEvent("pointerup",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:0,bubbles:true});
+  await touchPage.evaluate(({startPoint,endPoint})=>{
+    const canvas=document.querySelector("#canvas");
+    const init={pointerId:5101,pointerType:"touch",button:0,bubbles:true,cancelable:true};
+    canvas.dispatchEvent(new PointerEvent("pointerdown",{...init,clientX:startPoint.x,clientY:startPoint.y,buttons:1}));
+    canvas.dispatchEvent(new PointerEvent("pointermove",{...init,clientX:endPoint.x,clientY:endPoint.y,buttons:1}));
+    canvas.dispatchEvent(new PointerEvent("pointerup",{...init,clientX:endPoint.x,clientY:endPoint.y,buttons:0}));
+  },{startPoint,endPoint});
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true");
   assert.equal(await touchPage.locator("#editActions").isVisible(),true,"Finish/Cancel must remain visible after touch release");
   assert.equal(await touchPage.locator("#editCommit b").textContent(),"Finish","Finish label must be English");
