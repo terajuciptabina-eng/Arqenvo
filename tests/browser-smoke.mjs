@@ -109,6 +109,59 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
+  // Existing element edits must end on Enter and remain fixed when the pointer moves.
+  const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  gridPage.setDefaultTimeout(8000);
+  gridPage.on("pageerror", error => pageErrors.push(error.message));
+  await gridPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await gridPage.waitForFunction(() => { const el=document.querySelector("#canvas"); return el && el.clientWidth>100 && el.clientHeight>100; });
+  const gridPoint = async (wx, wy, action = "click") => {
+    const pt = await gridPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
+    if(action==="move") await gridPage.mouse.move(pt.x,pt.y); else await gridPage.mouse.click(pt.x,pt.y);
+    return pt;
+  };
+  const readGridline = async () => gridPage.evaluate(() => {
+    const raw=localStorage.getItem("arqenvo.autosave.v2");
+    const project=raw?JSON.parse(raw):{};
+    const line=project.elements?.find(el=>el.type==="gridline");
+    return line?{start:line.start,end:line.end}:null;
+  });
+  await gridPage.locator('[data-tool="gridline"]').click();
+  await gridPoint(-2, 0);
+  await gridPoint(2, 0);
+  await gridPage.waitForTimeout(800);
+  await gridPage.locator('[data-tool="select"]').click();
+  // Start a real pointer drag on an existing Gridline, then press Enter before releasing the mouse.
+  await gridPoint(0, 0, "move");
+  await gridPage.mouse.down();
+  await gridPoint(0, 1, "move");
+  await gridPage.keyboard.press("Enter");
+  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed");
+  await gridPage.waitForTimeout(800);
+  const gridAfterEnter = await readGridline();
+  await gridPoint(1, 2, "move");
+  await gridPage.waitForTimeout(850);
+  const gridAfterPointer = await readGridline();
+  assert.deepEqual(gridAfterPointer, gridAfterEnter,
+    "Moving the pointer after Enter must not keep moving an existing Gridline");
+  assert.equal(await gridPage.locator("#status").textContent(), "Element edit committed");
+  await gridPage.mouse.up();
+  // Editing one endpoint uses its own active pointer gesture and must also be terminated by Enter.
+  await gridPoint(-2, 1, "move");
+  await gridPage.mouse.down();
+  await gridPoint(-2, 2, "move");
+  await gridPage.keyboard.press("Enter");
+  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed");
+  await gridPage.waitForTimeout(800);
+  const endpointAfterEnter = await readGridline();
+  await gridPoint(-1, 3, "move");
+  await gridPage.waitForTimeout(850);
+  const endpointAfterPointer = await readGridline();
+  assert.deepEqual(endpointAfterPointer, endpointAfterEnter,
+    "Moving the pointer after Enter must not keep editing an existing Gridline endpoint");
+  await gridPage.mouse.up();
+  await gridPage.close();
+
   // Archicad-style element picking: run opening regression in a clean editor state so
   // earlier wall-chain/undo interactions cannot leave a stale pointer or transient canvas state.
   const openingPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -225,54 +278,6 @@ try {
     "Clicking a visible window sash should select Window rather than its host wall");
   await modelPoint(2.6, wallY);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
-
-  // Existing element edits must end on Enter and remain fixed when the pointer moves.
-  const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
-  gridPage.setDefaultTimeout(8000);
-  gridPage.on("pageerror", error => pageErrors.push(error.message));
-  await gridPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
-  await gridPage.waitForFunction(() => { const el=document.querySelector("#canvas"); return el && el.clientWidth>100 && el.clientHeight>100; });
-  const gridPoint = async (wx, wy, action = "click") => {
-    const pt = await gridPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
-    if(action==="move") await gridPage.mouse.move(pt.x,pt.y); else await gridPage.mouse.click(pt.x,pt.y);
-  };
-  const readGridline = async () => gridPage.evaluate(() => {
-    const raw=localStorage.getItem("arqenvo.autosave.v2");
-    const project=raw?JSON.parse(raw):{};
-    const line=project.elements?.find(el=>el.type==="gridline");
-    return line?{start:line.start,end:line.end}:null;
-  });
-  await gridPage.locator('[data-tool="gridline"]').click();
-  await gridPoint(-2, 0);
-  await gridPoint(2, 0);
-  await gridPage.waitForTimeout(800);
-  await gridPage.locator('[data-tool="select"]').click();
-  // Move an existing Gridline as a whole, then press Enter mid-drag.
-  await gridPoint(0, 0);
-  await gridPoint(0, 1, "move");
-  await gridPage.keyboard.press("Enter");
-  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed");
-  await gridPage.waitForTimeout(800);
-  const gridAfterEnter = await readGridline();
-  await gridPoint(1, 2, "move");
-  await gridPage.waitForTimeout(850);
-  const gridAfterPointer = await readGridline();
-  assert.deepEqual(gridAfterPointer, gridAfterEnter,
-    "Moving the pointer after Enter must not keep moving an existing Gridline");
-  assert.equal(await gridPage.locator("#status").textContent(), "Element edit committed");
-  // Editing one endpoint uses its own gesture and must also be terminated by Enter.
-  await gridPoint(-2, 1);
-  await gridPoint(-2, 2, "move");
-  await gridPage.keyboard.press("Enter");
-  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Element edit committed");
-  await gridPage.waitForTimeout(800);
-  const endpointAfterEnter = await readGridline();
-  await gridPoint(-1, 3, "move");
-  await gridPage.waitForTimeout(850);
-  const endpointAfterPointer = await readGridline();
-  assert.deepEqual(endpointAfterPointer, endpointAfterEnter,
-    "Moving the pointer after Enter must not keep editing an existing Gridline endpoint");
-  await gridPage.close();
 
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
