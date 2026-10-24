@@ -173,6 +173,8 @@ try {
   await gridPage.locator("#wallGeometryMethod").selectOption("single");
   await gridPoint(0, 3);
   await gridPoint(3, 3);
+  await gridPage.keyboard.press("Enter");
+  await gridPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
   await gridPage.waitForTimeout(800);
   await gridPage.locator('[data-tool="select"]').click();
   await gridPoint(0, 3, "move");
