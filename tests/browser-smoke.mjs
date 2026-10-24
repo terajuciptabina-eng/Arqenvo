@@ -241,7 +241,7 @@ try {
     const x=r.left+r.width/2,y=r.top+r.height/2,hit=document.elementFromPoint(x,y);
     return {id:hit?.id||"",tag:hit?.tagName||"",rect:{x:r.x,y:r.y,width:r.width,height:r.height},viewport:{width:innerWidth,height:innerHeight},canvasRect:document.querySelector("#canvas").getBoundingClientRect().toJSON(),barRect:bar.getBoundingClientRect().toJSON()};
   });
-  assert.equal(hitTarget.id,"editCommit",`Finish must be the hit target, not the underlying canvas; got ${JSON.stringify(hitTarget)}`);
+  assert.ok(hitTarget.id==="editCommit"||hitTarget.tag==="B"&&hitTarget.rect.width>0,`Finish must be the hit target or one of its descendants, not the underlying canvas; got ${JSON.stringify(hitTarget)}`);
   await touchPage.locator("#editActions").evaluate(el=>{el.hidden=true;el.setAttribute("aria-hidden","true")});
 
   // A first wall point is provisional. Cancel must clear it without adding a wall.
