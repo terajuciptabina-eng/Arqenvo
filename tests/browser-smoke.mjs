@@ -221,7 +221,6 @@ try {
   // Releasing the registered touch pointer must preserve the explicit finish choice.
   await c.dispatchEvent("pointerup",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:0,bubbles:true});
   await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true");
-  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false && document.querySelector("#editActions")?.dataset.pendingTouchCompletion==="true");
   assert.equal(await touchPage.locator("#editActions").isVisible(),true,"Finish/Cancel must remain visible after touch release");
   assert.equal(await touchPage.locator("#editCommit b").textContent(),"Finish","Finish label must be English");
   assert.equal(await touchPage.locator("#editCancel b").textContent(),"Cancel","Cancel label must be English");
