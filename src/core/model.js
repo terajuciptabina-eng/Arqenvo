@@ -108,7 +108,7 @@ export function createRoof(boundary, options = {}) {
   const thickness=options.thickness??0.18,elevation=options.elevation??3,pitch=options.pitch??30;
   if (!(thickness>0)||!Number.isFinite(elevation)||elevation<0||!Number.isFinite(pitch)||pitch<0||pitch>70) throw new RangeError("Roof thickness, elevation or pitch is invalid");
   const points=boundary.map(p=>point(p.x,p.y));if(points.length>3&&distance(points[0],points[points.length-1])<1e-8)points.pop();
-  return {id:options.id??makeId("roof"),type:"roof",storyId:options.storyId??DEFAULT_STORY.id,boundary:points,thickness,elevation,pitch,sourceWallIds:Array.isArray(options.sourceWallIds)?[...options.sourceWallIds]:[],buildingMaterial:options.buildingMaterial??"Roof - Generic",layer:options.layer??"A-ROOF",properties:{loadBearing:false,...options.properties}};
+  return {id:options.id??makeId("roof"),type:"roof",storyId:options.storyId??DEFAULT_STORY.id,boundary:points,thickness,elevation,offset:options.offset??0,pitch,sourceWallIds:Array.isArray(options.sourceWallIds)?[...options.sourceWallIds]:[],buildingMaterial:options.buildingMaterial??"Roof - Generic",layer:options.layer??"A-ROOF",properties:{loadBearing:false,...options.properties}};
 }
 
 export function createStory(name, elevation, height = 3) {
