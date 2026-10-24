@@ -193,7 +193,7 @@ try {
   await gridPage.close();
 
 
-  // Touch users must be able to explicitly finish and cancel an existing whole-element drag.
+  // Touch users must be able to finish/cancel after the physical touch has ended.
   const touchPage = await browser.newPage({ viewport: { width: 900, height: 1100 }, hasTouch: true, isMobile: true });
   touchPage.setDefaultTimeout(8000);
   touchPage.on("pageerror", error => pageErrors.push(error.message));
@@ -203,6 +203,16 @@ try {
     const c=document.querySelector("#canvas"),r=c.getBoundingClientRect(),t=window.__arqenvoViewport;
     return {x:r.left+c.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+c.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)};
   },{wx,wy});
+  const projectElements = async () => touchPage.evaluate(() => JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[]);
+  const actionsVisible = async () => touchPage.locator("#editActions").evaluate(el => !el.hidden && el.getAttribute("aria-hidden")!=="true");
+  const pointerSequence = async (startPt,endPt,pointerId) => {
+    const canvas=touchPage.locator("#canvas");
+    await canvas.dispatchEvent("pointerdown",{pointerId,pointerType:"touch",clientX:startPt.x,clientY:startPt.y,button:0,buttons:1,bubbles:true});
+    await canvas.dispatchEvent("pointermove",{pointerId,pointerType:"touch",clientX:endPt.x,clientY:endPt.y,button:0,buttons:1,bubbles:true});
+    await canvas.dispatchEvent("pointerup",{pointerId,pointerType:"touch",clientX:endPt.x,clientY:endPt.y,button:0,buttons:0,bubbles:true});
+  };
+
+  // Existing element edit: release must not hide actions; Finish then commits.
   await touchPage.locator('[data-tool="gridline"]').click();
   let tp=await touchPoint(-2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
   tp=await touchPoint(2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
@@ -210,23 +220,54 @@ try {
   await touchPage.locator('[data-tool="select"]').click();
   const before=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
   assert.ok(before,"Touch test must create a Gridline");
-  const startPoint=await touchPoint(0,0);
-  const endPoint=await touchPoint(0,0.7);
-  const c=touchPage.locator("#canvas");
-  // The app's pointerdown sequence selects the line and starts its edit gesture; synthetic touch dispatch
-  // is used only to move/release that already-registered pointer because Playwright touchscreen.tap is tap-only.
-  await c.dispatchEvent("pointerdown",{pointerId:5101,pointerType:"touch",clientX:startPoint.x,clientY:startPoint.y,button:0,buttons:1,bubbles:true});
-  await c.dispatchEvent("pointermove",{pointerId:5101,pointerType:"touch",clientX:endPoint.x,clientY:endPoint.y,button:0,buttons:1,bubbles:true});
-  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
-  await touchPage.locator("#editCommit").click();
+  await pointerSequence(await touchPoint(0,0),await touchPoint(0,0.7),5101);
+  assert.equal(await actionsVisible(),true,"Finish/Cancel must remain visible after touch pointerup during element edit");
+  assert.equal(await touchPage.locator("#editCommit").innerText().then(s=>s.includes("Finish")),true,"Finish button label must be English");
+  await touchPage.locator("#editCommit").tap();
   await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent==="Element edit committed");
-  await touchPage.mouse.move(20,20);
-  await touchPage.waitForTimeout(800);
-  assert.equal(await touchPage.locator("#editActions").isHidden(),true,"Selesai must hide contextual edit actions");
-  const afterCommit=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
+  assert.equal(await actionsVisible(),false,"Finish should close contextual actions after committing the edit");
+  const afterCommit=await projectElements().then(items=>items.find(e=>e.type==="gridline"));
   assert.ok(afterCommit,"Gridline must remain after touch commit");
   assert.equal(afterCommit.start.y,afterCommit.end.y,"Whole Gridline drag must preserve its parallel geometry");
-  assert.notDeepEqual(afterCommit,before,"Committed touch drag must retain the edited Gridline geometry");
+  assert.notDeepEqual(afterCommit,before,"Committed touch drag must retain edited Gridline geometry");
+
+  // Start a second edit, release, then cancel. Geometry must return to its original state.
+  const baselineCancel=await projectElements().then(items=>items.find(e=>e.type==="gridline"));
+  await pointerSequence(await touchPoint(0,0),await touchPoint(0,0.6),5102);
+  assert.equal(await actionsVisible(),true,"Finish/Cancel must remain visible after release before cancel");
+  await touchPage.locator("#editCancel").tap();
+  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent==="Element edit cancelled");
+  assert.equal(await actionsVisible(),false,"Cancel should close contextual actions after cancelling an edit");
+  const afterCancel=await projectElements().then(items=>items.find(e=>e.type==="gridline"));
+  assert.deepEqual(afterCancel.start,baselineCancel.start,"Cancel must restore the original Gridline start point");
+  assert.deepEqual(afterCancel.end,baselineCancel.end,"Cancel must restore the original Gridline end point");
+
+  // Drawing: Finish and Cancel must persist after release and must not start an extra wall point.
+  await touchPage.locator('[data-tool="wall"]').click();
+  await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
+  await touchPage.touchscreen.tap((await touchPoint(-3,-2)).x,(await touchPoint(-3,-2)).y);
+  await touchPage.touchscreen.tap((await touchPoint(0,-2)).x,(await touchPoint(0,-2)).y);
+  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
+  assert.equal(await actionsVisible(),true,"Wall-chain controls should appear while drawing");
+  await touchPage.locator("#editCommit").tap();
+  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  assert.equal(await actionsVisible(),false,"Finish must close the wall chain");
+  const wallCountAfterFinish=await projectElements().then(items=>items.filter(e=>e.type==="wall").length);
+  await touchPage.locator("#editCommit").tap().catch(()=>{});
+  assert.equal((await projectElements()).filter(e=>e.type==="wall").length,wallCountAfterFinish,"Tapping Finish must not create an additional wall point");
+
+  // A provisional rectangle can be cancelled after finger release without leaving elements behind.
+  await touchPage.locator("#wallGeometryMethod").selectOption("rectangle");
+  await touchPage.touchscreen.tap((await touchPoint(-2,1)).x,(await touchPoint(-2,1)).y);
+  await touchPage.touchscreen.tap((await touchPoint(1,3)).x,(await touchPoint(1,3)).y);
+  await touchPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
+  const wallCountBeforeCancel=await projectElements().then(items=>items.filter(e=>e.type==="wall").length);
+  assert.equal(await actionsVisible(),true,"Provisional drawing controls should remain visible");
+  await touchPage.locator("#editCancel").tap();
+  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Drawing cancelled"));
+  assert.equal(await actionsVisible(),false,"Cancel should close provisional drawing controls");
+  assert.equal((await projectElements()).filter(e=>e.type==="wall").length,wallCountBeforeCancel-4,"Cancelling a provisional rectangle must remove its four pending wall segments");
+
   await touchPage.close();
 
   // Archicad-style element picking: run opening regression in a clean editor state so
