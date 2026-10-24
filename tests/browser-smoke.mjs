@@ -408,7 +408,7 @@ try {
 
   
 
-// Confirmation semantics: Enter clears selection; clicking blank paper confirms an active element edit.
+// Confirmation semantics: Enter commits a drawing and clears selection; blank paper commits a move.
   const confirmPage=await browser.newPage({viewport:{width:1280,height:900}});
   confirmPage.setDefaultTimeout(8000);
   await confirmPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
@@ -419,9 +419,13 @@ try {
   await confirmPage.locator('[data-tool="wall"]').click();
   await confirmPage.locator("#wallGeometryMethod").selectOption("single");
   await confirmPoint(-2,-1);await confirmPoint(2,-1);
+  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall created"));
+  // The wall is provisional until confirmed; Enter must commit it before changing tools.
   await confirmPage.keyboard.press("Enter");
   await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
-  assert.ok(["No selection",""].includes((await confirmPage.locator("#selectionInfo").textContent()).trim()),`Drawing confirmation should leave selection info empty or No selection; info=${await confirmPage.locator("#selectionInfo").textContent()}; status=${await confirmPage.locator("#status").textContent()}`);
+  await confirmPage.waitForTimeout(850);
+  const committedState=await confirmPage.evaluate(()=>({info:document.querySelector("#selectionInfo")?.textContent,status:document.querySelector("#status")?.textContent,hidden:document.querySelector("#editActions")?.hidden,elements:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.map(e=>e.type)}));
+  assert.ok(["No selection",""].includes((committedState.info||"").trim()),`Enter must leave selection clear: ${JSON.stringify(committedState)}`);
   const storedWall=await confirmPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall"));
   assert.ok(storedWall,"Confirmed wall must remain in the model");
   await confirmPage.locator('[data-tool="select"]').click();
@@ -435,7 +439,7 @@ try {
   await confirmPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===false);
   await confirmPoint(6,4);
   await confirmPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
-  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Clicking blank paper must commit the edit and clear selection");
+  await confirmPage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent==="No selection");
   await confirmPage.close();
 
   const {openingPlacementDirection}=await import("../src/core/authoring.js");
