@@ -421,7 +421,7 @@ try {
   await confirmPoint(-2,-1);await confirmPoint(2,-1);
   await confirmPage.keyboard.press("Enter");
   await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
-  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Confirming a drawing should leave no element selected");
+  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection",`Confirming a drawing should leave no element selected; info=${await confirmPage.locator("#selectionInfo").textContent()}; status=${await confirmPage.locator("#status").textContent()}; controlsHidden=${await confirmPage.locator("#editActions").isHidden()}; props=${await confirmPage.locator("#elementProperties").textContent()}`);
   const storedWall=await confirmPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall"));
   assert.ok(storedWall,"Confirmed wall must remain in the model");
   await confirmPage.locator('[data-tool="select"]').click();
