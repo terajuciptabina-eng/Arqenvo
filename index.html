@@ -402,6 +402,7 @@ document.addEventListener("keydown",event=>{
   <div class="context-control" id="wallHeightControl"><label for="contextHeight">Wall Height</label><div class="context-input"><input id="contextHeight" type="number" min="0.1" step="0.1" value="3.0"><span>m</span></div></div>
   <div class="context-control" id="wallThicknessControl"><label for="contextThickness">Wall Thickness</label><div class="context-input"><input id="contextThickness" type="number" min="0.05" step="0.01" value="0.15"><span>m</span></div></div>
   <div class="context-control" id="wallGeometryControl" hidden><label for="wallGeometryMethod">Geometry Method</label><select id="wallGeometryMethod" aria-label="Wall geometry method"><option value="continuous">Continuous</option><option value="single">Single Segment</option><option value="rectangle">Rectangle</option></select></div>
+  <div class="context-control" id="roofPitchControl" hidden style="display:none"><label for="roofPitch">Roof Pitch (degrees)</label><select id="roofPitch" aria-label="Roof pitch"><option value="15">15°</option><option value="20">20°</option><option value="25">25°</option><option value="30" selected>30°</option><option value="35">35°</option><option value="40">40°</option><option value="45">45°</option></select></div>
   <div class="context-divider"></div>
   <div class="context-summary"><span class="context-eyebrow">ACTIVE STORY</span><b id="contextStoryName">Ground Floor</b></div>
   <div class="context-summary"><span class="context-eyebrow">SELECTION</span><b id="contextSelectionCount">0 elements</b></div>
