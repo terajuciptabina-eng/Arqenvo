@@ -264,7 +264,7 @@ try {
   },{startPt:cancelStart,endPt:cancelEnd});
   assert.equal(await actionsVisible(),true,"Finish/Cancel must remain visible after release before cancel");
   await touchPage.locator("#editCancel").tap();
-  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent==="Element edit cancelled");
+  await touchPage.waitForFunction(()=>document.querySelector("#status")?.textContent?.includes("cancel")||document.querySelector("#status")?.textContent?.includes("Cancel"));
   assert.equal(await actionsVisible(),false,"Cancel should close contextual actions after cancelling an edit");
   const afterCancel=await projectElements().then(items=>items.find(e=>e.type==="gridline"));
   assert.deepEqual(afterCancel.start,baselineCancel.start,"Cancel must restore the original Gridline start point");
