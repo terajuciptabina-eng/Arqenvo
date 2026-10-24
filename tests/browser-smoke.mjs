@@ -400,7 +400,10 @@ try {
   await roofPage.locator('[data-tool="wall"]').click();
   await roofPage.locator("#wallGeometryMethod").selectOption("single");
   const roofPoint=async(wx,wy)=>{const pt=await roofPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await roofPage.mouse.click(pt.x,pt.y)};
-  await roofPoint(-3,-2);await roofPoint(3,-2);await roofPoint(3,2);await roofPoint(-3,2);await roofPoint(-3,-2);
+  await roofPoint(-3,-2);await roofPoint(3,-2);await roofPage.keyboard.press("Enter");
+  await roofPoint(3,-2);await roofPoint(3,2);await roofPage.keyboard.press("Enter");
+  await roofPoint(3,2);await roofPoint(-3,2);await roofPage.keyboard.press("Enter");
+  await roofPoint(-3,2);await roofPoint(-3,-2);await roofPage.keyboard.press("Enter");
   await roofPage.keyboard.press("Enter");
   await roofPage.waitForFunction(()=>document.querySelector("#editActions")?.hidden===true);
   await roofPage.locator('[data-tool="magicwand"]').click();
