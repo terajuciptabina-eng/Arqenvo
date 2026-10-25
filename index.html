@@ -562,6 +562,26 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-open>.navigator{display:block!important}
 }
 
+
+/* Tablet Navigator is a RIGHT-side drawer. Toolbox remains on the left. */
+@media (pointer:coarse), (max-width:1200px) {
+ .work.navigator-open>.navigator{
+  position:fixed!important;left:auto!important;right:0!important;
+  top:182px!important;bottom:24px!important;
+  width:min(310px,calc(100vw - 64px))!important;
+  max-width:calc(100vw - 64px)!important;
+  display:block!important;z-index:1201!important;
+  overflow:auto!important;box-shadow:-8px 0 24px #0005!important
+ }
+ .work:not(.navigator-open)>.navigator{display:none!important}
+ .work>#navigatorToggle.navigator-toggle{
+  position:fixed!important;left:auto!important;right:12px!important;
+  top:182px!important;bottom:auto!important;z-index:1600!important
+ }
+ .work.navigator-open:after{inset:182px 0 24px 48px!important}
+ #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;margin-left:auto!important}
+}
+
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
