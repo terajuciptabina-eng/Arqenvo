@@ -174,6 +174,7 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
+  await page.locator('[data-tool="select"]').click();
   // Direction-dependent area selection: drag left-to-right around one wall segment.
   await page.mouse.move(cx - 100, cy - 10);
   await page.mouse.down();
