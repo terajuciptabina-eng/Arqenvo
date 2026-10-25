@@ -113,7 +113,9 @@ function nearestElement(q){
    );
   }
   const along=((q.x-host.start.x)*dx+(q.y-host.start.y)*dy)/len;
-  const withinOpening=along>=start-hitTolerance&&along<=end+hitTolerance;
+  // An opening is selectable only when the pointer is near its actual wall/symbol, not merely aligned with its length.
+  const perpendicularDistance=pointSegmentDistance(screenQ,a,b);
+  const withinOpening=along>=start-hitTolerance&&along<=end+hitTolerance&&perpendicularDistance<=Math.max(pixelTolerance,wallPixels/2+pixelTolerance);
   if(withinOpening||symbolDistance<=pixelTolerance){
    const score=(withinOpening?0:pixelTolerance+symbolDistance)-1000;
    if(score<bestScore){best=el;bestScore=score}
