@@ -479,7 +479,12 @@ try {
   assert.ok(mobileZoomRestored<mobileZoomAfter,"Mobile 3D Zoom Out should decrease camera zoom");
   await mobileZoomPage.close();
 
-  const {openingPlacementDirection}=await import("../src/core/authoring.js");
+  const {openingPlacementDirection,openingOffsetForAnchor,createOpeningPlacement}=await import("../src/core/authoring.js");
+  assert.equal(openingOffsetForAnchor(4,.9,"center"),1.55,"Center anchor must centre opening on host wall");
+  assert.equal(openingOffsetForAnchor(4,.9,"left"),0,"Left anchor must align to host wall start");
+  assert.equal(openingOffsetForAnchor(4,.9,"right"),3.1,"Right anchor must align to host wall end");
+  assert.throws(()=>openingOffsetForAnchor(.8,.9,"center"),/fit within/,"Opening wider than host wall is rejected");
+  const openingState=createOpeningPlacement();openingState.begin({wallId:"wall-1",type:"door",width:.9,offset:1.55,anchor:"center",hingeSide:"left",swingDirection:"inside"});openingState.aim({x:2,y:-1},{x:0,y:0},{x:4,y:0});openingState.update({anchor:"right",offset:3.1,hingeSide:"right"});const committedOpening=openingState.confirm();assert.equal(committedOpening.offset,3.1,"Changed anchor offset persists through confirm");assert.equal(committedOpening.hingeSide,"right","Changed hinge persists through confirm");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:1}),"inside","Cursor above a horizontal wall chooses inside swing");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:-1}),"outside","Cursor below a horizontal wall chooses outside swing");
 

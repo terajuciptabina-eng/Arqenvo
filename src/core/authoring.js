@@ -4,6 +4,19 @@
  * Units are metres for model coordinates; rendered coordinates may be pixels.
  */
 
+export function openingOffsetForAnchor(hostLength, openingWidth, anchor = "center") {
+  if (!Number.isFinite(hostLength) || hostLength <= 0) throw new RangeError("Host wall length must be positive");
+  if (!Number.isFinite(openingWidth) || openingWidth <= 0) throw new RangeError("Opening width must be positive");
+  if (openingWidth > hostLength + 1e-8) throw new RangeError("Opening must fit within the host wall");
+  const available = Math.max(0, hostLength - openingWidth);
+  switch (String(anchor || "center").toLowerCase()) {
+    case "left": return 0;
+    case "right": return available;
+    case "center": return available / 2;
+    default: throw new TypeError("Anchor must be center, left or right");
+  }
+}
+
 export function openingPlacementDirection(wallStart, wallEnd, cursor) {
   const dx = wallEnd.x - wallStart.x;
   const dy = wallEnd.y - wallStart.y;
@@ -145,6 +158,12 @@ export function createOpeningPlacement() {
       if (![cursor, wallStart, wallEnd].every(p => p && Number.isFinite(p.x) && Number.isFinite(p.y))) throw new TypeError("Placement coordinates must be finite");
       pending.cursor = { x: cursor.x, y: cursor.y };
       pending.swingDirection = openingPlacementDirection(wallStart, wallEnd, cursor);
+      return structuredClone(pending);
+    },
+    update(changes) {
+      if (!pending) return null;
+      if (!changes || typeof changes !== "object" || Array.isArray(changes)) throw new TypeError("Placement updates must be an object");
+      pending = { ...pending, ...structuredClone(changes) };
       return structuredClone(pending);
     },
     confirm() {
