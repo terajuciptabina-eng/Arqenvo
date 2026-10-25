@@ -602,6 +602,36 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .top .ribbon-brand .brand-logo{display:block!important;width:46px!important;height:auto!important;max-width:46px!important;max-height:36px!important;object-fit:contain!important}
 }
 
+
+/* Single source of truth for iPad Navigator behavior (tablet landscape/portrait). */
+@media (pointer:coarse) and (min-width:601px) {
+ .work {
+  display:grid!important;
+  grid-template-columns:48px 240px minmax(0,1fr) 250px!important;
+  min-width:0!important;
+  position:relative!important;
+ }
+ .work>.tools {grid-column:1!important;grid-row:1!important;display:flex!important;min-width:0!important;}
+ .work>.navigator {
+  grid-column:2!important;grid-row:1!important;
+  display:block!important;position:relative!important;inset:auto!important;
+  width:auto!important;min-width:0!important;max-width:none!important;
+  height:auto!important;min-height:0!important;visibility:visible!important;
+  overflow:auto!important;z-index:auto!important;box-shadow:none!important;
+ }
+ .work>.workspace {grid-column:3!important;grid-row:1!important;display:grid!important;min-width:0!important;}
+ .work>.inspector {grid-column:4!important;grid-row:1!important;display:block!important;visibility:visible!important;min-width:0!important;width:auto!important;max-width:none!important;}
+ .work.navigator-hidden {grid-template-columns:48px 0 minmax(0,1fr) 250px!important;}
+ .work.navigator-hidden>.navigator {display:none!important;visibility:hidden!important;width:0!important;min-width:0!important;max-width:0!important;overflow:hidden!important;}
+ .work.navigator-hidden>.workspace {grid-column:3!important;grid-row:1!important;}
+ .work.navigator-hidden>.inspector {display:block!important;visibility:visible!important;grid-column:4!important;}
+ .work>#navigatorToggle.navigator-toggle {
+  position:absolute!important;left:52px!important;right:auto!important;top:8px!important;bottom:auto!important;
+  display:inline-flex!important;z-index:1600!important;margin:0!important;
+ }
+ .work:not(.navigator-hidden):not(.navigator-open)>.navigator {display:block!important;}
+ .work.navigator-open:after {display:none!important;}
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -682,7 +712,8 @@ document.addEventListener("keydown",event=>{
   nav.id='navigator-panel';
   var toggle=document.getElementById('navigatorToggle');
   if(!toggle){toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';}
-  function isMobile(){return window.matchMedia('(max-width:900px), (pointer:coarse)').matches;}
+  /* Phone uses a drawer; iPad/tablet uses the docked panel with hide/show in place. */
+  function isMobile(){return window.matchMedia('(max-width:600px)').matches;}
   function sync(){
    var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
    var heading=nav.querySelector('.section');
