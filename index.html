@@ -534,6 +534,24 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;min-width:64px!important;min-height:38px!important;margin:0 0 0 auto!important}
 }
 
+
+/* Final tablet layout correction: compact ribbon and align Navigator to its own panel. */
+@media (pointer:coarse) {
+ .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px!important}
+ .menu{height:27px!important;min-height:27px!important}
+ .top{height:48px!important;min-height:48px!important;max-height:48px!important;padding:3px 6px!important;align-items:center!important;overflow-x:auto!important;overflow-y:hidden!important}
+ .top .ribbon-brand{display:none!important}
+ .top .ribbon-group{height:42px!important;min-height:42px!important;max-height:42px!important;align-self:center!important;padding:0 3px!important}
+ .top .ribbon-group>small,.top .ribbon-buttons button span{display:none!important}
+ .top .ribbon-buttons{height:40px!important;min-height:40px!important;align-items:center!important}
+ .top .ribbon-buttons button{width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;font-size:20px!important}
+ .context-toolbar{height:42px!important;min-height:42px!important;max-height:42px!important;overflow-x:auto!important;overflow-y:hidden!important}
+ .work>#navigatorToggle.navigator-toggle{top:182px!important;left:54px!important;right:auto!important;position:fixed!important;z-index:1600!important}
+ .work.navigator-open>#navigatorToggle.navigator-toggle{top:182px!important;left:auto!important;right:8px!important}
+ .work.navigator-open .navigator{top:182px!important}
+ .work.navigator-open:after{inset:182px 0 24px 48px!important}
+}
+
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
