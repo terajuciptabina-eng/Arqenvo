@@ -815,7 +815,7 @@ function prepareLayoutPrint(sheetOverride=null){
   }
   const meta=sheet.titleBlock||{},tb=document.createElement("div");tb.className="print-titleblock";
   const project=document.createElement("div");project.className="project-name";project.textContent=meta.projectTitle||p.project.name||"ARQENVO";tb.appendChild(project);
-  for(const txt of [meta.company||"",meta.author||"",sheet.name,"SCALE "+(sheet.drawings.map(d=>"1:"+d.scale).join(" / ")||"—"),"DATE "+(meta.issueDate||meta.date||new Date().toISOString().slice(0,10))]){const item=document.createElement("div");item.textContent=txt;tb.appendChild(item)}
+  for(const txt of [sheet.name,(sheet.drawings.map(d=>d.title||"").filter(Boolean).join(" · ")||"GENERAL ARRANGEMENT"),[meta.author?"PREPARED BY "+meta.author:"",meta.company||"", "SCALE "+(sheet.drawings.map(d=>"1:"+d.scale).join(" / ")||"—"),"DATE "+(meta.issueDate||meta.date||new Date().toISOString().slice(0,10))].filter(Boolean).join(" · ")]){const item=document.createElement("div");item.textContent=txt;tb.appendChild(item)}
   const sn=document.createElement("div");sn.className="sheet-number";sn.textContent=sheet.number;tb.appendChild(sn);page.appendChild(tb);stage.appendChild(page);
  }
  $("status").textContent="Print preview ready · "+sheets.length+" sheet(s). Choose Save as PDF in the print dialog.";
