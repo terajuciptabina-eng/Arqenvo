@@ -827,6 +827,8 @@ $("layoutDuplicate")?.addEventListener("click",duplicateActiveLayout);$("layoutM
 $("layoutReturnPlan")?.addEventListener("click",()=>enterModelView("floor"));
 $("layoutPrint")?.addEventListener("click",()=>prepareLayoutPrint(layoutSheet()?[layoutSheet()]:[]));$("layoutPreviewPdf")?.addEventListener("click",()=>prepareLayoutPrint());$("publisherPreview")?.addEventListener("click",publishSelectedLayouts);$("publishAllLayouts")?.addEventListener("click",publishSelectedLayouts);
 $("layoutApplyDrawing")?.addEventListener("click",applyLayoutDrawing);$("layoutApplyMeta")?.addEventListener("click",applyLayoutMeta);$("layoutAddDrawing")?.addEventListener("click",addLayoutDrawing);$("layoutDeleteDrawing")?.addEventListener("click",removeLayoutDrawing);
+ // Keep title-block edits in sync when the user leaves a field, not only after clicking Apply.
+ ["layoutProjectTitle","layoutSheetName","layoutSheetNumber","layoutSheetDate","layoutAuthor","layoutCompany"].forEach(id=>$(id)?.addEventListener("change",applyLayoutMeta));
 $("layoutControlSheet")?.addEventListener("change",e=>activateLayout(e.target.value));
 $("layoutPaper")?.addEventListener("change",e=>{const s=layoutSheet();if(!s)return;s.paper=e.target.value;renderLayoutControls();renderLayoutInspector();redraw();scheduleAutoSave()});
 $("layoutOrientation")?.addEventListener("change",e=>{const s=layoutSheet();if(!s)return;s.orientation=e.target.value;renderLayoutControls();redraw();scheduleAutoSave()});
