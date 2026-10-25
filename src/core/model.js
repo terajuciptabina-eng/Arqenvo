@@ -23,6 +23,7 @@ export function createProject(name = "Untitled Project") {
     elements: [],
     views: [{ id: "view-floor-ground", name: "Ground Floor", type: "floor-plan", storyId: DEFAULT_STORY.id, scale: 100 }],
     layouts: [],
+    publisher: { format: "pdf", scope: "all" },
     metadata: { engine: "ARQENVO Core", schema: MODEL_VERSION },
   };
 }
@@ -189,7 +190,7 @@ export function normalizeHostedOpenings(project) {
 function migrateProject(input) {
   const check = validateProject(input);
   if (!check.valid) throw new Error(check.errors.join("; "));
-  if (input.version === MODEL_VERSION) { const current = normalizeHostedOpenings(structuredClone(input)); current.layouts ??= []; return current; }
+  if (input.version === MODEL_VERSION) { const current = normalizeHostedOpenings(structuredClone(input)); current.layouts ??= []; current.views ??= []; current.publisher ??= { format: "pdf", scope: "all" }; for (const sheet of current.layouts) { sheet.drawings ??= []; sheet.paper ??= "A3"; sheet.orientation ??= "landscape"; sheet.titleBlock ??= {}; } return current; }
   const p = createProject(input.project?.name ?? "Imported Project");
   p.project = { ...p.project, ...(input.project ?? {}) };
   p.stories = input.stories?.length ? structuredClone(input.stories) : [{ ...DEFAULT_STORY }];
@@ -202,7 +203,9 @@ function migrateProject(input) {
     ...(input.dimensions ?? []).map(d => ({ ...d, type: "dimension" })),
   ];
   p.views = input.views ?? p.views;
-  p.layouts = input.layouts ?? [];
+  p.layouts = Array.isArray(input.layouts) ? structuredClone(input.layouts) : [];
+  p.publisher = input.publisher ?? { format: "pdf", scope: "all" };
+  for (const sheet of p.layouts) { sheet.drawings ??= []; sheet.paper ??= "A3"; sheet.orientation ??= "landscape"; sheet.titleBlock ??= {}; }
   p.settings = { ...p.settings, ...(input.settings ?? {}) };
   return normalizeHostedOpenings(p);
 }
