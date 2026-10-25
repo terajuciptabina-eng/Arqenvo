@@ -419,6 +419,23 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work.navigator-hidden{grid-template-columns:156px minmax(0,1fr)!important}
 .work.navigator-hidden .navigator,.work.navigator-hidden .inspector{display:none!important}
 .work.navigator-hidden .workspace{grid-column:2;grid-row:1 / span 2}
+
+/* Mobile-first compact toolbox and a real, touch-accessible panel toggle. */
+@media(max-width:900px){
+  #toolbox{width:48px;min-width:48px;padding:4px 2px;overflow-x:hidden}
+  #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note{display:none!important}
+  #toolbox .tool{width:42px;min-width:42px;min-height:42px;margin:2px auto;padding:4px;justify-content:center;gap:0;font-size:0}
+  #toolbox .tool b{flex:0 0 auto;width:auto;font-size:22px}
+  #toolbox .tool span{display:none!important}
+}
+.work.navigator-hidden{grid-template-columns:156px minmax(0,1fr)!important}
+.work.navigator-hidden .navigator,.work.navigator-hidden .inspector{display:none!important}
+.work.navigator-hidden .workspace{grid-column:2;grid-row:1 / span 2}
+#navigatorToggle{margin-left:8px;flex:0 0 auto;white-space:nowrap;min-height:34px;padding:5px 9px;font-size:11px;touch-action:manipulation}
+@media(max-width:900px){
+  .work.navigator-hidden{grid-template-columns:48px minmax(0,1fr)!important}
+  #navigatorToggle{padding:5px 7px;font-size:10px}
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -490,6 +507,40 @@ document.addEventListener("keydown",event=>{
 </div><footer class="status"><span id="status">Ready</span><span id="coords">X 0.00 · Y 0.00</span><span class="right">ARQENVO · BIM Workspace · Developed by Asyraf Reeza</span></footer></div>
 <div id="layoutPrintStage" aria-label="Layout Book print preview"></div><script type="module" src="./src/app.js?v=arqenvo-layout-book-20261025k"></script><dialog id="gridSystemDialog" style="width:min(520px,calc(100vw - 24px));border:1px solid #aeb8c1;border-radius:8px;padding:0;box-shadow:0 18px 60px #0003;color:var(--ink)"><form id="gridSystemForm" style="padding:18px;display:grid;gap:12px"><div style="display:flex;align-items:center;justify-content:space-between"><strong style="font-size:16px">Grid System Settings</strong><button type="button" id="gridSystemClose" aria-label="Close">✕</button></div><p style="margin:0;color:var(--muted)">Set grid spacing and labels, choose the starting corner, then click the grid origin and define the positive X-axis direction.</p><label style="display:grid;gap:4px">Grid starting corner <select id="gridSystemStartCorner" style="padding:8px;border:1px solid var(--line);border-radius:4px"><option value="bottom-left" selected>Bottom-left · labels progress right and up</option><option value="bottom-right">Bottom-right · labels progress left and up</option><option value="top-left">Top-left · labels progress right and down</option><option value="top-right">Top-right · labels progress left and down</option></select></label><label style="display:grid;gap:4px">Vertical grid intervals / spacing (mm) <input id="gridSystemX" value="4000, 5000, 5000" required title="Comma-separated distances in millimetres, e.g. 4000, 5000, 5000" style="padding:8px;border:1px solid var(--line);border-radius:4px"></label><label style="display:grid;gap:4px">Horizontal grid intervals / spacing (mm) <input id="gridSystemY" value="4000, 4000, 4000" required title="Comma-separated distances in millimetres, e.g. 4000, 4000, 4000" style="padding:8px;border:1px solid var(--line);border-radius:4px"></label><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label style="display:grid;gap:4px">Vertical grid start label (numbers) <input id="gridSystemXLabel" value="A" maxlength="6" style="padding:8px;border:1px solid var(--line);border-radius:4px"></label><label style="display:grid;gap:4px">Horizontal grid start label (letters) <input id="gridSystemYLabel" value="1" maxlength="6" style="padding:8px;border:1px solid var(--line);border-radius:4px"></label></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label style="display:grid;gap:4px">Axis bubble radius (px) <input id="gridSystemMarker" type="number" min="4" max="20" value="10" style="padding:8px;border:1px solid var(--line);border-radius:4px"></label><label style="display:grid;gap:4px">Line extension past outer axes (mm) <input id="gridSystemExtension" type="number" min="0" max="5000" step="100" value="4000" style="padding:8px;border:1px solid var(--line);border-radius:4px"></label></div><fieldset style="border:1px solid var(--line);border-radius:4px;padding:9px;display:grid;gap:7px"><legend>Axis bubbles / markers</legend><div style="display:grid;grid-template-columns:1fr 1fr;gap:6px"><label><input id="gridMarkerTop" type="checkbox" checked> Top</label><label><input id="gridMarkerBottom" type="checkbox"> Bottom</label><label><input id="gridMarkerLeft" type="checkbox" checked> Left</label><label><input id="gridMarkerRight" type="checkbox"> Right</label></div><small style="color:var(--muted)">Enable any combination, including all four sides.</small></fieldset><fieldset style="border:1px solid var(--line);border-radius:4px;padding:9px;display:grid;gap:7px"><legend>Structural helpers (optional)</legend><label><input id="gridSystemColumns" type="checkbox"> Place columns at every grid intersection</label><label><input id="gridSystemBeams" type="checkbox"> Create beams between adjacent grid intersections</label><label><input id="gridSystemDimensions" type="checkbox" checked> Dimension lines (chain dimensions)</label><label><input id="gridSystemTotalDimension" type="checkbox" checked> Total dimension</label><div style="display:grid;grid-template-columns:1fr 1fr;gap:10px"><label style="display:grid;gap:4px">Chain dimension offset from grid circles (mm) <input id="gridSystemChainDimensionOffset" type="number" min="0" max="100000" step="100" value="1000" style="padding:8px;border:1px solid var(--line);border-radius:4px"></label><label style="display:grid;gap:4px">Total dimension offset from grid circles (mm) <input id="gridSystemTotalDimensionOffset" type="number" min="0" max="100000" step="100" value="1500" style="padding:8px;border:1px solid var(--line);border-radius:4px"></label></div><small style="color:var(--muted)">For the horizontal grid axes, dimensions are placed below the axis bubbles. Total dimension should be farther from the bubbles than chain dimensions.</small></fieldset><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:4px"><button type="button" id="gridSystemCancel">Cancel</button><button type="submit" style="background:var(--select);border-color:var(--accent);font-weight:600">Place Grid System</button></div></form></dialog>
 
-/* Navigator visibility toggle; also hide the properties dock to maximize the model canvas. */
-(()=>{const action=document.querySelector('[data-panel-command="navigator"]');const work=document.querySelector('.work');if(!action||!work)return;const sync=()=>{const hidden=work.classList.contains('navigator-hidden');action.textContent=hidden?'Show Navigator':'Hide Navigator';action.setAttribute('aria-pressed',String(!hidden));};action.addEventListener('click',event=>{event.preventDefault();event.stopPropagation();work.classList.toggle('navigator-hidden');sync();});sync();})();
+
+<script>
+(function(){
+  function initWorkspacePanels(){
+    var work=document.querySelector('.work');
+    var toolbar=document.querySelector('.top');
+    if(!work||!toolbar)return;
+    var toggle=document.getElementById('navigatorToggle');
+    if(!toggle){
+      toggle=document.createElement('button');
+      toggle.id='navigatorToggle';
+      toggle.type='button';
+      toggle.textContent='Hide Navigator';
+      toggle.setAttribute('aria-controls','navigator-panel');
+      toolbar.appendChild(toggle);
+    }
+    var nav=document.querySelector('.navigator');
+    if(nav)nav.id='navigator-panel';
+    function sync(){
+      var hidden=work.classList.contains('navigator-hidden');
+      toggle.textContent=hidden?'Show Navigator':'Hide Navigator';
+      toggle.setAttribute('aria-pressed',hidden?'true':'false');
+      toggle.setAttribute('aria-label',hidden?'Show Navigator and Properties':'Hide Navigator and Properties');
+    }
+    toggle.addEventListener('click',function(){
+      work.classList.toggle('navigator-hidden');
+      sync();
+      window.dispatchEvent(new Event('resize'));
+    });
+    sync();
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initWorkspacePanels);
+  else initWorkspacePanels();
+})();
+</script>
+
 </body></html>
