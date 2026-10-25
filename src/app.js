@@ -733,7 +733,7 @@ function renderModelSnapshot(ctx,rect,source,storyId,scaleDenominator=100,frameW
  ctx.restore()
 }
 function renderLayoutCanvas(w,h){
- const sheet=layoutSheet();x.save();x.fillStyle="#d5d9de";x.fillRect(0,0,w,h);
+ const sheet=layoutSheet();const canvasRect=c.getBoundingClientRect();w=Math.max(1,canvasRect.width);h=Math.max(1,canvasRect.height);const ratio=window.devicePixelRatio||1;x.setTransform(ratio,0,0,ratio,0,0);x.save();x.fillStyle="#303139";x.fillRect(0,0,w,h);
  if(!sheet){x.fillStyle="#e9ecef";x.fillRect(0,0,w,h);x.fillStyle="#303943";x.font="bold 16px Arial";x.fillText("LAYOUT BOOK",22,30);x.font="12px Arial";x.fillText("Create a layout sheet to start documenting the project.",22,52);x.restore();return}
  ensureLayoutDefaults(sheet);const {width:pw,height:ph}=layoutDimensions(sheet);const fit=Math.max(.01,Math.min((w-42)/pw,(h-42)/ph)),sw=pw*fit,sh=ph*fit,left=(w-sw)/2,top=(h-sh)/2,mm=v=>v*fit;
  x.fillStyle="#00000022";x.fillRect(left+5,top+5,sw,sh);x.fillStyle="#fff";x.strokeStyle="#747b84";x.lineWidth=1;x.fillRect(left,top,sw,sh);x.strokeRect(left,top,sw,sh);
