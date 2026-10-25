@@ -200,12 +200,35 @@ try {
   assert.ok(marqueeRect, "Canvas must remain visible before marquee selection");
   marqueeCx = marqueeRect.x + marqueeRect.width / 2;
   marqueeCy = marqueeRect.y + marqueeRect.height / 2;
+  await marqueePage.evaluate(() => {
+    window.__marqueeEventProbe = [];
+    for (const type of ["pointerdown","pointermove","pointerup"]) {
+      document.addEventListener(type, event => {
+        const target = event.target;
+        window.__marqueeEventProbe.push({
+          type,
+          target: target?.id || (typeof target?.className === "string" ? target.className : target?.tagName),
+          x: event.clientX,
+          y: event.clientY
+        });
+      }, true);
+    }
+  });
   // Start outside the 10 px element hit tolerance, but enclose the horizontal wall.
   await marqueePage.mouse.move(marqueeCx - 100, marqueeCy - 30);
   await marqueePage.mouse.down();
   await marqueePage.mouse.move(marqueeCx + 100, marqueeCy + 30, { steps: 5 });
   await marqueePage.mouse.up();
-  await marqueePage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Marquee area defined"));
+  await marqueePage.waitForTimeout(100);
+  const marqueeProbe = await marqueePage.evaluate(() => ({
+    status: document.querySelector("#status")?.textContent || "",
+    tool: window.__arqenvoDebug?.getTool() || "unknown",
+    view: window.__arqenvoDebug?.getView() || "unknown",
+    viewport: window.__arqenvoDebug?.getViewport() || null,
+    events: window.__marqueeEventProbe
+  }));
+  assert.ok(marqueeProbe.status.includes("Marquee area defined"),
+    `Expected marquee area after drag; diagnostic=${JSON.stringify(marqueeProbe)}`);
   await marqueePage.keyboard.press("Control+a");
   await marqueePage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected in marquee"));
   assert.ok(Number((await marqueePage.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
