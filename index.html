@@ -403,7 +403,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .workspace:has(#layoutControls.active){grid-template-rows:32px auto minmax(0,1fr) 28px}
 @media(max-width:760px){.workspace:has(#layoutControls.active){grid-template-rows:34px auto minmax(0,1fr) 30px}}
 
-/* Compact touch toolbox controls: keep the Toolbox in column 1. */
+/* Touch toolbox: retain the canonical DOM order and compact the icons only. */
 @media(max-width:900px){
  #toolbox{width:48px;min-width:48px;max-width:48px;padding:4px 2px;overflow-x:hidden}
  #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none!important}
@@ -440,8 +440,16 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .top .ribbon-brand .brand-logo{display:block!important;width:46px!important;height:auto!important;max-width:46px!important;max-height:36px!important;object-fit:contain!important}
 }
 
-/* Docked workspace layout matches the live DOM: Toolbox | Workspace | Navigator / Info Box.
-   Keep the desktop grid as it is; touch tablets use the three-panel docked arrangement. */
+
+/* Keep the original ARQENVO logo visible on iPad in a compact brand slot. */
+@media (pointer:coarse), (max-width:1200px) {
+ .top .ribbon-brand{display:flex!important;flex:0 0 52px!important;width:52px!important;min-width:52px!important;height:40px!important;align-items:center!important;justify-content:center!important;padding:0 4px!important;margin:0 4px 0 0!important}
+ .top .ribbon-brand .brand-logo{display:block!important;width:46px!important;height:auto!important;max-width:46px!important;max-height:36px!important;object-fit:contain!important}
+}
+
+
+/* Canonical layout follows the actual DOM: desktop three columns / two rows;
+   tablet uses docked Toolbox, Navigator, workspace and Info Box columns. */
 .work{grid-template-columns:156px minmax(0,1fr) 238px;grid-template-rows:minmax(0,1fr) minmax(170px,.58fr);min-width:0;min-height:0;overflow:hidden;position:relative}
 #toolbox{grid-column:1;grid-row:1 / span 2;min-width:0}
 .work>.workspace{grid-column:2;grid-row:1 / span 2;min-width:0;min-height:0}
@@ -451,7 +459,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 #navigatorToggle.navigator-toggle{display:none;align-items:center;justify-content:center;min-height:32px;min-width:72px;padding:5px 9px;margin:0 0 0 auto;border:1px solid #7d8790;border-radius:4px;background:#3e414a;color:#fff;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:none;touch-action:manipulation;cursor:pointer}
 #navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static;display:inline-flex;flex:0 0 auto;min-width:72px;margin-left:auto}
-@media (pointer:coarse) and (min-width:601px), (min-width:761px) and (max-width:1200px){
+@media (pointer:coarse) and (min-width:601px){
  .app{grid-template-rows:34px 59px 54px minmax(0,1fr) 23px}
  .work{grid-template-columns:48px minmax(190px,240px) minmax(240px,1fr) 250px;grid-template-rows:minmax(0,1fr)}
  .work>#toolbox{grid-column:1;grid-row:1}
@@ -559,7 +567,7 @@ document.addEventListener("keydown",event=>{
   nav.id='navigator-panel';
   var toggle=document.getElementById('navigatorToggle');
   if(!toggle){toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';}
-  /* Phones use an overlay. Desktop never exposes this control; touch tablets hide only Navigator. */
+  /* Phones use an overlay. Desktop never exposes Hide/Show; touch tablets keep docked panels. */
   function isMobile(){return window.matchMedia('(max-width:600px)').matches;}
   function isTouchTablet(){return window.matchMedia('(pointer:coarse) and (min-width:601px)').matches;}
   function sync(){
