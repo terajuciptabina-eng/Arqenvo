@@ -398,6 +398,10 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media(max-width:760px){#layoutControls{padding:3px 5px;gap:4px}#layoutControls label{font-size:9px}#layoutControls input,#layoutControls select{max-width:82px;font-size:10px;padding:4px}#layoutControls button{padding:5px;font-size:9px}#layoutInspector .field-row{gap:4px}#layoutInspector input,#layoutInspector select{font-size:12px;padding:8px}}
 @page{size:auto;margin:0}
 @media print{html,body{width:auto!important;height:auto!important;min-height:0!important;overflow:visible!important;background:#fff!important}body.layout-print-mode #layoutPrintStage{position:static;inset:auto;overflow:visible;padding:0;background:#fff}body.layout-print-mode #layoutPrintStage .print-page{margin:0;box-shadow:none;print-color-adjust:exact;-webkit-print-color-adjust:exact}body.layout-print-mode #layoutPrintStage .print-view{border-color:#bbb}body.layout-print-mode #layoutPrintStage .print-titleblock{border-color:#222}body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto;page-break-after:auto}body.layout-print-mode .app{display:none!important}}
+
+/* Layout Book adds its own controls row; reserve space for tabs, controls, canvas and quick options. */
+.workspace:has(#layoutControls.active){grid-template-rows:32px auto minmax(0,1fr) 28px}
+@media(max-width:760px){.workspace:has(#layoutControls.active){grid-template-rows:34px auto minmax(0,1fr) 30px}}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
