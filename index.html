@@ -403,241 +403,73 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .workspace:has(#layoutControls.active){grid-template-rows:32px auto minmax(0,1fr) 28px}
 @media(max-width:760px){.workspace:has(#layoutControls.active){grid-template-rows:34px auto minmax(0,1fr) 30px}}
 
-/* Compact touch workspace: icon-only toolbox and hideable side panels */
-@media(max-width:900px){
- .work{grid-template-columns:48px minmax(0,1fr) 0px!important}
- #toolbox{padding:4px 2px;overflow-x:hidden}
- #toolbox .tool-group-label,#toolbox .tool-note,#toolbox .toolbox-title{display:none!important}
- #toolbox .tool{width:40px;min-width:40px;min-height:42px;margin:2px auto;padding:4px;justify-content:center;gap:0}
- #toolbox .tool b{flex:0 0 auto;width:auto;font-size:22px}
- #toolbox .tool span{display:none!important}
- .work.navigator-hidden{grid-template-columns:48px minmax(0,1fr) 0px!important}
- .work.navigator-hidden .navigator,.work.navigator-hidden .inspector{display:none!important}
- .work.navigator-hidden .workspace{grid-column:2}
- .navigator{min-width:0}
-}
-.work.navigator-hidden{grid-template-columns:156px minmax(0,1fr)!important}
-.work.navigator-hidden .navigator,.work.navigator-hidden .inspector{display:none!important}
-.work.navigator-hidden .workspace{grid-column:2;grid-row:1 / span 2}
-
-/* Mobile-first compact toolbox and a real, touch-accessible panel toggle. */
-@media(max-width:900px){
-  #toolbox{width:48px;min-width:48px;padding:4px 2px;overflow-x:hidden}
-  #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note{display:none!important}
-  #toolbox .tool{width:42px;min-width:42px;min-height:42px;margin:2px auto;padding:4px;justify-content:center;gap:0;font-size:0}
-  #toolbox .tool b{flex:0 0 auto;width:auto;font-size:22px}
-  #toolbox .tool span{display:none!important}
-}
-.work.navigator-hidden{grid-template-columns:156px minmax(0,1fr)!important}
-.work.navigator-hidden .navigator,.work.navigator-hidden .inspector{display:none!important}
-.work.navigator-hidden .workspace{grid-column:2;grid-row:1 / span 2}
-#navigatorToggle{margin-left:8px;flex:0 0 auto;white-space:nowrap;min-height:34px;padding:5px 9px;font-size:11px;touch-action:manipulation}
-@media(max-width:900px){
-  .work.navigator-hidden{grid-template-columns:48px minmax(0,1fr)!important}
-  #navigatorToggle{padding:5px 7px;font-size:10px}
-}
-
-/* ARQENVO tablet Navigator: persistent touch control and usable slide-in panel. */
-#navigatorToggle.navigator-toggle{position:sticky;left:0;z-index:1200;flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:7px 12px;margin-right:6px;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 1px 3px #0002;touch-action:manipulation;cursor:pointer}
-@media(max-width:900px){
- #navigatorToggle.navigator-toggle{position:sticky;left:0;min-width:100px;min-height:42px;padding:8px 10px;font-size:12px;background:#fff;z-index:1202}
- .work.navigator-open{position:relative}
- .work.navigator-open .navigator{display:block!important;position:fixed!important;left:48px!important;top:calc(28px + 54px + 8px)!important;bottom:28px!important;width:min(310px,calc(100vw - 64px))!important;max-width:calc(100vw - 64px)!important;height:auto!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;border:1px solid #9ba4ad!important;background:#f4f5f6!important;color:#252d35!important;padding:12px!important;overscroll-behavior:contain}
- .work.navigator-open .navigator .section{color:#68737e!important}
- .work.navigator-open .navigator .tree{color:#252d35!important}
- .work.navigator-open .navigator .nav-tabs{color:#252d35!important}
- .work.navigator-open:after{content:"";position:fixed;inset:90px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
-}
-
-/* Final mobile toolbox override: icon-only buttons, no headings or text labels. */
-@media (max-width: 900px) {
-  #toolbox { width:48px!important; min-width:48px!important; max-width:48px!important; padding:4px 2px!important; overflow-x:hidden!important; }
-  #toolbox .toolbox-title,
-  #toolbox .tool-group-label,
-  #toolbox .tool-note,
-  #toolbox .tool span { display:none!important; visibility:hidden!important; }
-  #toolbox .tool { display:flex!important; align-items:center!important; justify-content:center!important; width:42px!important; min-width:42px!important; max-width:42px!important; min-height:42px!important; margin:2px auto!important; padding:4px!important; gap:0!important; font-size:0!important; line-height:0!important; white-space:nowrap!important; }
-  #toolbox .tool b { display:block!important; flex:0 0 auto!important; width:auto!important; margin:0!important; font-size:22px!important; line-height:1!important; visibility:visible!important; }
-}
-
-/* Place the Navigator show/hide control inside the Navigator header itself. */
-#navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
-#navigatorToggle.navigator-toggle{position:static;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:30px;min-width:54px;padding:4px 8px;margin:0 0 0 auto;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 2px #0002;touch-action:manipulation;cursor:pointer}
-@media(max-width:900px){
- #navigatorToggle.navigator-toggle{min-height:38px;min-width:64px;font-size:12px}
-}
-
-/* Keep Show Navigator reachable outside the panel when the panel is hidden. */
-#navigatorToggle.navigator-toggle{position:static;z-index:1300;flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;justify-content:center;min-height:32px;min-width:60px;padding:5px 9px;margin:4px;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 3px #0002;touch-action:manipulation;cursor:pointer}
-@media(max-width:900px){
- .work>#navigatorToggle.navigator-toggle{position:fixed;left:52px;top:90px;min-height:42px;min-width:96px;margin:0;z-index:1305;font-size:12px;box-shadow:0 2px 8px #0004}
- .work.navigator-open>#navigatorToggle.navigator-toggle{position:fixed;left:auto;right:8px;top:94px;min-width:74px;z-index:1305}
- #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static;min-width:64px;min-height:38px;margin:0 0 0 auto;z-index:1305}
-}
-
-/* Keep the floating Show Navigator control directly beside the canvas top edge. */
-@media(max-width:900px){
- .work>#navigatorToggle.navigator-toggle{
-   position:fixed!important;
-   left:56px!important;
-   top:92px!important;
-   bottom:auto!important;
-   right:auto!important;
-   margin:0!important;
-   min-width:102px!important;
-   min-height:40px!important;
-   z-index:1500!important;
- }
- .work.navigator-open>#navigatorToggle.navigator-toggle{
-   left:auto!important;
-   right:8px!important;
-   top:92px!important;
- }
-}
-
-/* Final iPad compact ribbon: preserve tooltips, show icons only. */
-@media(max-width:900px){
- .top{display:flex!important;align-items:center!important;gap:5px!important;padding:4px 6px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important}
- .top .ribbon-brand{display:none!important}
- .top .ribbon-group{display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;padding:0 3px!important;margin:0!important;border:0!important}
- .top .ribbon-group>small,.top .ribbon-buttons button span{display:none!important;visibility:hidden!important}
- .top .ribbon-buttons{display:flex!important;align-items:center!important;gap:3px!important}
- .top .ribbon-buttons button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;font-size:21px!important;line-height:1!important;white-space:nowrap!important}
- .top .ribbon-spacer,.top>.spacer{display:none!important}
-}
-/* The Show control stays adjacent to the top of the workspace, not at the bottom. */
-@media(max-width:900px){
- .work>#navigatorToggle.navigator-toggle{position:fixed!important;left:54px!important;top:90px!important;right:auto!important;bottom:auto!important;min-width:100px!important;min-height:40px!important;margin:0!important;z-index:1600!important}
- .work.navigator-open>#navigatorToggle.navigator-toggle{position:fixed!important;left:auto!important;right:8px!important;top:90px!important}
- #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;min-width:64px!important;min-height:38px!important;margin:0 0 0 auto!important}
-}
-
-/* iPad Safari may report a desktop-width viewport; detect touch tablets as well. */
+/* Responsive ribbon controls: compact on touch/tablet without changing desktop layout. */
 @media (max-width:1200px), (pointer:coarse) {
  .top{display:flex!important;align-items:center!important;gap:5px!important;padding:4px 6px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important}
- .top .ribbon-brand{display:none!important}
+ .top .ribbon-brand{display:flex!important;flex:0 0 52px!important;width:52px!important;min-width:52px!important;height:40px!important;align-items:center!important;justify-content:center!important;padding:0 4px!important;margin:0 4px 0 0!important}
+ .top .ribbon-brand .brand-logo{display:block!important;width:46px!important;height:auto!important;max-width:46px!important;max-height:36px!important;object-fit:contain!important}
  .top .ribbon-group{display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;padding:0 3px!important;margin:0!important;border:0!important}
  .top .ribbon-group>small,.top .ribbon-buttons button span{display:none!important;visibility:hidden!important}
  .top .ribbon-buttons{display:flex!important;align-items:center!important;gap:3px!important}
  .top .ribbon-buttons button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;font-size:21px!important;line-height:1!important;white-space:nowrap!important}
  .top .ribbon-spacer,.top>.spacer{display:none!important}
- #toolbox{width:48px!important;min-width:48px!important;max-width:48px!important;padding:4px 2px!important;overflow-x:hidden!important}
+}
+@media (max-width:760px) {
+ .app{grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}
+ .top{padding:3px 4px!important}
+ .top .ribbon-brand{flex-basis:52px!important;width:52px!important;min-width:52px!important}
+ .top .ribbon-group{padding:0 2px!important}
+ .top .ribbon-buttons{gap:1px!important}
+ .top .ribbon-buttons button{width:35px!important;min-width:35px!important;height:35px!important;min-height:35px!important;font-size:18px!important}
+ .context-toolbar{height:43px!important;min-height:43px!important;max-height:43px!important;gap:8px!important;padding:4px 6px!important;overflow-x:auto!important;overflow-y:hidden!important}
+ .context-identity{min-width:135px!important;gap:5px!important}
  #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none!important;visibility:hidden!important}
  #toolbox .tool{display:flex!important;align-items:center!important;justify-content:center!important;width:42px!important;min-width:42px!important;max-width:42px!important;min-height:42px!important;margin:2px auto!important;padding:4px!important;gap:0!important;font-size:0!important;line-height:0!important;white-space:nowrap!important}
  #toolbox .tool b{display:block!important;flex:0 0 auto!important;width:auto!important;margin:0!important;font-size:22px!important;line-height:1!important;visibility:visible!important}
- .work{grid-template-columns:48px minmax(0,1fr) 0px!important}
- .work.navigator-open .navigator{display:block!important;position:fixed!important;left:48px!important;top:182px!important;bottom:28px!important;width:min(310px,calc(100vw - 64px))!important;max-width:calc(100vw - 64px)!important;height:auto!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;border:1px solid #9ba4ad!important;background:#f4f5f6!important;color:#252d35!important;padding:12px!important;overscroll-behavior:contain}
- .work.navigator-open .navigator .section,.work.navigator-open .navigator .tree,.work.navigator-open .navigator .nav-tabs{color:#252d35!important}
- .work.navigator-open:after{content:"";position:fixed;inset:146px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
- .work>#navigatorToggle.navigator-toggle{position:fixed!important;left:54px!important;top:146px!important;right:auto!important;bottom:auto!important;min-width:100px!important;min-height:40px!important;margin:0!important;z-index:1600!important}
- .work.navigator-open>#navigatorToggle.navigator-toggle{left:auto!important;right:8px!important;top:146px!important}
- #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;min-width:64px!important;min-height:38px!important;margin:0 0 0 auto!important}
 }
-
-
-/* Final tablet layout correction: compact ribbon and align Navigator to its own panel. */
-@media (pointer:coarse) {
- .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px!important}
- .menu{height:27px!important;min-height:27px!important}
- .top{height:48px!important;min-height:48px!important;max-height:48px!important;padding:3px 6px!important;align-items:center!important;overflow-x:auto!important;overflow-y:hidden!important}
- .top .ribbon-brand{display:none!important}
- .top .ribbon-group{height:42px!important;min-height:42px!important;max-height:42px!important;align-self:center!important;padding:0 3px!important}
- .top .ribbon-group>small,.top .ribbon-buttons button span{display:none!important}
- .top .ribbon-buttons{height:40px!important;min-height:40px!important;align-items:center!important}
- .top .ribbon-buttons button{width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;font-size:20px!important}
- .context-toolbar{height:42px!important;min-height:42px!important;max-height:42px!important;overflow-x:auto!important;overflow-y:hidden!important}
- .work>#navigatorToggle.navigator-toggle{top:182px!important;left:54px!important;right:auto!important;position:fixed!important;z-index:1600!important}
- .work.navigator-open>#navigatorToggle.navigator-toggle{top:182px!important;left:auto!important;right:8px!important}
- .work.navigator-open .navigator{top:182px!important}
- .work.navigator-open:after{inset:182px 0 24px 48px!important}
-}
-
-
-/* Hide Navigator means remove the entire left panel column; only the toggle remains. */
-@media (pointer:coarse) {
- .work.navigator-hidden{grid-template-columns:48px minmax(0,1fr)!important}
- .work.navigator-hidden>.navigator,.work.navigator-hidden>.inspector{display:none!important;visibility:hidden!important;width:0!important;min-width:0!important;max-width:0!important}
- .work.navigator-hidden>.workspace{grid-column:2!important;grid-row:1!important}
- .work:not(.navigator-open):not(.navigator-hidden)>.navigator{display:none!important}
- .work.navigator-open>.navigator{display:block!important}
-}
-
-
-/* Tablet Navigator is a RIGHT-side drawer. Toolbox remains on the left. */
-@media (pointer:coarse), (max-width:1200px) {
- .work.navigator-open>.navigator{
-  position:fixed!important;left:auto!important;right:0!important;
-  top:182px!important;bottom:24px!important;
-  width:min(310px,calc(100vw - 64px))!important;
-  max-width:calc(100vw - 64px)!important;
-  display:block!important;z-index:1201!important;
-  overflow:auto!important;box-shadow:-8px 0 24px #0005!important
- }
- .work:not(.navigator-open)>.navigator{display:none!important}
- .work>#navigatorToggle.navigator-toggle{
-  position:fixed!important;left:auto!important;right:12px!important;
-  top:182px!important;bottom:auto!important;z-index:1600!important
- }
- .work.navigator-open:after{inset:182px 0 24px 48px!important}
- #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;margin-left:auto!important}
-}
-
-
-/* Clear, consistent ribbon iconography for desktop and iPad. */
-.top .ribbon-buttons button svg{display:block;width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
-@media (pointer:coarse), (max-width:1200px){
- .top .ribbon-buttons button svg{width:24px;height:24px;stroke-width:1.9}
-}
-
-
-/* Architectural tool icons: consistent line-art geometry at touch size. */
 #toolbox .tool b svg{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
 #toolbox .tool[data-tool="select"] b svg{fill:currentColor;stroke-width:1.2}
 @media(pointer:coarse){#toolbox .tool b svg{width:25px;height:25px;stroke-width:1.8}}
-
-
-/* Keep the original ARQENVO logo visible on iPad in a compact brand slot. */
-@media (pointer:coarse), (max-width:1200px) {
- .top .ribbon-brand{display:flex!important;flex:0 0 52px!important;width:52px!important;min-width:52px!important;height:40px!important;align-items:center!important;justify-content:center!important;padding:0 4px!important;margin:0 4px 0 0!important}
- .top .ribbon-brand .brand-logo{display:block!important;width:46px!important;height:auto!important;max-width:46px!important;max-height:36px!important;object-fit:contain!important}
+#navigatorToggle[hidden]{display:none!important}
+#navigatorToggle.navigator-toggle{
+ display:none;align-items:center;justify-content:center;flex:0 0 auto;
+ min-height:32px;min-width:72px;padding:5px 9px;margin:0 0 0 auto;
+ border:1px solid #87939d;border-radius:4px;background:#3e414a;color:#fff;
+ font-size:11px;font-weight:700;white-space:nowrap;box-shadow:none;touch-action:manipulation;cursor:pointer
 }
-
-
-/* Single source of truth for iPad Navigator behavior (tablet landscape/portrait). */
-@media (pointer:coarse) and (min-width:601px) {
- .work {
-  display:grid!important;
-  grid-template-columns:48px 240px minmax(0,1fr) 250px!important;
-  min-width:0!important;
-  position:relative!important;
- }
- .work>.tools {grid-column:1!important;grid-row:1!important;display:flex!important;min-width:0!important;}
- .work>.navigator {
-  grid-column:2!important;grid-row:1!important;
-  display:block!important;position:relative!important;inset:auto!important;
-  width:auto!important;min-width:0!important;max-width:none!important;
-  height:auto!important;min-height:0!important;visibility:visible!important;
-  overflow:auto!important;z-index:auto!important;box-shadow:none!important;
- }
- .work>.workspace {grid-column:3!important;grid-row:1!important;display:grid!important;min-width:0!important;}
- .work>.inspector {grid-column:4!important;grid-row:1!important;display:block!important;visibility:visible!important;min-width:0!important;width:auto!important;max-width:none!important;}
- .work.navigator-hidden {grid-template-columns:48px 0 minmax(0,1fr) 250px!important;}
- .work.navigator-hidden>.navigator {display:none!important;visibility:hidden!important;width:0!important;min-width:0!important;max-width:0!important;overflow:hidden!important;}
- .work.navigator-hidden>.workspace {grid-column:3!important;grid-row:1!important;}
- .work.navigator-hidden>.inspector {display:block!important;visibility:visible!important;grid-column:4!important;}
- .work>#navigatorToggle.navigator-toggle {
-  position:absolute!important;left:52px!important;right:auto!important;top:8px!important;bottom:auto!important;
-  display:inline-flex!important;z-index:1600!important;margin:0!important;
- }
- .work:not(.navigator-hidden):not(.navigator-open)>.navigator {display:block!important;}
- .work.navigator-open:after {display:none!important;}
+#navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#navigator-panel>.section #navigatorToggle.navigator-toggle{display:inline-flex;position:static;min-width:72px;margin-left:auto}
+@media (pointer:coarse) and (min-width:601px){
+ /* iPad/tablet: keep the actual DOM order: Toolbox, Navigator, Workspace, Inspector. */
+ .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px}
+ .work{display:grid;grid-template-columns:48px minmax(190px,240px) minmax(240px,1fr) 250px;grid-template-rows:minmax(0,1fr);min-width:0;min-height:0;overflow:hidden}
+ .work>.tools{grid-column:1;grid-row:1;display:flex!important;min-width:0}
+ .work>.navigator{grid-column:2;grid-row:1;display:block!important;position:relative!important;inset:auto!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;visibility:visible!important;overflow:auto!important;box-shadow:none!important}
+ .work>.workspace{grid-column:3;grid-row:1;display:grid!important;position:relative;min-width:0;min-height:0}
+ .work>.inspector{grid-column:4;grid-row:1;display:block!important;position:relative!important;inset:auto!important;width:auto!important;min-width:0!important;max-width:none!important;height:auto!important;visibility:visible!important;overflow:auto!important;box-shadow:none!important}
+ #navigatorToggle.navigator-toggle{display:inline-flex}
+ .work.navigator-hidden{grid-template-columns:48px 0 minmax(0,1fr) 250px!important}
+ .work.navigator-hidden>.navigator{display:none!important;visibility:hidden!important;width:0!important;min-width:0!important;max-width:0!important;overflow:hidden!important}
+ .work.navigator-hidden>.workspace{grid-column:3!important;grid-row:1!important}
+ .work.navigator-hidden>.inspector{display:block!important;visibility:visible!important;grid-column:4!important;grid-row:1!important}
+ .work>#navigatorToggle.navigator-toggle{position:fixed;left:54px;top:122px;right:auto;bottom:auto;z-index:1600;min-width:100px;min-height:40px}
+ .work:not(.navigator-hidden)>#navigatorToggle.navigator-toggle{display:none!important}
 }
-
-/* Context Toolbar / Info Box: keep SVG tool icons as visible outline icons, not black-filled shapes. */
+@media (max-width:600px){
+ .app{grid-template-rows:27px 54px 42px minmax(0,1fr) 22px}
+ .work{display:grid;grid-template-columns:48px minmax(0,1fr);grid-template-rows:minmax(0,1fr);min-width:0;min-height:0;overflow:hidden}
+ .work>.tools{grid-column:1;grid-row:1;display:flex!important}
+ .work>.workspace{grid-column:2;grid-row:1;display:grid!important;min-width:0;min-height:0}
+ .work>.navigator{display:none!important}
+ .work>.inspector{display:none!important}
+ #navigatorToggle.navigator-toggle{display:inline-flex;position:fixed;left:54px;top:122px;right:auto;bottom:auto;z-index:1600;min-width:100px;min-height:40px}
+ .work.navigator-open>.navigator{display:block!important;position:fixed!important;left:48px!important;right:auto!important;top:122px!important;bottom:24px!important;width:min(310px,calc(100vw - 64px))!important;max-width:calc(100vw - 64px)!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;background:var(--panel)!important}
+ .work.navigator-open:after{content:"";position:fixed;inset:122px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
+ .work.navigator-open>#navigatorToggle.navigator-toggle{position:fixed;left:auto;right:8px;top:86px;z-index:1602}
+}
 #contextToolIcon{color:#e7edf3!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 38px!important;width:38px!important;height:38px!important}
 #contextToolIcon svg{display:block!important;width:26px!important;height:26px!important;overflow:visible!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
 #contextToolIcon svg *{fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
-#contextToolIcon svg path[d="M5 3 19 15l-6 1-3 5z"]{fill:currentColor!important;stroke:currentColor!important}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -718,32 +550,34 @@ document.addEventListener("keydown",event=>{
   nav.id='navigator-panel';
   var toggle=document.getElementById('navigatorToggle');
   if(!toggle){toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';}
-  /* Phone uses a drawer; iPad/tablet uses the docked panel with hide/show in place. */
-  function isMobile(){return window.matchMedia('(max-width:600px)').matches;}
+  function isPhone(){return window.matchMedia('(max-width:600px)').matches;}
+  function isTouchTablet(){return window.matchMedia('(pointer:coarse) and (min-width:601px)').matches;}
   function sync(){
-   var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
+   var phone=isPhone(),tablet=isTouchTablet(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
    var heading=nav.querySelector('.section');
-   var panelVisible=mobile?open:!hidden;
-   if(panelVisible){
-    if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
-   }else{
-    if(toggle.parentNode!==work)work.insertBefore(toggle,work.firstChild);
-   }
-   toggle.textContent=mobile?(open?'✕ Close':'☰ Navigator'):(hidden?'Show Navigator':'Hide Navigator');
+   if(phone){
+    if(open&&heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
+    else if(!open&&toggle.parentNode!==work)work.appendChild(toggle);
+   }else if(tablet){
+    if(hidden&&toggle.parentNode!==work)work.appendChild(toggle);
+    else if(!hidden&&heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
+   }else if(toggle.parentNode!==work)work.appendChild(toggle);
+   toggle.textContent=phone?(open?'✕ Close':'☰ Navigator'):(hidden?'Show Navigator':'Hide Navigator');
    toggle.setAttribute('aria-controls','navigator-panel');
-   toggle.setAttribute('aria-expanded',mobile?(open?'true':'false'):(hidden?'false':'true'));
-   toggle.setAttribute('aria-label',mobile?(open?'Close Navigator panel':'Open Navigator panel'):(hidden?'Show Navigator and Properties':'Hide Navigator and Properties'));
-   toggle.title=mobile?(open?'Close Navigator':'Open Navigator'):(hidden?'Show Navigator and Properties':'Hide Navigator and Properties');
+   toggle.setAttribute('aria-expanded',phone?(open?'true':'false'):(hidden?'false':'true'));
+   toggle.setAttribute('aria-label',phone?(open?'Close Navigator panel':'Open Navigator panel'):(hidden?'Show Navigator':'Hide Navigator'));
+   toggle.title=phone?(open?'Close Navigator':'Open Navigator'):(hidden?'Show Navigator':'Hide Navigator');
+   toggle.hidden=!phone&&!tablet;
   }
   toggle.addEventListener('click',function(){
-   if(isMobile()){work.classList.toggle('navigator-open');}
-   else{work.classList.toggle('navigator-hidden');}
+   if(isPhone())work.classList.toggle('navigator-open');
+   else work.classList.toggle('navigator-hidden');
    sync();window.dispatchEvent(new Event('resize'));
   });
   window.addEventListener('resize',sync);
   document.addEventListener('keydown',function(e){if(e.key==='Escape'&&work.classList.contains('navigator-open')){work.classList.remove('navigator-open');sync();}});
   document.addEventListener('pointerdown',function(e){
-   if(!isMobile()||!work.classList.contains('navigator-open'))return;
+   if(!isPhone()||!work.classList.contains('navigator-open'))return;
    if(e.target===toggle||toggle.contains(e.target)||nav.contains(e.target))return;
    work.classList.remove('navigator-open');sync();
   });
