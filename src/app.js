@@ -82,7 +82,7 @@ function selectionCandidatesAt(q){
 }
 function nearestElement(q){
  const allElements=els();const visibleWalls=new Set(allElements.filter(e=>e.type==="wall"&&isLayerVisible(e)&&(view!=="floor"||e.storyId===story().id)).map(e=>e.id));const candidates=allElements.filter(e=>isLayerVisible(e)&&(view!=="floor"||e.storyId===story().id||((e.type==="door"||e.type==="window")&&visibleWalls.has(e.hostWallId))));
- const hitTolerance=Math.max(.12,10/Math.max(1,scale));
+ const hitTolerance=10/Math.max(1,scale);
  let best=null,bestScore=Infinity;
  const screenQ=spos(q),pixelTolerance=12;
  const openings=candidates.filter(el=>el.type==="door"||el.type==="window");
