@@ -181,9 +181,11 @@ try {
   await page.mouse.down();
   await page.mouse.move(cx + 100, cy + 30, { steps: 5 });
   await page.mouse.up();
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"));
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Marquee area defined"));
+  await page.keyboard.press("Control+a");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected in marquee"));
   assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
-    "Area selection should select at least one element");
+    "Selecting within the marquee should select at least one element");
 
   // Existing element edits must end on Enter and remain fixed when the pointer moves.
   const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
