@@ -466,6 +466,14 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media(max-width:900px){
  #navigatorToggle.navigator-toggle{min-height:38px;min-width:64px;font-size:12px}
 }
+
+/* Keep Show Navigator reachable outside the panel when the panel is hidden. */
+#navigatorToggle.navigator-toggle{position:static;z-index:1300;flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;justify-content:center;min-height:32px;min-width:60px;padding:5px 9px;margin:4px;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 3px #0002;touch-action:manipulation;cursor:pointer}
+@media(max-width:900px){
+ .work>#navigatorToggle.navigator-toggle{position:fixed;left:52px;top:90px;min-height:42px;min-width:96px;margin:0;z-index:1305;font-size:12px;box-shadow:0 2px 8px #0004}
+ .work.navigator-open>#navigatorToggle.navigator-toggle{position:fixed;left:auto;right:8px;top:94px;min-width:74px;z-index:1305}
+ #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static;min-width:64px;min-height:38px;margin:0 0 0 auto;z-index:1305}
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -545,18 +553,18 @@ document.addEventListener("keydown",event=>{
   if(!work||!nav)return;
   nav.id='navigator-panel';
   var toggle=document.getElementById('navigatorToggle');
-  if(!toggle){
-   toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';
-   var heading=nav.querySelector('.section');
-   if(heading)heading.appendChild(toggle);else nav.insertBefore(toggle,nav.firstChild);
-  }else{
-   var heading=nav.querySelector('.section');
-   if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
-  }
+  if(!toggle){toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';}
   function isMobile(){return window.matchMedia('(max-width:900px)').matches;}
   function sync(){
    var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
-   toggle.textContent=mobile?(open?'✕ Close':'☰ Open'):(hidden?'Show':'Hide');
+   var heading=nav.querySelector('.section');
+   var panelVisible=mobile?open:!hidden;
+   if(panelVisible){
+    if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
+   }else{
+    if(toggle.parentNode!==work)work.insertBefore(toggle,work.firstChild);
+   }
+   toggle.textContent=mobile?(open?'✕ Close':'☰ Navigator'):(hidden?'Show Navigator':'Hide Navigator');
    toggle.setAttribute('aria-controls','navigator-panel');
    toggle.setAttribute('aria-expanded',mobile?(open?'true':'false'):(hidden?'false':'true'));
    toggle.setAttribute('aria-label',mobile?(open?'Close Navigator panel':'Open Navigator panel'):(hidden?'Show Navigator and Properties':'Hide Navigator and Properties'));
