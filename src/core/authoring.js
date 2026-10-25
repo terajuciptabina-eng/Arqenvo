@@ -4,17 +4,21 @@
  * Units are metres for model coordinates; rendered coordinates may be pixels.
  */
 
-export function openingOffsetForAnchor(hostLength, openingWidth, anchor = "center") {
+export function openingOffsetForAnchor(hostLength, openingWidth, anchor = "center", anchorPosition = hostLength / 2) {
   if (!Number.isFinite(hostLength) || hostLength <= 0) throw new RangeError("Host wall length must be positive");
   if (!Number.isFinite(openingWidth) || openingWidth <= 0) throw new RangeError("Opening width must be positive");
   if (openingWidth > hostLength + 1e-8) throw new RangeError("Opening must fit within the host wall");
+  if (!Number.isFinite(anchorPosition)) throw new TypeError("Anchor position must be finite");
   const available = Math.max(0, hostLength - openingWidth);
+  const position = Math.max(0, Math.min(hostLength, anchorPosition));
+  let offset;
   switch (String(anchor || "center").toLowerCase()) {
-    case "left": return 0;
-    case "right": return available;
-    case "center": return available / 2;
+    case "left": offset = position; break;
+    case "right": offset = position - openingWidth; break;
+    case "center": offset = position - openingWidth / 2; break;
     default: throw new TypeError("Anchor must be center, left or right");
   }
+  return Math.max(0, Math.min(available, offset));
 }
 
 export function openingPlacementDirection(wallStart, wallEnd, cursor) {
