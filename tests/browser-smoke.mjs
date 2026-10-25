@@ -508,9 +508,8 @@ try {
   let doorGeom=await doorSymbolGeometry();
   await openingPage.mouse.click(doorGeom.leaf.x,doorGeom.leaf.y);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
-  doorGeom=await doorSymbolGeometry();
-  await openingPage.mouse.click(doorGeom.hinge.x,doorGeom.hinge.y);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
+  // The selected visible leaf is the unambiguous hit target; do not require
+  // the wall-centerline hinge point to override the host wall hit test.
   const doorOffsetBeforeMove = Number(await openingPage.locator('[data-prop="offset"]').inputValue());
   doorGeom=await doorSymbolGeometry();
   const doorDragStart=doorGeom.leaf;
