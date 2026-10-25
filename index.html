@@ -389,10 +389,10 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 body.layout-print-mode #layoutPrintStage{display:block;position:fixed;inset:0;z-index:99999;overflow:auto;background:#62676d;padding:20px}
 body.layout-print-mode #layoutPrintStage .print-page{position:relative;background:#fff;color:#111;margin:0 auto 22px;box-shadow:0 2px 10px #0003;overflow:hidden;break-after:page;page-break-after:always}
 body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto;page-break-after:auto}
-#layoutPrintStage .print-titleblock{position:absolute;right:2.5%;bottom:2.5%;width:42%;height:12%;border:1px solid #333;display:grid;grid-template-columns:1fr 25%;grid-template-rows:1.1fr 1fr 1fr;font:8pt Arial,sans-serif}
+#layoutPrintStage .print-titleblock{position:absolute;right:2.5%;bottom:2.5%;width:42%;height:12%;border:1px solid #333;display:grid;grid-template-columns:1fr 25%;grid-template-rows:1.1fr 1fr 1fr 1fr;font:8pt Arial,sans-serif}
 #layoutPrintStage .print-titleblock>div{padding:3px 5px;border-top:1px solid #777;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 #layoutPrintStage .print-titleblock .project-name{grid-column:1 / span 2;border-top:0;font-weight:700;font-size:11pt}
-#layoutPrintStage .print-titleblock .sheet-number{grid-column:2;grid-row:2 / span 2;display:flex;align-items:center;justify-content:center;font-size:14pt;font-weight:700;border-left:1px solid #777}
+#layoutPrintStage .print-titleblock .sheet-number{grid-column:2;grid-row:2 / span 3;display:flex;align-items:center;justify-content:center;font-size:14pt;font-weight:700;border-left:1px solid #777}
 #layoutPrintStage .print-view{position:absolute;left:4%;top:5%;width:92%;height:80%;border:1px solid #aaa;overflow:hidden}
 #layoutPrintStage .print-view canvas{width:100%;height:100%;display:block}
 @media(max-width:760px){#layoutControls{padding:3px 5px;gap:4px}#layoutControls label{font-size:9px}#layoutControls input,#layoutControls select{max-width:82px;font-size:10px;padding:4px}#layoutControls button{padding:5px;font-size:9px}#layoutInspector .field-row{gap:4px}#layoutInspector input,#layoutInspector select{font-size:12px;padding:8px}}
