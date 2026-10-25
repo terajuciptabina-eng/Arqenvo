@@ -404,7 +404,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media(max-width:760px){.workspace:has(#layoutControls.active){grid-template-rows:34px auto minmax(0,1fr) 30px}}
 </style></head>
 <body><div class="app">
-<div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
+<div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
 
 <nav class="menu" aria-label="Application menu">
 <details class="menu-group"><summary>File</summary><div class="menu-pop"><button data-command="new">New Project</button><button data-command="open">Open Project…</button><button data-command="save">Save Project</button><button data-command="exportDxf">Export Floor Plan DXF</button><button data-command="exportSchedule">Export Schedule CSV</button></div></details>
