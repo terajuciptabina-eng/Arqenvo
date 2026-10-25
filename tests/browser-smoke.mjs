@@ -186,7 +186,14 @@ try {
   await page.mouse.down();
   await page.mouse.move(cx + 100, cy + 30, { steps: 5 });
   await page.mouse.up();
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Marquee area defined"));
+  await page.waitForTimeout(100);
+  const marqueeProbe = await page.evaluate(() => ({
+    status: document.querySelector("#status")?.textContent || "",
+    tool: window.__arqenvoDebug?.getTool() || "unknown",
+    canvas: (() => { const r=document.querySelector("#canvas").getBoundingClientRect(); return {left:r.left,top:r.top,width:r.width,height:r.height}; })()
+  }));
+  assert.ok(marqueeProbe.status.includes("Marquee area defined"),
+    `Expected marquee area after blank-space drag; got status="${marqueeProbe.status}", tool="${marqueeProbe.tool}", canvas=${JSON.stringify(marqueeProbe.canvas)}`);
   await page.keyboard.press("Control+a");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected in marquee"));
   assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
