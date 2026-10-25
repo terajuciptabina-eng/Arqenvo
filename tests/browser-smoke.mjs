@@ -345,16 +345,21 @@ try {
   await openingPage.mouse.click(canvasBox.x + canvasBox.width - 24, canvasBox.y + 24);
   await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.includes("No selection") || !(document.querySelector("#elementProperties input[readonly]")));
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
-  // Click the visible Door swing arc in screen coordinates derived from the real host wall.
-  // Include current model geometry in a failure report so browser automation identifies the actual hit-test result.
-  const doorSymbolPoint = await openingPage.evaluate(() => {
+  // Click inside the actual hosted opening span, derived from persisted geometry and the live viewport.
+  // The previous hard-coded arc point was not on the generated door arc, so it did not test opening selection.
+  const doorOpeningPoint = await openingPage.evaluate(() => {
     const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),t=window.__arqenvoDebug?.getViewport();
-    const wx=0.566,wy=-2.934;
+    const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}");
+    const door=model.elements?.find(e=>e.type==="door");
+    const wall=model.elements?.find(e=>e.id===door?.hostWallId&&e.type==="wall");
+    if(!door||!wall) throw new Error("Hosted door or host wall missing from saved model");
+    const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1;
+    const along=(Number(door.offset)||0)+(Number(door.width)||0)/2;
+    const wx=wall.start.x+dx*along/len,wy=wall.start.y+dy*along/len;
     const scale=t?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=t?.origin||{x:0,y:0};
-    return {x:rect.left+canvas.clientWidth/2+origin.x+wx*scale,y:rect.top+canvas.clientHeight/2+origin.y-wy*scale};
+    return {x:rect.left+canvas.clientWidth/2+origin.x+wx*scale,y:rect.top+canvas.clientHeight/2+origin.y-wy*scale,wx,wy};
   });
-  // Use real browser input so this exercises the same trusted pointer sequence as a user click.
-  await openingPage.mouse.click(doorSymbolPoint.x,doorSymbolPoint.y);
+  await openingPage.mouse.click(doorOpeningPoint.x,doorOpeningPoint.y);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { const diag=await openingPage.evaluate(()=>({status:document.querySelector("#status")?.textContent,selection:document.querySelector("#selectionInfo")?.textContent,tool:document.querySelector("#toolName")?.value,props:document.querySelector("#elementProperties")?.textContent,project:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>["wall","door","window"].includes(e.type)).map(e=>({id:e.id,type:e.type,start:e.start,end:e.end,offset:e.offset,width:e.width,hostWallId:e.hostWallId,storyId:e.storyId,hingeSide:e.hingeSide,swingDirection:e.swingDirection}))})); console.log("DOOR_SELECTION_DIAG",JSON.stringify(diag)); throw new Error(`Door symbol selection failed; diag=${JSON.stringify(diag)}; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
     "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
