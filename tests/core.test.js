@@ -28,6 +28,18 @@ test("project serialization round trips", () => {
 test("legacy v1 project migrates to schema v2", () => {
  const q=deserializeProject(JSON.stringify({format:"ARQENVO-PROJECT",version:1,walls:[{id:"w1",a:{x:0,y:0},b:{x:2,y:0},height:3,thickness:.15}],slabs:[],columns:[],beams:[],dimensions:[]})); assert.equal(q.version,2); assert.equal(q.elements[0].type,"wall"); assert.equal(q.elements[0].start.x,0);
 });
+test("deserialization exposes wall-hosted openings as selectable project elements", () => {
+ const p=createProject("Hosted opening selection");
+ const wall=createWall({x:0,y:0},{x:4,y:0},{storyId:p.stories[0].id});
+ const door=addOpening(wall,"door",1,.9,2.1);
+ p.elements.push(wall);
+ const loaded=deserializeProject(serializeProject(p));
+ const selectable=loaded.elements.find(el=>el.type==="door"&&el.id===door.id);
+ assert.ok(selectable,"A door stored only inside wall.openings must be exposed in project.elements");
+ assert.equal(selectable.hostWallId,wall.id);
+ assert.equal(selectable.storyId,wall.storyId);
+ assert.equal(loaded.elements.filter(el=>el.id===door.id).length,1,"Normalization must not duplicate an already top-level opening");
+});
 test("element schedule reports quantities by story", () => {
  const p=createProject(); p.elements.push(createWall({x:0,y:0},{x:2,y:0})); const rows=elementSchedule(p); assert.equal(rows[0].story,"Ground Floor"); assert.equal(rows[0].length,2); assert.equal(rows[0].area,6);
 });
