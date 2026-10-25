@@ -438,8 +438,9 @@ function beginOpeningPlacement(q){
  const dx=w.end.x-w.start.x,dy=w.end.y-w.start.y,position=((q.x-w.start.x)*dx+(q.y-w.start.y)*dy)/(len||1),anchorPosition=Math.max(0,Math.min(len,position));
  const offset=openingOffsetForAnchor(len,width,anchor,anchorPosition);
  const anchorPoint={x:w.start.x+dx*anchorPosition/(len||1),y:w.start.y+dy*anchorPosition/(len||1)};
- pendingOpeningPlacement=openingPlacement.begin({wallId:w.id,storyId:w.storyId,type:tool,offset,width,height:tool==="door"?2.1:1.2,sill:tool==="door"?0:.9,hingeSide:openingHingeSide,swingDirection:openingSwingDirection,anchor,anchorPosition,anchorPoint,cursor:{x:q.x,y:q.y}});
- $("status").textContent="Move cursor to choose opening direction, then press Enter or tap blank paper to place "+tool+" · Esc cancels";
+ const cross=dx*(q.y-w.start.y)-dy*(q.x-w.start.x),revealSide=cross>=0?"left":"right";
+ pendingOpeningPlacement=openingPlacement.begin({wallId:w.id,storyId:w.storyId,type:tool,offset,width,height:tool==="door"?2.1:1.2,sill:tool==="door"?0:.9,hingeSide:openingHingeSide,swingDirection:openingSwingDirection,revealSide,anchor,anchorPosition,anchorPoint,cursor:{x:q.x,y:q.y}});
+ $("status").textContent="Move cursor to choose hinge left/right and swing inside/outside · Tab flips reveal side · Enter/tap blank paper places · Esc cancels";
  redraw();return true
 }
 function updatePendingOpening(q){
@@ -447,8 +448,15 @@ function updatePendingOpening(q){
  const wall=els().find(v=>v.id===pendingOpeningPlacement.wallId);
  if(!wall){openingPlacement.cancel();pendingOpeningPlacement=null;redraw();return}
  const aimed=openingPlacement.aim(q,wall.start,wall.end);
- const offset=openingOffsetForAnchor(wallLength(wall),aimed.width,openingAlignment,aimed.anchorPosition);
- pendingOpeningPlacement=openingPlacement.update({anchor:openingAlignment,offset,hingeSide:openingHingeSide,swingDirection:aimed.swingDirection,cursor:{x:q.x,y:q.y}});
+ // Archicad-style four-way aiming: along-wall cursor position selects hinge; wall side selects swing.
+ const len=wallLength(wall),ux=(wall.end.x-wall.start.x)/len,uy=(wall.end.y-wall.start.y)/len;
+ const openingCenter=pendingOpeningPlacement.offset+pendingOpeningPlacement.width/2;
+ const cursorAlong=(q.x-wall.start.x)*ux+(q.y-wall.start.y)*uy;
+ const hingeSide=cursorAlong<openingCenter?"left":"right";
+ const offset=openingOffsetForAnchor(len,aimed.width,openingAlignment,aimed.anchorPosition);
+ openingHingeSide=hingeSide;
+ pendingOpeningPlacement=openingPlacement.update({anchor:openingAlignment,offset,hingeSide,swingDirection:aimed.swingDirection,cursor:{x:q.x,y:q.y}});
+ if($("openingHinge"))$("openingHinge").value=hingeSide;
  openingSwingDirection=pendingOpeningPlacement.swingDirection;
  if($("openingSwing"))$("openingSwing").value=pendingOpeningPlacement.swingDirection;
  const hinge=pendingOpeningPlacement.hingeSide==="left"?"Left hinge":"Right hinge";
@@ -456,7 +464,8 @@ function updatePendingOpening(q){
  $("status").textContent=(pendingOpeningPlacement.type==="door"?"Door":"Window")+" preview · "+hinge+" · swings "+swing+" · anchor "+pendingOpeningPlacement.anchor+" · press Enter or tap blank paper to place";
  redraw();
 }
-function commitPendingOpening(){if(!pendingOpeningPlacement)return false;const w0=els().find(v=>v.id===pendingOpeningPlacement.wallId);if(!w0){openingPlacement.cancel();pendingOpeningPlacement=null;redraw();return false}try{const expected=openingOffsetForAnchor(wallLength(w0),pendingOpeningPlacement.width,pendingOpeningPlacement.anchor||"center",pendingOpeningPlacement.anchorPosition);if(Math.abs(expected-pendingOpeningPlacement.offset)>1e-7||pendingOpeningPlacement.offset<0||pendingOpeningPlacement.offset+pendingOpeningPlacement.width>wallLength(w0)+1e-8)throw new RangeError("Opening anchor falls outside its host wall");const d=openingPlacement.confirm(),w=d&&els().find(v=>v.id===d.wallId);pendingOpeningPlacement=null;if(!w){redraw();return false}hist();const o=addOpening(w,d.type,d.offset,d.width,d.height,d.sill);o.hingeSide=d.hingeSide;o.swingDirection=d.swingDirection;o.alignment=d.anchor||"center";els().push({...o,hostWallId:w.id,storyId:w.storyId,alignment:d.anchor||"center"});$("status").textContent=(d.type==="door"?"Door":"Window")+" placed · opening direction confirmed";renderProperties();redraw();return true}catch(err){$("status").textContent=err.message;redraw();return false}}
+document.addEventListener("keydown",e=>{if(e.key!=="Tab"||!pendingOpeningPlacement||/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName||""))return;e.preventDefault();e.stopPropagation();const revealSide=pendingOpeningPlacement.revealSide==="left"?"right":"left";pendingOpeningPlacement=openingPlacement.update({revealSide});$("status").textContent="Reveal side: "+revealSide+" · move cursor to choose hinge/swing · Enter to place";redraw()},true);
+function commitPendingOpening(){if(!pendingOpeningPlacement)return false;const w0=els().find(v=>v.id===pendingOpeningPlacement.wallId);if(!w0){openingPlacement.cancel();pendingOpeningPlacement=null;redraw();return false}try{const expected=openingOffsetForAnchor(wallLength(w0),pendingOpeningPlacement.width,pendingOpeningPlacement.anchor||"center",pendingOpeningPlacement.anchorPosition);if(Math.abs(expected-pendingOpeningPlacement.offset)>1e-7||pendingOpeningPlacement.offset<0||pendingOpeningPlacement.offset+pendingOpeningPlacement.width>wallLength(w0)+1e-8)throw new RangeError("Opening anchor falls outside its host wall");const d=openingPlacement.confirm(),w=d&&els().find(v=>v.id===d.wallId);pendingOpeningPlacement=null;if(!w){redraw();return false}hist();const o=addOpening(w,d.type,d.offset,d.width,d.height,d.sill);o.hingeSide=d.hingeSide;o.swingDirection=d.swingDirection;o.revealSide=d.revealSide||"left";o.alignment=d.anchor||"center";els().push({...o,hostWallId:w.id,storyId:w.storyId,alignment:d.anchor||"center",revealSide:d.revealSide||"left"});$("status").textContent=(d.type==="door"?"Door":"Window")+" placed · opening direction confirmed";renderProperties();redraw();return true}catch(err){$("status").textContent=err.message;redraw();return false}}
 
 function createRoofFromMagicWand(q){
  const loops=findClosedWallLoops(els().filter(e=>e.type==="wall"&&e.storyId===story().id&&isLayerVisible(e)),{tolerance:.06,minArea:.25}).filter(loop=>pointInPolygon(q,loop.boundary)).sort((a,b)=>a.area-b.area);
