@@ -819,29 +819,46 @@ function enterModelView(source){layoutMode=false;$("layoutControls")?.classList.
 function prepareLayoutPrint(sheetOverride=null){
  const scope=$("publisherScope")?.value||"all";
  const sheets=Array.isArray(sheetOverride)?sheetOverride:(scope==="active"&&layoutSheet()?[layoutSheet()]:(p.layouts||[]));
- if(!sheets.length){$("status").textContent="Create a layout sheet before printing";return}
- const stage=$("layoutPrintStage");stage.replaceChildren();document.body.classList.add("layout-print-mode");
- const mmToPx=96/25.4;
+ if(!sheets.length){$("status").textContent="Create a layout sheet before saving PDF";return}
+ const dpi=150,pxPerMm=dpi/25.4,encoder=new TextEncoder(),pdfPages=[];
+ const drawText=(ctx,text,x,y,size=8,bold=false,color="#202a33")=>{ctx.fillStyle=color;ctx.font=(bold?"bold ":"")+size+"px Arial";ctx.fillText(String(text??""),x,y)};
  for(const sheet of sheets){
-  ensureLayoutDefaults(sheet);const dim=layoutDimensions(sheet),page=document.createElement("section");
-  page.className="print-page";page.style.width=(dim.width*mmToPx)+"px";page.style.height=(dim.height*mmToPx)+"px";
-  if(sheet.showFrame!==false){const border=document.createElement("div");border.style.cssText="position:absolute;inset:5mm;border:.6pt solid #aaa;pointer-events:none";page.appendChild(border)}
-  for(const d of sheet.drawings){
-   const b=layoutDrawingBounds(sheet,d),v=document.createElement("div");v.className="print-view";
-   v.style.left=b.x/dim.width*100+"%";v.style.top=b.y/dim.height*100+"%";v.style.width=b.width/dim.width*100+"%";v.style.height=b.height/dim.height*100+"%";v.style.border=d.frame===false?"none":".7pt solid #444";
-   const cv=document.createElement("canvas");cv.width=Math.max(1,Math.round(b.width*mmToPx));cv.height=Math.max(1,Math.round(b.height*mmToPx));v.appendChild(cv);
-   renderModelSnapshot(cv.getContext("2d"),{x:0,y:0,width:cv.width,height:cv.height},d.source,d.storyId,d.scale,d.width);
-   const title=document.createElement("div");title.textContent=d.title||"";title.style.cssText="position:absolute;left:3mm;top:2mm;font:8pt Arial,sans-serif;background:#fff;padding:0 1mm";v.appendChild(title);page.appendChild(v);
+  ensureLayoutDefaults(sheet);
+  const dim=layoutDimensions(sheet),width=Math.max(1,Math.round(dim.width*pxPerMm)),height=Math.max(1,Math.round(dim.height*pxPerMm)),cv=document.createElement("canvas");cv.width=width;cv.height=height;
+  const ctx=cv.getContext("2d");ctx.fillStyle="#fff";ctx.fillRect(0,0,width,height);const mm=v=>v*pxPerMm;
+  if(sheet.showFrame!==false){ctx.strokeStyle="#aeb5bd";ctx.lineWidth=Math.max(1,mm(.6));ctx.strokeRect(mm(5),mm(5),width-mm(10),height-mm(10))}
+  for(const d of sheet.drawings||[]){
+   const b=layoutDrawingBounds(sheet,d),r={x:mm(b.x),y:mm(b.y),width:mm(b.width),height:mm(b.height)};
+   ctx.save();ctx.beginPath();ctx.rect(r.x,r.y,r.width,r.height);ctx.clip();ctx.fillStyle="#fff";ctx.fillRect(r.x,r.y,r.width,r.height);renderModelSnapshot(ctx,r,d.source,d.storyId,d.scale,d.width);ctx.restore();
+   if(d.frame!==false){ctx.strokeStyle="#444";ctx.lineWidth=Math.max(1,mm(.25));ctx.strokeRect(r.x,r.y,r.width,r.height)}
+   drawText(ctx,d.title||d.source,r.x+mm(2),r.y+mm(4),Math.max(10,mm(2.2)),false);
   }
-  const meta=sheet.titleBlock||{},tb=document.createElement("div");tb.className="print-titleblock";
-  const project=document.createElement("div");project.className="project-name";project.textContent=meta.projectTitle||p.project.name||"ARQENVO";tb.appendChild(project);
-  for(const txt of [sheet.name,(sheet.drawings.map(d=>d.title||"").filter(Boolean).join(" · ")||"GENERAL ARRANGEMENT"),[meta.author?"PREPARED BY "+meta.author:"",meta.company||"", "SCALE "+(sheet.drawings.map(d=>"1:"+d.scale).join(" / ")||"—"),"DATE "+(meta.issueDate||meta.date||new Date().toISOString().slice(0,10))].filter(Boolean).join(" · ")]){const item=document.createElement("div");item.textContent=txt;tb.appendChild(item)}
-  const sn=document.createElement("div");sn.className="sheet-number";sn.textContent=sheet.number;tb.appendChild(sn);page.appendChild(tb);stage.appendChild(page);
+  const meta=sheet.titleBlock||{},tx=width-mm(190),ty=height-mm(36),tw=mm(178),th=mm(29);
+  ctx.strokeStyle="#26313b";ctx.lineWidth=Math.max(1,mm(.25));ctx.strokeRect(tx,ty,tw,th);ctx.beginPath();ctx.moveTo(tx,ty+th*.5);ctx.lineTo(tx+tw,ty+th*.5);ctx.moveTo(tx+tw*.66,ty+th*.5);ctx.lineTo(tx+tw*.66,ty+th);ctx.stroke();
+  drawText(ctx,meta.projectTitle||p.project.name||"ARQENVO",tx+mm(3),ty+mm(6),Math.max(12,mm(3.1)),true);
+  drawText(ctx,sheet.name,tx+mm(3),ty+mm(12),Math.max(10,mm(2.5)));
+  drawText(ctx,(sheet.drawings.map(d=>d.title||"").filter(Boolean).join(" · ")||"GENERAL ARRANGEMENT").slice(0,90),tx+mm(3),ty+mm(18),Math.max(9,mm(2.2)));
+  const metaLine=[meta.author?"PREPARED BY "+meta.author:"",meta.company||"","SCALE "+((sheet.drawings||[]).map(d=>"1:"+d.scale).join(" / ")||"—"),"DATE "+(meta.issueDate||meta.date||new Date().toISOString().slice(0,10))].filter(Boolean).join(" · ");
+  drawText(ctx,metaLine,tx+mm(3),ty+mm(24),Math.max(8,mm(1.8)));drawText(ctx,sheet.number,tx+tw*.68,ty+th*.78,Math.max(13,mm(4)),true);
+  const data=cv.toDataURL("image/jpeg",.94).split(",")[1],binary=atob(data),jpg=new Uint8Array(binary.length);for(let i=0;i<binary.length;i++)jpg[i]=binary.charCodeAt(i);
+  pdfPages.push({width,height,pageWidth:dim.width*72/25.4,pageHeight:dim.height*72/25.4,jpg});
  }
- $("status").textContent="Print preview ready · "+sheets.length+" sheet(s). Choose Save as PDF in the print dialog.";
- setTimeout(()=>window.print(),120);
+ const objects=[],addObject=value=>{objects.push(value);return objects.length};const catalogId=addObject(""),pagesId=addObject(""),pageIds=[];
+ for(const page of pdfPages){
+  const imageId=addObject({dict:"<< /Type /XObject /Subtype /Image /Width "+page.width+" /Height "+page.height+" /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length "+page.jpg.length+" >>",stream:page.jpg});
+  const contentBytes=encoder.encode("q\n"+page.pageWidth.toFixed(3)+" 0 0 "+page.pageHeight.toFixed(3)+" 0 0 cm\n/Im0 Do\nQ\n");
+  const contentId=addObject({dict:"<< /Length "+contentBytes.length+" >>",stream:contentBytes});
+  pageIds.push(addObject("<< /Type /Page /Parent "+pagesId+" 0 R /MediaBox [0 0 "+page.pageWidth.toFixed(3)+" "+page.pageHeight.toFixed(3)+"] /Resources << /XObject << /Im0 "+imageId+" 0 R >> >> /Contents "+contentId+" 0 R >>"));
+ }
+ objects[catalogId-1]="<< /Type /Catalog /Pages "+pagesId+" 0 R >>";objects[pagesId-1]="<< /Type /Pages /Kids ["+pageIds.map(id=>id+" 0 R").join(" ")+"] /Count "+pageIds.length+" >>";
+ const chunks=[],offsets=[0];let byteLength=0;const pushBytes=bytes=>{chunks.push(bytes);byteLength+=bytes.length};pushBytes(encoder.encode("%PDF-1.4\n%âãÏÓ\n"));
+ for(let i=0;i<objects.length;i++){offsets.push(byteLength);pushBytes(encoder.encode((i+1)+" 0 obj\n"));const obj=objects[i];if(typeof obj==="string")pushBytes(encoder.encode(obj+"\n"));else{pushBytes(encoder.encode(obj.dict+"\nstream\n"));pushBytes(obj.stream);pushBytes(encoder.encode("\nendstream\n"))}pushBytes(encoder.encode("endobj\n"))}
+ const xrefOffset=byteLength;let xref="xref\n0 "+(objects.length+1)+"\n0000000000 65535 f \n";for(let i=1;i<offsets.length;i++)xref+=String(offsets[i]).padStart(10,"0")+" 00000 n \n";
+ pushBytes(encoder.encode(xref+"trailer\n<< /Size "+(objects.length+1)+" /Root "+catalogId+" 0 R >>\nstartxref\n"+xrefOffset+"\n%%EOF"));
+ const blob=new Blob(chunks,{type:"application/pdf"}),url=URL.createObjectURL(blob),link=document.createElement("a"),safeName=String(sheets.length===1?(sheets[0].titleBlock?.projectTitle||sheets[0].name||"ARQENVO"):((p.project.name||"ARQENVO")+" - Layout Book")).replace(/[^a-z0-9 _-]/gi,"").trim().replace(/\s+/g,"-")||"ARQENVO";
+ link.href=url;link.download=safeName+".pdf";link.style.display="none";document.body.appendChild(link);link.click();link.remove();setTimeout(()=>URL.revokeObjectURL(url),60000);
+ $("status").textContent="PDF saved · "+sheets.length+" sheet(s) · "+safeName+".pdf";
 }
-window.addEventListener("afterprint",()=>{document.body.classList.remove("layout-print-mode");$("layoutPrintStage")?.replaceChildren();resize()});
 $("createLayoutSheet")?.addEventListener("click",makeLayoutSheet);
 $("layoutDuplicate")?.addEventListener("click",duplicateActiveLayout);$("layoutMoveUp")?.addEventListener("click",()=>moveActiveLayout(-1));$("layoutMoveDown")?.addEventListener("click",()=>moveActiveLayout(1));$("layoutDelete")?.addEventListener("click",deleteActiveLayout);
 $("layoutReturnPlan")?.addEventListener("click",()=>enterModelView("floor"));
