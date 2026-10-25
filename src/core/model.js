@@ -221,10 +221,25 @@ export function deserializeProject(text) {
   return migrateProject(data);
 }
 export function elementSchedule(project) {
-  return project.elements.map(e => ({
-    id: e.id, type: e.type, story: project.stories.find(s => s.id === e.storyId)?.name ?? "Unassigned",
-    length: e.type === "wall" || e.type === "beam" ? Number((e.type === "wall" ? wallLength(e) : distance(e.start, e.end)).toFixed(3)) : null,
-    area: e.type === "slab" || e.type === "roof" ? Number(polygonArea(e.boundary).toFixed(3)) : e.type === "wall" ? Number(netWallArea(e).toFixed(3)) : null,
-    material: e.buildingMaterial ?? "",
-  }));
+  return project.elements.map(e => {
+    const isZone = e.type === "room";
+    const boundary = Array.isArray(e.boundary) ? e.boundary : [];
+    const perimeter = isZone && boundary.length > 1
+      ? boundary.reduce((sum, p, i) => sum + distance(p, boundary[(i + 1) % boundary.length]), 0)
+      : null;
+    return {
+      id: e.id,
+      type: e.type,
+      story: project.stories.find(s => s.id === e.storyId)?.name ?? "Unassigned",
+      zoneNumber: isZone ? (e.zoneNumber ?? "") : "",
+      zoneName: isZone ? (e.roomName ?? e.name ?? "") : "",
+      zoneCategory: isZone ? (e.zoneCategory ?? "General") : "",
+      length: e.type === "wall" || e.type === "beam" ? Number((e.type === "wall" ? wallLength(e) : distance(e.start, e.end)).toFixed(3)) : null,
+      area: isZone ? Number((Number.isFinite(e.area) ? e.area : polygonArea(boundary)).toFixed(3))
+        : e.type === "slab" || e.type === "roof" ? Number(polygonArea(e.boundary).toFixed(3))
+        : e.type === "wall" ? Number(netWallArea(e).toFixed(3)) : null,
+      perimeter: perimeter === null ? null : Number(perimeter.toFixed(3)),
+      material: e.buildingMaterial ?? "",
+    };
+  });
 }
