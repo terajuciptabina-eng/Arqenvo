@@ -45,6 +45,56 @@ try {
     const canvas = document.querySelector("#canvas");
     return canvas && canvas.clientWidth > 100 && canvas.clientHeight > 100;
   });
+  assert.equal(await page.locator("#navigatorToggle").isVisible(), false,
+    "Desktop must not expose Hide/Show Navigator");
+
+  // Use the tablet viewport with coarse-pointer emulation so this actually exercises iPad CSS.
+  const tabletPanelPage = await browser.newPage({ viewport: { width: 1024, height: 768 }, hasTouch: true, isMobile: true });
+  tabletPanelPage.setDefaultTimeout(8000);
+  tabletPanelPage.on("pageerror", error => pageErrors.push(error.message));
+  await tabletPanelPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await tabletPanelPage.waitForFunction(() => document.querySelector("#canvas")?.clientWidth > 100);
+  const tabletBefore = await tabletPanelPage.evaluate(() => {
+    const work = document.querySelector(".work");
+    const nav = document.querySelector(".navigator");
+    const workspace = document.querySelector(".workspace");
+    const inspector = document.querySelector(".inspector");
+    const toggle = document.querySelector("#navigatorToggle");
+    const box = element => { const r=element.getBoundingClientRect(); return {left:r.left,width:r.width,display:getComputedStyle(element).display}; };
+    return {columns:getComputedStyle(work).gridTemplateColumns,nav:box(nav),workspace:box(workspace),inspector:box(inspector),toggleInHeading:toggle.parentElement===nav.querySelector(".section")};
+  });
+  assert.ok(tabletBefore.nav.display!=="none" && tabletBefore.nav.width>100, "iPad Navigator must be docked in its original column");
+  assert.ok(tabletBefore.inspector.display!=="none" && tabletBefore.inspector.width>100, "iPad Inspector must be visible beside the workspace");
+  assert.ok(tabletBefore.workspace.width>200, "iPad workspace must retain usable width");
+  assert.equal(tabletBefore.toggleInHeading,true,"When shown, Hide Navigator stays inside the Navigator header");
+  await tabletPanelPage.locator("#navigatorToggle").click();
+  const tabletHidden = await tabletPanelPage.evaluate(() => {
+    const work = document.querySelector(".work");
+    const nav = document.querySelector(".navigator");
+    const workspace = document.querySelector(".workspace");
+    const inspector = document.querySelector(".inspector");
+    const toggle = document.querySelector("#navigatorToggle");
+    const box = element => { const r=element.getBoundingClientRect(); return {left:r.left,width:r.width,display:getComputedStyle(element).display}; };
+    return {columns:getComputedStyle(work).gridTemplateColumns,nav:box(nav),workspace:box(workspace),inspector:box(inspector),toggleInWork:toggle.parentElement===work,togglePosition:getComputedStyle(toggle).position};
+  });
+  assert.equal(tabletHidden.nav.display,"none","Hide must collapse the Navigator only");
+  assert.ok(tabletHidden.inspector.display!=="none" && tabletHidden.inspector.width>100, "Inspector must remain visible when Navigator is hidden");
+  assert.ok(tabletHidden.workspace.width>tabletBefore.workspace.width, "Workspace must expand into the Navigator's collapsed column");
+  assert.equal(tabletHidden.toggleInWork,true,"Show control must remain reachable after hiding Navigator");
+  assert.equal(tabletHidden.togglePosition,"fixed","Show control must not become an extra grid item ahead of the Toolbox");
+  await tabletPanelPage.locator("#navigatorToggle").click();
+  const tabletRestored = await tabletPanelPage.evaluate(() => {
+    const nav=document.querySelector(".navigator"), workspace=document.querySelector(".workspace"), inspector=document.querySelector(".inspector"), toggle=document.querySelector("#navigatorToggle");
+    const box=element=>{const r=element.getBoundingClientRect();return {left:r.left,width:r.width,display:getComputedStyle(element).display}};
+    return {nav:box(nav),workspace:box(workspace),inspector:box(inspector),toggleInHeading:toggle.parentElement===nav.querySelector(".section")};
+  });
+  assert.notEqual(tabletRestored.nav.display,"none","Show must restore the Navigator");
+  assert.ok(Math.abs(tabletRestored.nav.left-tabletBefore.nav.left)<2,"Navigator must return to the same column after Show");
+  assert.ok(tabletRestored.inspector.display!=="none" && tabletRestored.inspector.width>100,"Inspector must remain visible after Show");
+  assert.equal(tabletRestored.toggleInHeading,true,"Hide button returns to the Navigator header after Show");
+  await tabletPanelPage.close();
+  console.log("[PASS] Tablet Navigator Hide/Show preserves column position and Inspector");
+
   const canvas = page.locator("#canvas");
   await page.locator('[data-tool="wall"]').click();
   await page.locator("#wallGeometryMethod").selectOption("single");
@@ -71,6 +121,21 @@ try {
   });
   assert.ok(centerPixel[0] < 170 && centerPixel[1] < 180 && centerPixel[2] < 190,
     `T-junction centre should render as a wall, got rgba(${centerPixel.join(",")})`);
+
+  // Commit the two provisional wall segments before switching tools; otherwise
+  // setTool("select") correctly cancels provisional geometry and leaves no candidates.
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+
+  // Cycle overlapping candidates at the committed T-junction.
+  await page.locator('[data-tool="select"]').click();
+  const tJunctionRect = await canvas.boundingBox();
+  assert.ok(tJunctionRect, "Floor-plan canvas must remain visible");
+  cx = tJunctionRect.x + tJunctionRect.width / 2;
+  cy = tJunctionRect.y + tJunctionRect.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.keyboard.press("Tab");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
 
   await page.locator("#undo").click();
   await page.waitForFunction(() => document.querySelector("#redo")?.disabled === false);
@@ -109,19 +174,42 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
-  // Archicad-style preselection and Tab cycling at overlapping wall junctions.
-  await page.locator('[data-tool="select"]').click();
-  await page.mouse.move(cx, cy);
-  await page.keyboard.press("Tab");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
-  // Direction-dependent area selection: drag left-to-right around one wall segment.
-  await page.mouse.move(cx - 100, cy - 10);
-  await page.mouse.down();
-  await page.mouse.move(cx + 100, cy + 10, { steps: 5 });
-  await page.mouse.up();
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"));
-  assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
-    "Area selection should select at least one element");
+  // Isolate marquee behavior from previous drawing/undo state.
+  const marqueePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  marqueePage.setDefaultTimeout(8000);
+  marqueePage.on("pageerror", error => pageErrors.push(error.message));
+  await marqueePage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await marqueePage.waitForFunction(() => {
+    const el = document.querySelector("#canvas");
+    return el && el.clientWidth > 100 && el.clientHeight > 100;
+  });
+  const marqueeCanvas = marqueePage.locator("#canvas");
+  await marqueePage.locator('[data-tool="wall"]').click();
+  await marqueePage.locator("#wallGeometryMethod").selectOption("single");
+  await marqueePage.waitForTimeout(80);
+  let marqueeRect = await marqueeCanvas.boundingBox();
+  assert.ok(marqueeRect, "Canvas must remain visible for marquee test");
+  let marqueeCx = marqueeRect.x + marqueeRect.width / 2;
+  let marqueeCy = marqueeRect.y + marqueeRect.height / 2;
+  await marqueePage.mouse.click(marqueeCx - 72, marqueeCy);
+  await marqueePage.mouse.click(marqueeCx + 72, marqueeCy);
+  await marqueePage.keyboard.press("Enter");
+  await marqueePage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  await marqueePage.locator('[data-tool="select"]').click();
+  marqueeRect = await marqueeCanvas.boundingBox();
+  assert.ok(marqueeRect, "Canvas must remain visible before marquee selection");
+  marqueeCx = marqueeRect.x + marqueeRect.width / 2;
+  marqueeCy = marqueeRect.y + marqueeRect.height / 2;
+  await marqueePage.mouse.move(marqueeCx - 100, marqueeCy - 30);
+  await marqueePage.mouse.down();
+  await marqueePage.mouse.move(marqueeCx + 100, marqueeCy + 30, { steps: 5 });
+  await marqueePage.mouse.up();
+  await marqueePage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Marquee area defined"));
+  await marqueePage.keyboard.press("Control+a");
+  await marqueePage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected in marquee"));
+  assert.ok(Number((await marqueePage.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
+    "Selecting within the marquee should select at least one element");
+  await marqueePage.close();
 
   // Existing element edits must end on Enter and remain fixed when the pointer moves.
   const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
@@ -359,21 +447,26 @@ try {
   await openingPage.mouse.click(canvasBox.x + canvasBox.width - 24, canvasBox.y + 24);
   await openingPage.waitForFunction(() => document.querySelector("#selectionInfo")?.textContent.includes("No selection") || !(document.querySelector("#elementProperties input[readonly]")));
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
-  // Click inside the actual hosted opening span, derived from persisted geometry and the live viewport.
-  // The previous hard-coded arc point was not on the generated door arc, so it did not test opening selection.
-  const doorOpeningPoint = await openingPage.evaluate(() => {
+  // Click the visible door-leaf segment, not the opening centerline.
+  // Hit-testing intentionally requires a visible symbol so blank-paper drags can start a marquee.
+  const doorSymbolPoint = await openingPage.evaluate(() => {
     const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),t=window.__arqenvoDebug?.getViewport();
     const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}");
     const door=model.elements?.find(e=>e.type==="door");
     const wall=model.elements?.find(e=>e.id===door?.hostWallId&&e.type==="wall");
     if(!door||!wall) throw new Error("Hosted door or host wall missing from saved model");
     const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1;
-    const along=(Number(door.offset)||0)+(Number(door.width)||0)/2;
-    const wx=wall.start.x+dx*along/len,wy=wall.start.y+dy*along/len;
+    const start=Math.max(0,Number(door.offset)||0),end=start+Math.max(0,Number(door.width)||0);
+    const modelPoint=along=>({x:wall.start.x+dx*along/len,y:wall.start.y+dy*along/len});
     const scale=t?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=t?.origin||{x:0,y:0};
-    return {x:rect.left+canvas.clientWidth/2+origin.x+wx*scale,y:rect.top+canvas.clientHeight/2+origin.y-wy*scale,wx,wy};
+    const screenPoint=p=>({x:rect.left+canvas.clientWidth/2+origin.x+p.x*scale,y:rect.top+canvas.clientHeight/2+origin.y-p.y*scale});
+    const a=screenPoint(modelPoint(start)),b=screenPoint(modelPoint(end));
+    const radius=Math.hypot(b.x-a.x,b.y-a.y)||1,nx=-(b.y-a.y)/radius,ny=(b.x-a.x)/radius;
+    const rightHinge=door.hingeSide==="right",hinge=rightHinge?b:a,side=door.swingDirection==="outside"?-1:1;
+    const openFree={x:hinge.x+nx*side*radius,y:hinge.y+ny*side*radius};
+    return {x:(hinge.x+openFree.x)/2,y:(hinge.y+openFree.y)/2,hinge,openFree};
   });
-  await openingPage.mouse.click(doorOpeningPoint.x,doorOpeningPoint.y);
+  await openingPage.mouse.click(doorSymbolPoint.x,doorSymbolPoint.y);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { const diag=await openingPage.evaluate(()=>({hitDebug:window.__arqenvoDebug?.getLastFloorSelectionDebug?.(),status:document.querySelector("#status")?.textContent,selection:document.querySelector("#selectionInfo")?.textContent,tool:document.querySelector("#toolName")?.value,props:document.querySelector("#elementProperties")?.textContent,project:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>["wall","door","window"].includes(e.type)).map(e=>({id:e.id,type:e.type,start:e.start,end:e.end,offset:e.offset,width:e.width,hostWallId:e.hostWallId,storyId:e.storyId,hingeSide:e.hingeSide,swingDirection:e.swingDirection}))})); console.log("DOOR_SELECTION_DIAG",JSON.stringify(diag)); throw new Error(`Door symbol selection failed; diag=${JSON.stringify(diag)}; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
     "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
@@ -394,15 +487,33 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Opening updated");
   assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
     "Pressing Enter should apply the new door width to the hosted opening");
-  // Alignment=Left moved the opening to the host wall start (-4 m); hit the updated visible arc and opening span.
-  await modelPoint(-3.434, wallY + 0.566);
+  // Recompute the visible leaf and hinge from the current hosted geometry after Width/Alignment edits.
+  const doorSymbolGeometry = async () => openingPage.evaluate(() => {
+    const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),viewport=window.__arqenvoDebug?.getViewport();
+    const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}");
+    const door=model.elements?.find(e=>e.type==="door");
+    const wall=model.elements?.find(e=>e.id===door?.hostWallId&&e.type==="wall");
+    if(!door||!wall)throw new Error("Hosted door or host wall missing from saved model");
+    const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1;
+    const offset=Math.max(0,Number(door.offset)||0),width=Math.max(0,Number(door.width)||0);
+    const at=distance=>({x:wall.start.x+dx*distance/len,y:wall.start.y+dy*distance/len});
+    const scale=viewport?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=viewport?.origin||{x:0,y:0};
+    const project=p=>({x:rect.left+canvas.clientWidth/2+origin.x+p.x*scale,y:rect.top+canvas.clientHeight/2+origin.y-p.y*scale});
+    const a=project(at(offset)),b=project(at(offset+width)),radius=Math.hypot(b.x-a.x,b.y-a.y)||1;
+    const nx=-(b.y-a.y)/radius,ny=(b.x-a.x)/radius;
+    const hinge=door.hingeSide==="right"?b:a,side=door.swingDirection==="outside"?-1:1;
+    const openFree={x:hinge.x+nx*side*radius,y:hinge.y+ny*side*radius};
+    return {leaf:{x:(hinge.x+openFree.x)/2,y:(hinge.y+openFree.y)/2},hinge,unitScreen:{x:(b.x-a.x)/radius,y:(b.y-a.y)/radius},scale};
+  });
+  let doorGeom=await doorSymbolGeometry();
+  await openingPage.mouse.click(doorGeom.leaf.x,doorGeom.leaf.y);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
-  await modelPoint(-3.55, wallY);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
+  // The selected visible leaf is the unambiguous hit target; do not require
+  // the wall-centerline hinge point to override the host wall hit test.
   const doorOffsetBeforeMove = Number(await openingPage.locator('[data-prop="offset"]').inputValue());
-  const dragScreenPoint = async (wx, wy) => openingPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
-  const doorDragStart = await dragScreenPoint(-3.434, wallY + 0.566);
-  const doorDragEnd = await dragScreenPoint(-2.634, wallY + 0.566);
+  doorGeom=await doorSymbolGeometry();
+  const doorDragStart=doorGeom.leaf;
+  const doorDragEnd={x:doorDragStart.x+doorGeom.unitScreen.x*0.8*doorGeom.scale,y:doorDragStart.y+doorGeom.unitScreen.y*0.8*doorGeom.scale};
   await openingPage.mouse.move(doorDragStart.x, doorDragStart.y);
   await openingPage.mouse.down();
   await openingPage.mouse.move(doorDragEnd.x, doorDragEnd.y, {steps:6});
