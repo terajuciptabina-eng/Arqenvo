@@ -216,6 +216,37 @@ function drawWallJunctions(){
   x.closePath();x.fill();x.restore();
  }
 }
+function render3DScene(ctx,items,project3d,options={}){
+ const faces3d=[];
+ 
+const prism=(e,footprint,z0,height)=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height));const chosenElement=(!!options.interactive&&selected.has(e.id));
+for(let i=0;i<base.length;i++){const j=(i+1)%base.length;const poly=[base[i],base[j],top[j],top[i]];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,fill:chosenElement?"#9acbd0":(i%2?"#cbd4da":"#b8c4cc"),selected:chosenElement})}
+faces3d.push({id:e.id,poly:top,depth:top.reduce((sum,pt)=>sum+pt.depth,0)/top.length,fill:chosenElement?"#bce3e6":"#e4e9ed",selected:chosenElement})};
+for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","door","window","roof"].includes(e.type))continue;const level=p.stories.find(v=>v.id===e.storyId),storyElevation=level?.elevation||0;if(e.type==="roof"){const center={x:e.boundary.reduce((s,v)=>s+v.x,0)/e.boundary.length,y:e.boundary.reduce((s,v)=>s+v.y,0)/e.boundary.length},radius=Math.min(...e.boundary.map(v=>Math.hypot(v.x-center.x,v.y-center.y))),baseZ=storyElevation+(e.elevation||0)+(e.offset||0),rise=Math.tan((e.pitch||30)*Math.PI/180)*radius,base=e.boundary.map(v=>project3d(v,baseZ)),inner=e.boundary.map(v=>project3d(v,baseZ-(e.thickness||.18))),peak=project3d(center,baseZ+rise),chosenElement=(!!options.interactive&&selected.has(e.id));for(let i=0;i<base.length;i++){const j=(i+1)%base.length,poly=[base[i],base[j],peak];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,fill:chosenElement?"#d2a47f":"#b98760",selected:chosenElement});faces3d.push({id:e.id,poly:[base[j],base[i],inner[i],inner[j]],depth:(base[i].depth+base[j].depth)/2,fill:"#795640",selected:chosenElement})}continue}if(e.type==="door"||e.type==="window"){
+ const host=items.find(v=>v.id===e.hostWallId&&v.type==="wall");if(!host)continue;
+ const g=hostedOpening3dGeometry(host,e),baseZ=storyElevation+(host.baseOffset||0)+g.zOffset;
+ if(e.type==="window"){
+  const frame=.045,depth=(g.thickness||.025)*1.8;
+  const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy)||1,nx=-dy/len*depth/2,ny=dx/len*depth/2;
+  const offset=e.offset||0,width=e.width||0,a={x:host.start.x+dx*offset/len,y:host.start.y+dy*offset/len},b={x:host.start.x+dx*(offset+width)/len,y:host.start.y+dy*(offset+width)/len};
+  const zBottom=baseZ,zTop=baseZ+g.height;
+  const frameRects=[
+   [{x:a.x,y:a.y},{x:b.x,y:b.y},0,frame],
+   [{x:a.x,y:a.y},{x:b.x,y:b.y},g.height-frame,g.height],
+  ];
+  for(const [u,v,lo,hi] of frameRects){const poly=[{x:u.x+nx,y:u.y+ny},{x:v.x+nx,y:v.y+ny},{x:v.x-nx,y:v.y-ny},{x:u.x-nx,y:u.y-ny}];prism(e,poly,zBottom+lo,Math.max(.015,hi-lo))}
+  const jambs=[a,b];
+  for(const jamb of jambs){const poly=[{x:jamb.x+nx,y:jamb.y+ny},{x:jamb.x+nx+dx/len*frame,y:jamb.y+ny+dy/len*frame},{x:jamb.x-nx+dx/len*frame,y:jamb.y-ny+dy/len*frame},{x:jamb.x-nx,y:jamb.y-ny}];prism(e,poly,zBottom, g.height)}
+  prism(e,g.boundary,baseZ,g.height);
+ }else prism(e,g.boundary,baseZ,g.height);
+ continue
+}let footprint=[],z0=storyElevation,height=0;
+if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=e.openings||[],cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len});for(const [low,high] of solids){const u=at(lo),v=at(hi),poly=[{x:u.x+nx,y:u.y+ny},{x:v.x+nx,y:v.y+ny},{x:v.x-nx,y:v.y-ny},{x:u.x-nx,y:u.y-ny}];prism(e,poly,base+low,high-low)} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
+else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
+else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
+prism(e,footprint,z0,height)
+}for(const face of faces3d.sort((a,b)=>a.depth-b.depth)){ctx.fillStyle=face.fill;ctx.strokeStyle=face.selected?"#087e8b":"#52616b";ctx.lineWidth=face.selected?1.5:1;ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();ctx.stroke()}hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));
+}
 function renderFloorPlanElements(ctx,items,pointAt,scaleFactor,options={}){
 for(const e of items){const isSel=!!options.interactive&&selected.has(e.id),isHover=!!options.interactive&&hoveredElementId===e.id&&!isSel;ctx.strokeStyle=isSel?"#087e8b":isHover?"#d97706":e.type==="room"?"#6aa5a8":"#4b5660";ctx.fillStyle=e.type==="room"?"rgba(217,240,242,.28)":"#e9eef0";ctx.lineWidth=isSel?2:isHover?1.8:1;
 if(e.type==="gridline"){const a=pointAt(e.start),b=pointAt(e.end);ctx.save();ctx.strokeStyle=isSel?"#087e8b":"#6d8296";ctx.fillStyle="#fff";ctx.lineWidth=isSel?2:1.2;ctx.setLineDash([7,4]);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();ctx.setLineDash([]);const markerFlags=e.markerSides||{start:true,end:false};const markerPoints=[];if(markerFlags.start)markerPoints.push([a,e.label||"A"]);if(markerFlags.end)markerPoints.push([b,e.label||"A"]);for(const [pt,label] of markerPoints){const markerRadius=Math.max(4,Math.min(20,Number(e.markerRadius)||10));ctx.beginPath();ctx.arc(pt.x,pt.y,markerRadius,0,Math.PI*2);ctx.fill();ctx.stroke();ctx.fillStyle=isSel?"#087e8b":"#526779";ctx.font="bold 11px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(String(label),pt.x,pt.y);ctx.fillStyle="#fff"}ctx.restore()}
@@ -253,8 +284,7 @@ if(draft.length&&mouse){const anchor=draft[draft.length-1],raw=wpos(mouse),g=Mat
 if(view==="floor"&&activeSnapPoint&&p.settings?.snap!==false){const q=spos(activeSnapPoint);x.save();x.strokeStyle="#00a6b5";x.fillStyle="rgba(0,166,181,.13)";x.lineWidth=1.5;x.beginPath();if(activeSnapPoint.kind==="midpoint"){x.moveTo(q.x,q.y-6);x.lineTo(q.x+6,q.y);x.lineTo(q.x,q.y+6);x.lineTo(q.x-6,q.y);x.closePath()}else if(activeSnapPoint.kind==="center"){x.arc(q.x,q.y,5,0,Math.PI*2);x.moveTo(q.x-8,q.y);x.lineTo(q.x+8,q.y);x.moveTo(q.x,q.y-8);x.lineTo(q.x,q.y+8)}else if(activeSnapPoint.kind==="nearest"){x.arc(q.x,q.y,4,0,Math.PI*2);x.moveTo(q.x-7,q.y);x.lineTo(q.x+7,q.y)}else{x.rect(q.x-4,q.y-4,8,8)}x.fill();x.stroke();x.restore()}
 updateTrackerUI();
 }else{
-const faces3d=[];
- const project3d=(pt,z)=>{
+const project3d=(pt,z)=>{
 const yaw=camera3d.yaw,pitch=camera3d.pitch,cy=Math.cos(yaw),sy=Math.sin(yaw),cp=Math.cos(pitch),sp=Math.sin(pitch);
 const wx=pt.x,wy=pt.y,wz=z;
 const rx=wx*cy-wy*sy,ry=wx*sy+wy*cy;
@@ -262,33 +292,7 @@ const px=(rx-camera3d.panX)*scale*.72*camera3d.zoom;
 const py=((ry-camera3d.panY)*sp-(wz-camera3d.targetZ)*cp)*scale*.72*camera3d.zoom;
 return{x:c.clientWidth/2+origin.x+px,y:c.clientHeight*.58+origin.y+py,depth:ry*cp+wz*sp};
 };
-const prism=(e,footprint,z0,height)=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height));const chosenElement=selected.has(e.id);
-for(let i=0;i<base.length;i++){const j=(i+1)%base.length;const poly=[base[i],base[j],top[j],top[i]];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,fill:chosenElement?"#9acbd0":(i%2?"#cbd4da":"#b8c4cc"),selected:chosenElement})}
-faces3d.push({id:e.id,poly:top,depth:top.reduce((sum,pt)=>sum+pt.depth,0)/top.length,fill:chosenElement?"#bce3e6":"#e4e9ed",selected:chosenElement})};
-for(const e of els()){if(!isLayerVisible(e)||!["wall","beam","column","slab","door","window","roof"].includes(e.type))continue;const level=p.stories.find(v=>v.id===e.storyId),storyElevation=level?.elevation||0;if(e.type==="roof"){const center={x:e.boundary.reduce((s,v)=>s+v.x,0)/e.boundary.length,y:e.boundary.reduce((s,v)=>s+v.y,0)/e.boundary.length},radius=Math.min(...e.boundary.map(v=>Math.hypot(v.x-center.x,v.y-center.y))),baseZ=storyElevation+(e.elevation||0)+(e.offset||0),rise=Math.tan((e.pitch||30)*Math.PI/180)*radius,base=e.boundary.map(v=>project3d(v,baseZ)),inner=e.boundary.map(v=>project3d(v,baseZ-(e.thickness||.18))),peak=project3d(center,baseZ+rise),chosenElement=selected.has(e.id);for(let i=0;i<base.length;i++){const j=(i+1)%base.length,poly=[base[i],base[j],peak];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,fill:chosenElement?"#d2a47f":"#b98760",selected:chosenElement});faces3d.push({id:e.id,poly:[base[j],base[i],inner[i],inner[j]],depth:(base[i].depth+base[j].depth)/2,fill:"#795640",selected:chosenElement})}continue}if(e.type==="door"||e.type==="window"){
- const host=els().find(v=>v.id===e.hostWallId&&v.type==="wall");if(!host)continue;
- const g=hostedOpening3dGeometry(host,e),baseZ=storyElevation+(host.baseOffset||0)+g.zOffset;
- if(e.type==="window"){
-  const frame=.045,depth=(g.thickness||.025)*1.8;
-  const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy)||1,nx=-dy/len*depth/2,ny=dx/len*depth/2;
-  const offset=e.offset||0,width=e.width||0,a={x:host.start.x+dx*offset/len,y:host.start.y+dy*offset/len},b={x:host.start.x+dx*(offset+width)/len,y:host.start.y+dy*(offset+width)/len};
-  const zBottom=baseZ,zTop=baseZ+g.height;
-  const frameRects=[
-   [{x:a.x,y:a.y},{x:b.x,y:b.y},0,frame],
-   [{x:a.x,y:a.y},{x:b.x,y:b.y},g.height-frame,g.height],
-  ];
-  for(const [u,v,lo,hi] of frameRects){const poly=[{x:u.x+nx,y:u.y+ny},{x:v.x+nx,y:v.y+ny},{x:v.x-nx,y:v.y-ny},{x:u.x-nx,y:u.y-ny}];prism(e,poly,zBottom+lo,Math.max(.015,hi-lo))}
-  const jambs=[a,b];
-  for(const jamb of jambs){const poly=[{x:jamb.x+nx,y:jamb.y+ny},{x:jamb.x+nx+dx/len*frame,y:jamb.y+ny+dy/len*frame},{x:jamb.x-nx+dx/len*frame,y:jamb.y-ny+dy/len*frame},{x:jamb.x-nx,y:jamb.y-ny}];prism(e,poly,zBottom, g.height)}
-  prism(e,g.boundary,baseZ,g.height);
- }else prism(e,g.boundary,baseZ,g.height);
- continue
-}let footprint=[],z0=storyElevation,height=0;
-if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=e.openings||[],cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len});for(const [low,high] of solids){const u=at(lo),v=at(hi),poly=[{x:u.x+nx,y:u.y+ny},{x:v.x+nx,y:v.y+ny},{x:v.x-nx,y:v.y-ny},{x:u.x-nx,y:u.y-ny}];prism(e,poly,base+low,high-low)} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
-else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
-else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
-prism(e,footprint,z0,height)
-}for(const face of faces3d.sort((a,b)=>a.depth-b.depth)){x.fillStyle=face.fill;x.strokeStyle=face.selected?"#087e8b":"#52616b";x.lineWidth=face.selected?1.5:1;x.beginPath();face.poly.forEach((pt,i)=>i?x.lineTo(pt.x,pt.y):x.moveTo(pt.x,pt.y));x.closePath();x.fill();x.stroke()}hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));if(draft.length&&mouse&&tool!=="select"){const cursor=screenToWorld3d(mouse,story().elevation||0),points=[...draft,cursor].map(pt=>project3d(pt,story().elevation||0));x.save();x.strokeStyle="#087e8b";x.fillStyle="rgba(8,126,139,.12)";x.lineWidth=2;x.setLineDash([5,4]);x.beginPath();points.forEach((pt,i)=>i?x.lineTo(pt.x,pt.y):x.moveTo(pt.x,pt.y));if(tool==="slab"&&draft.length>1){x.closePath();x.fill()}x.stroke();x.setLineDash([]);x.restore()}
+render3DScene(x,els(),project3d,{interactive:true});if(draft.length&&mouse&&tool!=="select"){const cursor=screenToWorld3d(mouse,story().elevation||0),points=[...draft,cursor].map(pt=>project3d(pt,story().elevation||0));x.save();x.strokeStyle="#087e8b";x.fillStyle="rgba(8,126,139,.12)";x.lineWidth=2;x.setLineDash([5,4]);x.beginPath();points.forEach((pt,i)=>i?x.lineTo(pt.x,pt.y):x.moveTo(pt.x,pt.y));if(tool==="slab"&&draft.length>1){x.closePath();x.fill()}x.stroke();x.setLineDash([]);x.restore()}
 $("selectionInfo").textContent=selected.size?selected.size+" selected · "+chosen().map(e=>e.type).join(", "):"No selection";updateHistoryButtons()}}
 function renderProperties(){updateContextUI();const host=$("elementProperties"),info=$("selectionInfo");if(!host)return;const list=chosen();host.innerHTML="";if(info)info.textContent=list.length?list.length+" element"+(list.length===1?"":"s")+" selected":"";if(!list.length){host.replaceChildren();return}if(list.length>1){
 const type=list.every(e=>e.type===list[0].type)?list[0].type:"mixed";
@@ -718,15 +722,8 @@ function renderModelSnapshot(ctx,rect,source,storyId,scaleDenominator=100,frameW
  const minX=Math.min(...points.map(v=>v.x)),maxX=Math.max(...points.map(v=>v.x)),minY=Math.min(...points.map(v=>v.y)),maxY=Math.max(...points.map(v=>v.y)),ex=Math.max(1,maxX-minX),ey=Math.max(1,maxY-minY);
  const scaleFactor=Math.max(.0001,rect.width/Math.max(1,frameWidthMm)*1000/Math.max(1,scaleDenominator)),ox=rect.x+rect.width/2-(minX+maxX)*scaleFactor/2,oy=rect.y+rect.height/2+(minY+maxY)*scaleFactor/2,pt=v=>({x:ox+v.x*scaleFactor,y:oy-v.y*scaleFactor});
  if(source==="3d"){
-  const cx=(minX+maxX)/2,cy=(minY+maxY)/2,projected=points.map(q=>({x:(q.x-cx)-(q.y-cy)*.55,y:(q.x-cx)+(q.y-cy)*.45})),pMinX=Math.min(...projected.map(q=>q.x)),pMaxX=Math.max(...projected.map(q=>q.x)),pMinY=Math.min(...projected.map(q=>q.y)),pMaxY=Math.max(...projected.map(q=>q.y)),maxWallHeight=Math.max(2,...items.filter(el=>el.type==="wall"||el.type==="column").map(el=>Number(el.height)||3))*.34,projectedWidth=Math.max(1,pMaxX-pMinX),projectedHeight=Math.max(1,pMaxY-pMinY)*.34+maxWallHeight,factor=Math.max(.001,Math.min((rect.width-24)/projectedWidth,(rect.height-32)/projectedHeight)),baseY=rect.y+rect.height/2-(pMinY+pMaxY)*factor*.34/2+maxWallHeight*factor/2,iso=q=>({x:rect.x+rect.width/2+((q.x-cx)-(q.y-cy)*.55)*factor,y:baseY+((q.x-cx)+(q.y-cy)*.45)*factor*.34});
-  ctx.strokeStyle="#4c5963";ctx.fillStyle="#e1e7ea";ctx.lineWidth=.9;
-  for(const el of items){
-   if(el.type==="wall"&&el.start&&el.end){const a=iso(el.start),b=iso(el.end),z=Math.max(2,(el.height||3)*factor*.34);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x,b.y-z);ctx.lineTo(a.x,a.y-z);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(a.x,a.y-z);ctx.moveTo(b.x,b.y);ctx.lineTo(b.x,b.y-z);ctx.stroke()}
-   else if(el.type==="column"&&el.position){const q=iso(el.position),z=Math.max(2,(el.height||3)*factor*.34),cw=Math.max(1,(el.width||.3)*factor*.5);ctx.fillRect(q.x-cw/2,q.y-z,cw,z);ctx.strokeRect(q.x-cw/2,q.y-z,cw,z)}
-   else if(el.type==="beam"&&el.start&&el.end){const a=iso(el.start),b=iso(el.end);ctx.beginPath();ctx.moveTo(a.x,a.y-2);ctx.lineTo(b.x,b.y-2);ctx.stroke()}
-   else if(["slab","roof"].includes(el.type)&&el.boundary?.length){ctx.beginPath();el.boundary.forEach((q,i)=>{const v=iso(q);i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y)});ctx.closePath();ctx.fill();ctx.stroke()}
-  }
-  ctx.restore();return
+  const cx=(minX+maxX)/2,cy=(minY+maxY)/2,projected=points.map(q=>({x:(q.x-cx)-(q.y-cy)*.55,y:(q.x-cx)+(q.y-cy)*.45})),pMinX=Math.min(...projected.map(q=>q.x)),pMaxX=Math.max(...projected.map(q=>q.x)),pMinY=Math.min(...projected.map(q=>q.y)),pMaxY=Math.max(...projected.map(q=>q.y)),maxWallHeight=Math.max(2,...items.filter(el=>el.type==="wall"||el.type==="column").map(el=>Number(el.height)||3))*.34,projectedWidth=Math.max(1,pMaxX-pMinX),projectedHeight=Math.max(1,pMaxY-pMinY)*.34+maxWallHeight,factor=Math.max(.001,Math.min((rect.width-24)/projectedWidth,(rect.height-32)/projectedHeight)),baseY=rect.y+rect.height/2-(pMinY+pMaxY)*factor*.34/2+maxWallHeight*factor/2,iso3d=(q,z=0)=>({x:rect.x+rect.width/2+((q.x-cx)-(q.y-cy)*.55)*factor,y:baseY+((q.x-cx)+(q.y-cy)*.45)*factor*.34-z*factor*.34,depth:q.y});
+  render3DScene(ctx,items,iso3d,{interactive:false});ctx.restore();return
  }
  renderFloorPlanElements(ctx,items,pt,scaleFactor,{interactive:false,includePending:false});
  ctx.restore()
