@@ -448,6 +448,17 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-open .navigator .nav-tabs{color:#252d35!important}
  .work.navigator-open:after{content:"";position:fixed;inset:90px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
 }
+
+/* Final mobile toolbox override: icon-only buttons, no headings or text labels. */
+@media (max-width: 900px) {
+  #toolbox { width:48px!important; min-width:48px!important; max-width:48px!important; padding:4px 2px!important; overflow-x:hidden!important; }
+  #toolbox .toolbox-title,
+  #toolbox .tool-group-label,
+  #toolbox .tool-note,
+  #toolbox .tool span { display:none!important; visibility:hidden!important; }
+  #toolbox .tool { display:flex!important; align-items:center!important; justify-content:center!important; width:42px!important; min-width:42px!important; max-width:42px!important; min-height:42px!important; margin:2px auto!important; padding:4px!important; gap:0!important; font-size:0!important; line-height:0!important; white-space:nowrap!important; }
+  #toolbox .tool b { display:block!important; flex:0 0 auto!important; width:auto!important; margin:0!important; font-size:22px!important; line-height:1!important; visibility:visible!important; }
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
