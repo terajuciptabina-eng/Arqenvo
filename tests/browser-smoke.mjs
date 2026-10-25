@@ -510,6 +510,34 @@ try {
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:1}),"inside","Cursor above a horizontal wall chooses inside swing");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:-1}),"outside","Cursor below a horizontal wall chooses outside swing");
 
+  // Tablet Navigator regression: docked panel hides without removing the Inspector.
+  const tabletPanelPage=await browser.newPage({viewport:{width:1024,height:768},hasTouch:true,isMobile:false});
+  tabletPanelPage.setDefaultTimeout(8000);
+  tabletPanelPage.on("pageerror",error=>pageErrors.push(error.message));
+  await tabletPanelPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await tabletPanelPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  const tabletBefore=await tabletPanelPage.evaluate(()=>{
+    const nav=document.querySelector(".navigator"),ins=document.querySelector(".inspector"),work=document.querySelector(".work"),ws=document.querySelector(".workspace");
+    const box=el=>{const r=el.getBoundingClientRect();return {width:Math.round(r.width),display:getComputedStyle(el).display}};
+    return {columns:getComputedStyle(work).gridTemplateColumns,nav:box(nav),inspector:box(ins),workspace:box(ws)};
+  });
+  assert.ok(tabletBefore.nav.display!=="none"&&tabletBefore.nav.width>100,"Tablet Navigator must remain docked and visible");
+  assert.ok(tabletBefore.inspector.display!=="none"&&tabletBefore.inspector.width>100,"Tablet Inspector must remain visible");
+  await tabletPanelPage.locator("#navigatorToggle").click();
+  const tabletHidden=await tabletPanelPage.evaluate(()=>{
+    const nav=document.querySelector(".navigator"),ins=document.querySelector(".inspector"),ws=document.querySelector(".workspace");
+    const box=el=>{const r=el.getBoundingClientRect();return {width:Math.round(r.width),display:getComputedStyle(el).display}};
+    return {nav:box(nav),inspector:box(ins),workspace:box(ws)};
+  });
+  assert.equal(tabletHidden.nav.display,"none","Hide Navigator must hide only Navigator");
+  assert.ok(tabletHidden.inspector.display!=="none"&&tabletHidden.inspector.width>100,"Hiding Navigator must preserve the Inspector");
+  assert.ok(tabletHidden.workspace.width>tabletBefore.workspace.width,"Workspace must expand into the hidden Navigator column");
+  await tabletPanelPage.locator("#navigatorToggle").click();
+  const tabletRestored=await tabletPanelPage.evaluate(()=>({nav:getComputedStyle(document.querySelector(".navigator")).display,inspector:getComputedStyle(document.querySelector(".inspector")).display}));
+  assert.notEqual(tabletRestored.nav,"none","Show Navigator must restore its docked column");
+  assert.notEqual(tabletRestored.inspector,"none","Inspector must still be available after restoring Navigator");
+  await tabletPanelPage.close();
+
   // Mobile/tablet Touch: Magic Wand one-shot and 3D zoom buttons.
   const mobilePage=await browser.newPage({viewport:{width:820,height:1180},hasTouch:true,isMobile:true});
   mobilePage.setDefaultTimeout(8000);mobilePage.on("pageerror",error=>pageErrors.push(error.message));
