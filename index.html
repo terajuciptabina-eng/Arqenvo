@@ -549,6 +549,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work>.workspace{grid-column:2;grid-row:1 / span 2;min-width:0;min-height:0}
 .work>.navigator{grid-column:3;grid-row:1;min-width:0;min-height:0}
 .work>.inspector{grid-column:3;grid-row:2;display:block;min-width:0;min-height:0}
+#navigatorToggle[hidden]{display:none!important}
 #navigatorToggle.navigator-toggle{display:none;align-items:center;justify-content:center;min-height:32px;min-width:72px;padding:5px 9px;margin:0 0 0 auto;border:1px solid #7d8790;border-radius:4px;background:#3e414a;color:#fff;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:none;touch-action:manipulation;cursor:pointer}
 #navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static;display:inline-flex;flex:0 0 auto;min-width:72px;margin-left:auto}
@@ -666,7 +667,11 @@ document.addEventListener("keydown",event=>{
    var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
    var heading=nav.querySelector('.section');
    var dockedTablet=window.matchMedia('(pointer:coarse) and (min-width:601px), (min-width:761px) and (max-width:1200px)').matches;
-   if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
+   if(mobile||(!hidden&&dockedTablet)){
+    if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
+   }else if(toggle.parentNode!==work){
+    work.appendChild(toggle);
+   }
    toggle.textContent=mobile?(open?'✕ Close':'☰ Navigator'):(hidden?'Show Navigator':'Hide Navigator');
    toggle.setAttribute('aria-controls','navigator-panel');
    toggle.setAttribute('aria-expanded',mobile?(open?'true':'false'):(hidden?'false':'true'));
