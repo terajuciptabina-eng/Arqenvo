@@ -1,5 +1,5 @@
 /** RFC 4180-compatible CSV serialization for element schedules. */
-export const SCHEDULE_COLUMNS = Object.freeze(["id","type","story","length","area","material"]);
+export const SCHEDULE_COLUMNS = Object.freeze(["id","type","story","zoneNumber","zoneName","zoneCategory","length","area","perimeter","material"]);
 export function csvField(value) {
   const text = String(value ?? "");
   return /[",\r\n]/.test(text) ? '"' + text.replaceAll('"', '""') + '"' : text;
