@@ -474,6 +474,26 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-open>#navigatorToggle.navigator-toggle{position:fixed;left:auto;right:8px;top:94px;min-width:74px;z-index:1305}
  #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static;min-width:64px;min-height:38px;margin:0 0 0 auto;z-index:1305}
 }
+
+/* Keep the floating Show Navigator control directly beside the canvas top edge. */
+@media(max-width:900px){
+ .work>#navigatorToggle.navigator-toggle{
+   position:fixed!important;
+   left:56px!important;
+   top:92px!important;
+   bottom:auto!important;
+   right:auto!important;
+   margin:0!important;
+   min-width:102px!important;
+   min-height:40px!important;
+   z-index:1500!important;
+ }
+ .work.navigator-open>#navigatorToggle.navigator-toggle{
+   left:auto!important;
+   right:8px!important;
+   top:92px!important;
+ }
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
