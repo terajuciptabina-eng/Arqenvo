@@ -164,10 +164,31 @@ export function validateProject(data) {
   }
   return { valid: errors.length === 0, errors };
 }
-export function migrateProject(input) {
+export function normalizeHostedOpenings(project) {
+  const elements = project.elements;
+  const known = new Map(elements.filter(el => el.type === "door" || el.type === "window").map(el => [el.id, el]));
+  for (const wall of elements) {
+    if (wall.type !== "wall" || !Array.isArray(wall.openings)) continue;
+    for (const opening of wall.openings) {
+      if (!opening || !["door", "window"].includes(opening.type) || !opening.id) continue;
+      const existing = known.get(opening.id);
+      if (existing) {
+        existing.hostWallId = wall.id;
+        existing.storyId ??= wall.storyId ?? project.stories?.[0]?.id;
+        continue;
+      }
+      const selectable = { ...opening, hostWallId: wall.id, storyId: wall.storyId ?? project.stories?.[0]?.id };
+      elements.push(selectable);
+      known.set(selectable.id, selectable);
+    }
+  }
+  return project;
+}
+
+function migrateProject(input) {
   const check = validateProject(input);
   if (!check.valid) throw new Error(check.errors.join("; "));
-  if (input.version === MODEL_VERSION) return structuredClone(input);
+  if (input.version === MODEL_VERSION) return normalizeHostedOpenings(structuredClone(input));
   const p = createProject(input.project?.name ?? "Imported Project");
   p.project = { ...p.project, ...(input.project ?? {}) };
   p.stories = input.stories?.length ? structuredClone(input.stories) : [{ ...DEFAULT_STORY }];
@@ -181,7 +202,7 @@ export function migrateProject(input) {
   ];
   p.views = input.views ?? p.views;
   p.settings = { ...p.settings, ...(input.settings ?? {}) };
-  return p;
+  return normalizeHostedOpenings(p);
 }
 export function serializeProject(project) {
   const errors = validateProject(project);
