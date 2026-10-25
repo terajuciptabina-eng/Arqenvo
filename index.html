@@ -600,7 +600,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .inspector{grid-column:4;grid-row:1;display:block;visibility:visible;min-width:0;overflow:auto;border-right:0;border-left:1px solid var(--line);padding:12px}
 #navigatorToggle.navigator-toggle{display:none;position:absolute;left:52px;right:auto;top:8px;bottom:auto;z-index:1600;align-items:center;justify-content:center;min-height:38px;min-width:94px;padding:7px 10px;margin:0;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 1px 3px #0002;touch-action:manipulation;cursor:pointer}
 @media (pointer:coarse) and (min-width:601px){
- .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px}
+ .app{grid-template-rows:34px 59px 54px minmax(0,1fr) 23px}
  .work{grid-template-columns:48px 240px minmax(0,1fr) 250px}
  #navigatorToggle.navigator-toggle{display:inline-flex}
  .work.navigator-hidden{grid-template-columns:48px 0 minmax(0,1fr) 250px}
@@ -608,6 +608,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-hidden>.workspace{grid-column:3}
  .work.navigator-hidden>.inspector{display:block;visibility:visible;grid-column:4}
  .work>#navigatorToggle.navigator-toggle{position:absolute;left:52px;top:8px}
+ #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static;left:auto;top:auto;margin:0 0 0 auto;min-width:94px}
  .work:not(.navigator-hidden)>.navigator{display:block;visibility:visible}
  .work.navigator-open:after{display:none}
 }
