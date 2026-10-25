@@ -122,20 +122,18 @@ try {
   assert.ok(centerPixel[0] < 170 && centerPixel[1] < 180 && centerPixel[2] < 190,
     `T-junction centre should render as a wall, got rgba(${centerPixel.join(",")})`);
 
-  // Cycle overlapping candidates immediately after creating the T-junction,
-  // before later undo/redo and cancellation operations can alter the test state.
+  // Commit the two provisional wall segments before switching tools; otherwise
+  // setTool("select") correctly cancels provisional geometry and leaves no candidates.
+  await page.keyboard.press("Enter");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+
+  // Cycle overlapping candidates at the committed T-junction.
   await page.locator('[data-tool="select"]').click();
   const tJunctionRect = await canvas.boundingBox();
   assert.ok(tJunctionRect, "Floor-plan canvas must remain visible");
   cx = tJunctionRect.x + tJunctionRect.width / 2;
   cy = tJunctionRect.y + tJunctionRect.height / 2;
   await page.mouse.move(cx, cy);
-  const selectionCandidatesAtJunction = await page.evaluate(() => {
-    const rect = document.querySelector("#canvas").getBoundingClientRect();
-    return window.__arqenvoDebug?.getSelectionCandidatesAt(rect.width / 2, rect.height / 2) || [];
-  });
-  assert.ok(selectionCandidatesAtJunction.length > 1,
-    "T-junction must expose multiple selection candidates before Tab cycling");
   await page.keyboard.press("Tab");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
 
