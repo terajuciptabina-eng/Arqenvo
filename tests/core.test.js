@@ -44,6 +44,21 @@ test("element schedule reports quantities by story", () => {
  const p=createProject(); p.elements.push(createWall({x:0,y:0},{x:2,y:0})); const rows=elementSchedule(p); assert.equal(rows[0].story,"Ground Floor"); assert.equal(rows[0].length,2); assert.equal(rows[0].area,6);
 });
 
+test("Zone elements expose number, name, category, area and perimeter in schedules", () => {
+ const p=createProject();
+ p.elements.push({
+  id:"zone-living",type:"room",storyId:p.stories[0].id,
+  zoneNumber:"Z-01",roomName:"Living Room",zoneCategory:"Living",
+  boundary:[{x:0,y:0},{x:4,y:0},{x:4,y:3},{x:0,y:3}],area:12,
+ });
+ const zone=elementSchedule(p).find(row=>row.id==="zone-living");
+ assert.equal(zone.zoneNumber,"Z-01");
+ assert.equal(zone.zoneName,"Living Room");
+ assert.equal(zone.zoneCategory,"Living");
+ assert.equal(zone.area,12);
+ assert.equal(zone.perimeter,14);
+});
+
 test("project validation rejects duplicate stories and invalid story geometry", () => {
  const p=createProject();
  p.stories.push({id:p.stories[0].id,name:"First Floor",elevation:3,height:3});
