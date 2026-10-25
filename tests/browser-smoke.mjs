@@ -130,6 +130,12 @@ try {
   cx = tJunctionRect.x + tJunctionRect.width / 2;
   cy = tJunctionRect.y + tJunctionRect.height / 2;
   await page.mouse.move(cx, cy);
+  const selectionCandidatesAtJunction = await page.evaluate(() => {
+    const rect = document.querySelector("#canvas").getBoundingClientRect();
+    return window.__arqenvoDebug?.getSelectionCandidatesAt(rect.width / 2, rect.height / 2) || [];
+  });
+  assert.ok(selectionCandidatesAtJunction.length > 1,
+    "T-junction must expose multiple selection candidates before Tab cycling");
   await page.keyboard.press("Tab");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
 
