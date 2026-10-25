@@ -348,7 +348,7 @@ try {
   // Click the visible Door swing arc in screen coordinates derived from the real host wall.
   // Include current model geometry in a failure report so browser automation identifies the actual hit-test result.
   const doorSymbolPoint = await openingPage.evaluate(() => {
-    const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),t=window.__arqenvoViewport;
+    const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),t=window.__arqenvoDebug?.getViewport();
     const wx=0.566,wy=-2.934;
     const scale=t?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=t?.origin||{x:0,y:0};
     return {x:rect.left+canvas.clientWidth/2+origin.x+wx*scale,y:rect.top+canvas.clientHeight/2+origin.y-wy*scale};
