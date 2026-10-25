@@ -122,6 +122,17 @@ try {
   assert.ok(centerPixel[0] < 170 && centerPixel[1] < 180 && centerPixel[2] < 190,
     `T-junction centre should render as a wall, got rgba(${centerPixel.join(",")})`);
 
+  // Cycle overlapping candidates immediately after creating the T-junction,
+  // before later undo/redo and cancellation operations can alter the test state.
+  await page.locator('[data-tool="select"]').click();
+  const tJunctionRect = await canvas.boundingBox();
+  assert.ok(tJunctionRect, "Floor-plan canvas must remain visible");
+  cx = tJunctionRect.x + tJunctionRect.width / 2;
+  cy = tJunctionRect.y + tJunctionRect.height / 2;
+  await page.mouse.move(cx, cy);
+  await page.keyboard.press("Tab");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
+
   await page.locator("#undo").click();
   await page.waitForFunction(() => document.querySelector("#redo")?.disabled === false);
   await page.locator("#redo").click();
@@ -159,11 +170,6 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
-  // Archicad-style preselection and Tab cycling at overlapping wall junctions.
-  await page.locator('[data-tool="select"]').click();
-  await page.mouse.move(cx, cy);
-  await page.keyboard.press("Tab");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
   // Direction-dependent area selection: drag left-to-right around one wall segment.
   await page.mouse.move(cx - 100, cy - 10);
   await page.mouse.down();
