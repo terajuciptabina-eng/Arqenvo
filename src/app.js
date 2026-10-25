@@ -757,7 +757,13 @@ function makeLayoutSheet(){
  p.layouts.push(sheet);activeLayoutId=sheet.id;activeLayoutDrawingId=null;openLayoutBook();renderLayoutList();renderLayoutInspector();redraw();scheduleAutoSave();$("status").textContent="Created "+sheet.name+" · "+sheet.paper+" landscape";
 }
 function openLayoutBook(){
- layoutMode=true;view="layout";selected.clear();draft=[];layoutPointerGesture=null;
+ // A model-drawing command must not remain active above the Layout Book canvas.
+ if(provisionalDrawingActive)cancelProvisionalDrawing();
+ if(pendingOpeningPlacement){openingPlacement.cancel();pendingOpeningPlacement=null}
+ draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;
+ boundaryPointMoveGesture=null;gridlinePointMoveGesture=null;gridlineMoveGesture=null;wallPointMoveGesture=null;openingMoveGesture=null;genericMoveGesture=null;
+ releasedTouchEditPending=false;releasedTouchEditSnapshot=null;releasedTouchEditKind=null;
+ layoutMode=true;view="layout";selected.clear();layoutPointerGesture=null;updateEditActions();
  document.querySelectorAll("[data-navtab]").forEach(t=>t.classList.toggle("active",t.dataset.navtab==="layouts"));
  document.querySelectorAll("[data-navpanel]").forEach(panel=>panel.hidden=panel.dataset.navpanel!=="layouts");
  $("layoutControls")?.classList.add("active");$("layoutInspector")?.classList.add("active");$("elementProperties")?.style.setProperty("display","none");$("selectionInfo").textContent="";
