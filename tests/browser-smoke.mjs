@@ -482,6 +482,14 @@ try {
   assert.equal(await anchorPage.locator("#openingAlignment").count(),1,"Only one anchor selector should exist");
   await anchorPage.locator("#openingAlignment").selectOption("center");
   await anchorPoint(0,0);
+  // Changing the anchor in the live contextual control must update the actual placement state.
+  await anchorPage.locator("#openingAlignment").selectOption("left");
+  const leftLivePreview=await anchorPage.evaluate(()=>window.__arqenvoOpeningPreview);
+  assert.equal(leftLivePreview.anchor,"left","Changing Anchor Position during placement must update preview state");
+  assert.equal(leftLivePreview.offset,0,"Left anchor selected during placement must keep the opening at wall start");
+  await anchorPage.locator("#openingAlignment").selectOption("center");
+  const centerLivePreview=await anchorPage.evaluate(()=>window.__arqenvoOpeningPreview);
+  assert.equal(centerLivePreview.offset,1.55,"Returning to Center during placement must recenter the preview");
   await anchorPoint(0,0.8,"move");
   const previewBefore=await anchorPage.evaluate(()=>window.__arqenvoOpeningPreview);
   await anchorPoint(0,-0.8,"move");
@@ -509,6 +517,22 @@ try {
   assert.equal(rightPreview.offset,3.1,"Right anchor should end at the host wall end");
   await anchorPage.keyboard.press("Escape");
   await anchorPage.close();
+
+  // Magic Wand remains a reachable one-tap tool on touchscreen layouts.
+  const touchWandPage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+  touchWandPage.setDefaultTimeout(8000);
+  touchWandPage.on("pageerror",error=>pageErrors.push(error.message));
+  await touchWandPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await touchWandPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  const touchWand=touchWandPage.locator('[data-tool="magicwand"]');
+  assert.equal(await touchWand.isVisible(),true,"Magic Wand should be visible from the mobile toolbox");
+  const wandBox=await touchWand.boundingBox();
+  assert.ok(wandBox&&wandBox.height>=44,"Magic Wand should have a touch-sized target");
+  await touchWand.tap();
+  await touchWandPage.waitForFunction(()=>document.querySelector("#toolName")?.value==="magicwand");
+  assert.equal(await touchWand.evaluate(el=>el.classList.contains("active")),true,"One touch should activate Magic Wand");
+  await touchWandPage.locator('[data-tool="select"]').tap();
+  await touchWandPage.close();
 
   // Mobile 3D zoom controls must be visible in 3D view and change the actual camera readout.
   const mobileZoomPage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
