@@ -347,14 +347,14 @@ try {
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Click the visible Door swing arc in screen coordinates derived from the real host wall.
   // Include current model geometry in a failure report so browser automation identifies the actual hit-test result.
-  await openingPage.evaluate(() => {
+  const doorSymbolPoint = await openingPage.evaluate(() => {
     const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),t=window.__arqenvoViewport;
     const wx=0.566,wy=-2.934;
     const scale=t?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=t?.origin||{x:0,y:0};
-    const x=rect.left+canvas.clientWidth/2+origin.x+wx*scale,y=rect.top+canvas.clientHeight/2+origin.y-wy*scale;
-    canvas.dispatchEvent(new PointerEvent("pointerdown",{pointerId:992,clientX:x,clientY:y,button:0,buttons:1,bubbles:true}));
-    canvas.dispatchEvent(new PointerEvent("pointerup",{pointerId:992,clientX:x,clientY:y,button:0,buttons:0,bubbles:true}));
+    return {x:rect.left+canvas.clientWidth/2+origin.x+wx*scale,y:rect.top+canvas.clientHeight/2+origin.y-wy*scale};
   });
+  // Use real browser input so this exercises the same trusted pointer sequence as a user click.
+  await openingPage.mouse.click(doorSymbolPoint.x,doorSymbolPoint.y);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { const diag=await openingPage.evaluate(()=>({status:document.querySelector("#status")?.textContent,selection:document.querySelector("#selectionInfo")?.textContent,tool:document.querySelector("#toolName")?.value,props:document.querySelector("#elementProperties")?.textContent,project:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>["wall","door","window"].includes(e.type)).map(e=>({id:e.id,type:e.type,start:e.start,end:e.end,offset:e.offset,width:e.width,hostWallId:e.hostWallId,storyId:e.storyId,hingeSide:e.hingeSide,swingDirection:e.swingDirection}))})); console.log("DOOR_SELECTION_DIAG",JSON.stringify(diag)); throw new Error(`Door symbol selection failed; diag=${JSON.stringify(diag)}; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
     "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
