@@ -785,8 +785,26 @@ function makeNextLayoutNumber(){const used=new Set((p.layouts||[]).map(s=>s.numb
 function moveActiveLayout(delta){const i=p.layouts.findIndex(s=>s.id===activeLayoutId),j=i+delta;if(i<0||j<0||j>=p.layouts.length)return;[p.layouts[i],p.layouts[j]]=[p.layouts[j],p.layouts[i]];renderLayoutList();renderLayoutControls();redraw();scheduleAutoSave()}
 function deleteActiveLayout(){const s=layoutSheet();if(!s)return;if(!confirm("Delete layout "+s.number+" · "+s.name+"?"))return;const i=p.layouts.findIndex(v=>v.id===s.id);p.layouts.splice(i,1);activeLayoutId=p.layouts[Math.min(i,p.layouts.length-1)]?.id||null;activeLayoutDrawingId=layoutSheet()?.drawings?.[0]?.id||null;if(activeLayoutId)openLayoutBook();else{layoutMode=true;view="layout";renderLayoutList();$("layoutInspector").classList.add("active");$("layoutControls").classList.add("active");redraw()}scheduleAutoSave();$("status").textContent="Layout sheet deleted"}
 function addLayoutDrawing(){
- const s=layoutSheet();if(!s)return;ensureLayoutDefaults(s);const source=$("layoutDrawingSource").value,scaleDenominator=Number($("layoutDrawingScale").value)||100;
- const paper=layoutDimensions(s),frameWidth=Math.min(source==="3d"?150:220,Math.max(80,paper.width-40)),frameHeight=Math.min(source==="3d"?115:150,Math.max(60,paper.height-70)),cols=Math.max(1,Math.floor((paper.width-30)/(frameWidth+10))),maxY=paper.height-frameHeight-45;let slot=null;for(let row=0;row<Math.max(0,Math.floor((maxY-15)/(frameHeight+12))+1)&&!slot;row++){for(let col=0;col<cols;col++){const candidate={x:15+col*(frameWidth+10),y:15+row*(frameHeight+12),width:frameWidth,height:frameHeight};if(candidate.x+candidate.width>paper.width-10||candidate.y>maxY)continue;const overlaps=s.drawings.some(d=>{const b=layoutDrawingBounds(s,d);return candidate.x<b.x+b.width&&candidate.x+candidate.width>b.x&&candidate.y<b.y+b.height&&candidate.y+candidate.height>b.y});if(!overlaps){slot=candidate;break}}}if(!slot){$("status").textContent="No free drawing frame space on this sheet. Resize, move, or remove a drawing, or choose a larger paper size.";return}const d={id:"drawing-"+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)),source,storyId:source==="floor"?story().id:undefined,scale:scaleDenominator,...slot,frame:true,title:source==="3d"?"3D View":"Floor Plan · "+story().name,updatedAt:new Date().toISOString()};
+ const s=layoutSheet();if(!s)return;ensureLayoutDefaults(s);
+ const source=$("layoutDrawingSource").value,scaleDenominator=Number($("layoutDrawingScale").value)||100,paper=layoutDimensions(s);
+ const preferredWidth=Math.min(source==="3d"?150:220,Math.max(80,paper.width-40)),preferredHeight=Math.min(source==="3d"?115:150,Math.max(60,paper.height-70));
+ // Try progressively smaller frames so compact sheets can accept another drawing when the default frame no longer fits.
+ const sizes=[[preferredWidth,preferredHeight],[Math.min(preferredWidth,180),Math.min(preferredHeight,120)],[Math.min(preferredWidth,150),Math.min(preferredHeight,100)],[Math.min(preferredWidth,120),Math.min(preferredHeight,85)],[Math.min(preferredWidth,100),Math.min(preferredHeight,70)]];
+ let slot=null;
+ for(const [frameWidth,frameHeight] of sizes){
+  const cols=Math.max(1,Math.floor((paper.width-30)/(frameWidth+10))),maxY=paper.height-frameHeight-45;
+  for(let row=0;row<=Math.floor((maxY-15)/(frameHeight+12))&&!slot;row++){
+   for(let col=0;col<cols;col++){
+    const candidate={x:15+col*(frameWidth+10),y:15+row*(frameHeight+12),width:frameWidth,height:frameHeight};
+    if(candidate.x+candidate.width>paper.width-10||candidate.y>maxY)continue;
+    const overlaps=s.drawings.some(d=>{const b=layoutDrawingBounds(s,d);return candidate.x<b.x+b.width&&candidate.x+candidate.width>b.x&&candidate.y<b.y+b.height&&candidate.y+candidate.height>b.y});
+    if(!overlaps){slot=candidate;break}
+   }
+  }
+  if(slot)break;
+ }
+ if(!slot){$("status").textContent="No free drawing frame space on this sheet. Move or resize existing drawings, or choose a larger paper size.";return}
+ const d={id:"drawing-"+(globalThis.crypto?.randomUUID?.()||Date.now().toString(36)),source,storyId:source==="floor"?story().id:undefined,scale:scaleDenominator,...slot,frame:true,title:source==="3d"?"3D View":"Floor Plan · "+story().name,updatedAt:new Date().toISOString()};
  s.drawings.push(d);activeLayoutDrawingId=d.id;renderLayoutControls();renderLayoutInspector();redraw();scheduleAutoSave();$("status").textContent="Added live "+(source==="3d"?"3D":"Floor Plan")+" drawing to "+s.name;
 }
 function removeLayoutDrawing(){const s=layoutSheet();if(!s)return;const d=layoutDrawing();if(!d)return;s.drawings=s.drawings.filter(v=>v.id!==d.id);activeLayoutDrawingId=s.drawings[0]?.id||null;renderLayoutInspector();redraw();scheduleAutoSave();$("status").textContent="Drawing removed from layout"}
