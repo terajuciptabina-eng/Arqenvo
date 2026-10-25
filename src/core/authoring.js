@@ -170,6 +170,14 @@ export function createOpeningPlacement() {
       pending.swingDirection = openingPlacementDirection(wallStart, wallEnd, cursor);
       return structuredClone(pending);
     },
+    update(changes) {
+      if (!pending) return null;
+      if (!changes || typeof changes !== "object" || Array.isArray(changes)) {
+        throw new TypeError("Placement updates must be an object");
+      }
+      pending = { ...pending, ...structuredClone(changes) };
+      return structuredClone(pending);
+    },
     confirm() {
       if (!pending) return null;
       const result = { ...pending };

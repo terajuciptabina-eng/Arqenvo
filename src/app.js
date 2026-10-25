@@ -358,7 +358,25 @@ function renderLayerPanel(){
  host.querySelectorAll("[data-layer-visible]").forEach(input=>input.addEventListener("change",()=>{const layer=input.dataset.layerVisible;if(input.checked)hiddenLayers.delete(layer);else hiddenLayers.add(layer);for(const el of chosen())if(elementLayer(el)===layer&&!input.checked)selected.delete(el.id);redraw();renderProperties();renderLayerPanel();$("status").textContent=input.checked?"Layer shown: "+layer:"Layer hidden: "+layer}));
  $("showAllLayers").onclick=()=>{hiddenLayers.clear();redraw();renderProperties();renderLayerPanel();$("status").textContent="All layers visible"};
 }
-function ensureOpeningControls(){const toolbar=$("contextToolbar");if(!toolbar||$("openingHingeControl"))return;const geometry=$("wallGeometryControl");const make=(id,label,opts)=>{const wrap=document.createElement("div");wrap.className="context-control";wrap.id=id+"Control";wrap.hidden=true;wrap.style.display="none";const lab=document.createElement("label");lab.htmlFor=id;lab.textContent=label;const sel=document.createElement("select");sel.id=id;sel.setAttribute("aria-label",label);for(const [value,text] of opts){const opt=document.createElement("option");opt.value=value;opt.textContent=text;sel.append(opt)}wrap.append(lab,sel);geometry?.after(wrap);sel.addEventListener("change",()=>{if(id==="openingHinge")openingHingeSide=sel.value;else if(id==="openingSwing")openingSwingDirection=sel.value;else if(id==="openingAlignment"){openingAlignment=sel.value;if(pendingOpeningPlacement){pendingOpeningPlacement.anchor=openingAlignment;const wall=els().find(v=>v.id===pendingOpeningPlacement.wallId);if(wall){try{pendingOpeningPlacement.offset=openingOffsetForAnchor(wallLength(wall),pendingOpeningPlacement.width,openingAlignment)}catch(error){$("status").textContent=error.message}}redraw()}}});return wrap};make("openingHinge","Hinge / Side",[["left","Left"],["right","Right"]]);make("openingSwing","Opening Direction",[["inside","Inside"],["outside","Outside"]]);const alignment=make("openingAlignment","Anchor Position",[["center","Center"],["left","Left edge"],["right","Right edge"]]);alignment.hidden=false;alignment.style.display="";alignment.querySelector("select").value=openingAlignment;const pitch=document.createElement("div");pitch.className="context-control";pitch.id="roofPitchControl";pitch.hidden=true;pitch.style.display="none";const label=document.createElement("label");label.htmlFor="roofPitch";label.textContent="Roof Pitch (degrees)";const offsetLabel=document.createElement("label");offsetLabel.htmlFor="roofOffset";offsetLabel.textContent="Roof Offset (m)";const offsetInput=document.createElement("input");offsetInput.id="roofOffset";offsetInput.type="number";offsetInput.step="0.1";offsetInput.min="0";offsetInput.value="0";offsetInput.setAttribute("aria-label","Roof offset (m)");const offsetWrap=document.createElement("div");offsetWrap.className="context-control";offsetWrap.id="roofOffsetControl";offsetWrap.hidden=true;offsetWrap.style.display="none";offsetWrap.append(offsetLabel,offsetInput);geometry?.after(offsetWrap);const select=document.createElement("select");select.id="roofPitch";select.setAttribute("aria-label","Roof pitch");for(const value of [15,20,25,30,35,40,45]){const option=document.createElement("option");option.value=String(value);option.textContent=value+"°";if(value===30)option.selected=true;select.append(option)}pitch.append(label,select);geometry?.after(pitch);select.addEventListener("change",()=>{select.dataset.current=select.value})}
+function ensureOpeningControls(){const toolbar=$("contextToolbar");if(!toolbar||$("openingHingeControl"))return;const geometry=$("wallGeometryControl");const make=(id,label,opts)=>{const wrap=document.createElement("div");wrap.className="context-control";wrap.id=id+"Control";wrap.hidden=true;wrap.style.display="none";const lab=document.createElement("label");lab.htmlFor=id;lab.textContent=label;const sel=document.createElement("select");sel.id=id;sel.setAttribute("aria-label",label);for(const [value,text] of opts){const opt=document.createElement("option");opt.value=value;opt.textContent=text;sel.append(opt)}wrap.append(lab,sel);geometry?.after(wrap);sel.addEventListener("change",()=>{
+ if(id==="openingHinge"){
+  openingHingeSide=sel.value;
+  if(pendingOpeningPlacement)pendingOpeningPlacement=openingPlacement.update({hingeSide:openingHingeSide});
+ }else if(id==="openingSwing"){
+  openingSwingDirection=sel.value;
+  if(pendingOpeningPlacement)pendingOpeningPlacement=openingPlacement.update({swingDirection:openingSwingDirection});
+ }else if(id==="openingAlignment"){
+  openingAlignment=sel.value;
+  if(pendingOpeningPlacement){
+   const wall=els().find(v=>v.id===pendingOpeningPlacement.wallId);
+   if(wall){
+    try{pendingOpeningPlacement=openingPlacement.update({anchor:openingAlignment,offset:openingOffsetForAnchor(wallLength(wall),pendingOpeningPlacement.width,openingAlignment)})}
+    catch(error){$("status").textContent=error.message}
+   }
+   redraw();
+  }
+ }
+});return wrap};make("openingHinge","Hinge / Side",[["left","Left"],["right","Right"]]);make("openingSwing","Opening Direction",[["inside","Inside"],["outside","Outside"]]);const alignment=make("openingAlignment","Anchor Position",[["center","Center"],["left","Left edge"],["right","Right edge"]]);alignment.hidden=false;alignment.style.display="";alignment.querySelector("select").value=openingAlignment;const pitch=document.createElement("div");pitch.className="context-control";pitch.id="roofPitchControl";pitch.hidden=true;pitch.style.display="none";const label=document.createElement("label");label.htmlFor="roofPitch";label.textContent="Roof Pitch (degrees)";const offsetLabel=document.createElement("label");offsetLabel.htmlFor="roofOffset";offsetLabel.textContent="Roof Offset (m)";const offsetInput=document.createElement("input");offsetInput.id="roofOffset";offsetInput.type="number";offsetInput.step="0.1";offsetInput.min="0";offsetInput.value="0";offsetInput.setAttribute("aria-label","Roof offset (m)");const offsetWrap=document.createElement("div");offsetWrap.className="context-control";offsetWrap.id="roofOffsetControl";offsetWrap.hidden=true;offsetWrap.style.display="none";offsetWrap.append(offsetLabel,offsetInput);geometry?.after(offsetWrap);const select=document.createElement("select");select.id="roofPitch";select.setAttribute("aria-label","Roof pitch");for(const value of [15,20,25,30,35,40,45]){const option=document.createElement("option");option.value=String(value);option.textContent=value+"°";if(value===30)option.selected=true;select.append(option)}pitch.append(label,select);geometry?.after(pitch);select.addEventListener("change",()=>{select.dataset.current=select.value})}
 function updateContextUI(){
  ensureOpeningControls();
  const alignControl=$("openingAlignmentControl");if(alignControl){const showAnchor=tool==="door"||tool==="window";alignControl.hidden=!showAnchor;alignControl.style.display=showAnchor?"":"none";}
@@ -455,14 +473,17 @@ function updatePendingOpening(q){
  if(!pendingOpeningPlacement)return;
  const wall=els().find(v=>v.id===pendingOpeningPlacement.wallId);
  if(!wall){openingPlacement.cancel();pendingOpeningPlacement=null;redraw();return}
- pendingOpeningPlacement=openingPlacement.aim(q,wall.start,wall.end);
- // Keep the selected anchor independent from cursor-driven swing direction.
- pendingOpeningPlacement.anchor=openingAlignment;
- try{pendingOpeningPlacement.offset=openingOffsetForAnchor(wallLength(wall),pendingOpeningPlacement.width,pendingOpeningPlacement.anchor)}
+ const aimed=openingPlacement.aim(q,wall.start,wall.end);
+ // Persist the anchor and hinge on the placement object that confirm() will commit.
+ let offset;
+ try{offset=openingOffsetForAnchor(wallLength(wall),aimed.width,openingAlignment)}
  catch(error){$("status").textContent=error.message;return}
- // The cursor chooses the swing side; it does not flip the selected hinge or anchor.
- pendingOpeningPlacement.hingeSide=openingHingeSide;
- pendingOpeningPlacement.swingDirection=openingPlacementDirection(wall.start,wall.end,q);
+ pendingOpeningPlacement=openingPlacement.update({
+  anchor:openingAlignment,
+  offset,
+  hingeSide:openingHingeSide,
+  swingDirection:aimed.swingDirection
+ });
  openingSwingDirection=pendingOpeningPlacement.swingDirection;
  if($("openingHinge"))$("openingHinge").value=openingHingeSide;
  if($("openingSwing"))$("openingSwing").value=pendingOpeningPlacement.swingDirection;
