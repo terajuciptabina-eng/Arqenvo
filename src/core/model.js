@@ -22,6 +22,7 @@ export function createProject(name = "Untitled Project") {
     stories: [{ ...DEFAULT_STORY }],
     elements: [],
     views: [{ id: "view-floor-ground", name: "Ground Floor", type: "floor-plan", storyId: DEFAULT_STORY.id, scale: 100 }],
+    layouts: [],
     metadata: { engine: "ARQENVO Core", schema: MODEL_VERSION },
   };
 }
@@ -188,7 +189,7 @@ export function normalizeHostedOpenings(project) {
 function migrateProject(input) {
   const check = validateProject(input);
   if (!check.valid) throw new Error(check.errors.join("; "));
-  if (input.version === MODEL_VERSION) return normalizeHostedOpenings(structuredClone(input));
+  if (input.version === MODEL_VERSION) { const current = normalizeHostedOpenings(structuredClone(input)); current.layouts ??= []; return current; }
   const p = createProject(input.project?.name ?? "Imported Project");
   p.project = { ...p.project, ...(input.project ?? {}) };
   p.stories = input.stories?.length ? structuredClone(input.stories) : [{ ...DEFAULT_STORY }];
@@ -201,6 +202,7 @@ function migrateProject(input) {
     ...(input.dimensions ?? []).map(d => ({ ...d, type: "dimension" })),
   ];
   p.views = input.views ?? p.views;
+  p.layouts = input.layouts ?? [];
   p.settings = { ...p.settings, ...(input.settings ?? {}) };
   return normalizeHostedOpenings(p);
 }
