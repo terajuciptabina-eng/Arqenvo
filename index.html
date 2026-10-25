@@ -7,8 +7,8 @@
 <style>
 :root{--ui:#e8eaed;--panel:#f7f8f9;--line:#c6cbd1;--ink:#26313b;--muted:#65717d;--accent:#087e8b;--select:#d9f0f2}
 *{box-sizing:border-box}body{margin:0;color:var(--ink);font:13px/1.4 Inter,Arial,sans-serif;background:#d4d8dc}button,select,input{font:inherit;color:inherit}button{background:#f9fafb;border:1px solid #bcc3ca;border-radius:3px;padding:6px 9px;cursor:pointer}button:hover,button.active{border-color:var(--accent);background:var(--select)}button:disabled{opacity:.45;cursor:default}
-.app{height:100dvh;min-height:540px;display:grid;grid-template-rows:28px 72px 1fr 24px}.menu{display:flex;align-items:center;gap:15px;padding:0 12px;background:#f5f6f7;border-bottom:1px solid var(--line);font-size:12px}.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.13em;min-width:0}.brand-logo{display:block;height:62px;width:auto;max-width:38vw;object-fit:contain;flex:0 1 auto}.brandmark{display:none}.brandmark span{display:none}@media(max-width:600px){.app{grid-template-rows:28px 54px 1fr 24px}.brand-logo{height:46px;max-width:34vw}.brand{gap:6px}}.top{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#e0e3e6;border-bottom:1px solid #b9c0c7;overflow:auto}.top .spacer{flex:1}.tools{padding:7px 5px;display:flex;flex-direction:column;gap:5px}.tool{font-size:10px;padding:8px 2px;min-height:46px}.tool b{display:block;font-size:17px;font-weight:500}.inspector{border-right:0;border-left:1px solid var(--line);padding:12px}.section{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:2px 0 10px}.tree{display:block;width:100%;text-align:left;margin:3px 0;background:transparent;border-color:transparent}.tree.active{background:#dcebed}.workspace{display:grid;grid-template-rows:32px minmax(0,1fr);min-width:0;min-height:0;background:#fff}.tabs{display:flex;align-items:center;gap:3px;background:#f1f3f5;border-bottom:1px solid var(--line);padding:3px 8px}.tabs button{padding:4px 10px}.canvaswrap{position:relative;min-height:0;overflow:hidden;background:#fff}canvas{display:block;width:100%;height:100%;touch-action:none}.dynamic-tracker{position:absolute;z-index:5;width:218px;padding:6px 9px;background:rgba(48,47,43,.88);color:#f4f4f4;font:12px Arial,sans-serif;box-shadow:0 2px 8px #0002;pointer-events:auto}.dynamic-tracker[hidden]{display:none}.dynamic-tracker label{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:6px;margin:2px 0}.dynamic-tracker label span{white-space:nowrap;color:#e0e0e0}.dynamic-tracker input{width:100%;min-width:0;padding:3px 5px;border:1px solid #74736c;border-radius:2px;background:#33322e;color:#fff;font:600 12px Arial,sans-serif;outline:none;font-variant-numeric:tabular-nums}.dynamic-tracker input:focus{border-color:#7bc5d0;background:#242622}.hint{position:absolute;bottom:10px;left:10px;background:#fffffff0;border:1px solid var(--line);padding:6px 8px;font-size:11px;color:#56616b;pointer-events:none}.field{margin:10px 0}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.field input,.field select{width:100%;padding:7px;border:1px solid var(--line);background:#fff;border-radius:3px}.status{background:#e6e8eb;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 10px;color:#58636d;font-size:11px}.status .right{margin-left:auto}.mobile-nav{display:none}
-@media(max-width:900px){.inspector{display:none}.mobile-nav{display:inline-block}.tool{font-size:9px}.brand{letter-spacing:.04em}.top{gap:5px}.top button{white-space:nowrap}}
+.app{height:100dvh;min-height:540px;display:grid;grid-template-rows:28px 72px 1fr 24px}.menu{display:flex;align-items:center;gap:15px;padding:0 12px;background:#f5f6f7;border-bottom:1px solid var(--line);font-size:12px}.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.13em;min-width:0}.brand-logo{display:block;height:62px;width:auto;max-width:38vw;object-fit:contain;flex:0 1 auto}.brandmark{display:none}.brandmark span{display:none}@media(max-width:600px){.app{grid-template-rows:28px 54px 1fr 24px}.brand-logo{height:46px;max-width:34vw}.brand{gap:6px}}.top{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#e0e3e6;border-bottom:1px solid #b9c0c7;overflow:auto}.top .spacer{flex:1}.work{display:grid;grid-template-columns:56px 235px minmax(0,1fr) 250px;min-height:0}.tools,.navigator,.inspector{background:var(--panel);border-right:1px solid var(--line);min-height:0;overflow:auto}.tools{padding:7px 5px;display:flex;flex-direction:column;gap:5px}.tool{font-size:10px;padding:8px 2px;min-height:46px}.tool b{display:block;font-size:17px;font-weight:500}.navigator{padding:12px}.inspector{border-right:0;border-left:1px solid var(--line);padding:12px}.section{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:2px 0 10px}.tree{display:block;width:100%;text-align:left;margin:3px 0;background:transparent;border-color:transparent}.tree.active{background:#dcebed}.workspace{display:grid;grid-template-rows:32px minmax(0,1fr);min-width:0;min-height:0;background:#fff}.tabs{display:flex;align-items:center;gap:3px;background:#f1f3f5;border-bottom:1px solid var(--line);padding:3px 8px}.tabs button{padding:4px 10px}.canvaswrap{position:relative;min-height:0;overflow:hidden;background:#fff}canvas{display:block;width:100%;height:100%;touch-action:none}.dynamic-tracker{position:absolute;z-index:5;width:218px;padding:6px 9px;background:rgba(48,47,43,.88);color:#f4f4f4;font:12px Arial,sans-serif;box-shadow:0 2px 8px #0002;pointer-events:auto}.dynamic-tracker[hidden]{display:none}.dynamic-tracker label{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:6px;margin:2px 0}.dynamic-tracker label span{white-space:nowrap;color:#e0e0e0}.dynamic-tracker input{width:100%;min-width:0;padding:3px 5px;border:1px solid #74736c;border-radius:2px;background:#33322e;color:#fff;font:600 12px Arial,sans-serif;outline:none;font-variant-numeric:tabular-nums}.dynamic-tracker input:focus{border-color:#7bc5d0;background:#242622}.hint{position:absolute;bottom:10px;left:10px;background:#fffffff0;border:1px solid var(--line);padding:6px 8px;font-size:11px;color:#56616b;pointer-events:none}.field{margin:10px 0}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.field input,.field select{width:100%;padding:7px;border:1px solid var(--line);background:#fff;border-radius:3px}.status{background:#e6e8eb;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 10px;color:#58636d;font-size:11px}.status .right{margin-left:auto}.mobile-nav{display:none}
+@media(max-width:900px){.work{grid-template-columns:48px minmax(0,1fr)}.navigator{display:none}.inspector{display:none}.mobile-nav{display:inline-block}.tool{font-size:9px}.brand{letter-spacing:.04em}.top{gap:5px}.top button{white-space:nowrap}}
 
 /* ARQENVO professional BIM workspace — coordinated palette, navigator and info box */
 :root{--ui:#e3e6e9;--panel:#f4f5f6;--line:#c5cbd1;--ink:#252d35;--muted:#68737e;--accent:#087e8b;--select:#dceff0}
@@ -23,10 +23,12 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 .brand-logo{height:54px;max-width:190px}
 .top button{font-size:11px;white-space:nowrap;padding:7px 9px;border-color:#c3c9ce;background:linear-gradient(#fff,#f1f3f5);box-shadow:0 1px 0 #fff inset}
 .top button:hover{background:#e1f0f1;border-color:#72aeb3}
+.work{grid-template-columns:59px 226px minmax(0,1fr) 268px;background:#dce0e4}
 .tools{background:#e9ecef;padding:8px 5px;gap:4px;border-right:1px solid #b8c0c7}
 .tool{min-height:52px;padding:6px 2px;border-color:transparent;background:transparent;border-radius:4px;color:#36414a;font-size:10px}
 .tool b{font-size:19px;line-height:1.25;color:#34434e}
 .tool.active{background:#d3e9eb;border-color:#7eb4b9;box-shadow:0 1px 2px #0000000a}
+.navigator{background:#f6f7f8;padding:12px 10px;border-right:1px solid #b9c1c8}
 .section{font-size:10px;letter-spacing:.1em;color:#596671;border-bottom:1px solid #d8dde1;padding-bottom:7px;margin:0 0 9px}
 .tree{font-size:11px;padding:7px 8px;border-radius:3px;margin:2px 0;color:#39454f}
 .tree.active{background:#d8eaec;border-color:#a4cdd0;color:#175d64}
@@ -43,8 +45,8 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 #delete{width:100%;background:#fff7f5;border-color:#dfc3bd;color:#8d3b2e}
 .status{background:#e9ecef;color:#4d5963;border-top:1px solid #b9c1c8;font-size:10px}
 .hint{box-shadow:0 1px 3px #00000012;border-radius:3px}
-@media(max-width:1100px){.inspector{display:block}}
-@media(max-width:760px){.app{grid-template-rows:27px 58px minmax(0,1fr) 24px}.menu{gap:0;padding:0 4px}.menu span{padding:0 6px;font-size:10px}.top{gap:4px;padding:4px 6px}.brand{min-width:90px;padding-right:5px}.brand-logo{height:42px;max-width:100px}.top button{padding:6px;font-size:10px}.inspector{display:none}.tool{min-height:46px;font-size:9px}.tabs{overflow:auto}.status{gap:8px}.status .right{display:none}}
+@media(max-width:1100px){.work{grid-template-columns:52px minmax(0,1fr) 235px}.navigator{display:none}.inspector{display:block}}
+@media(max-width:760px){.app{grid-template-rows:27px 58px minmax(0,1fr) 24px}.menu{gap:0;padding:0 4px}.menu span{padding:0 6px;font-size:10px}.top{gap:4px;padding:4px 6px}.brand{min-width:90px;padding-right:5px}.brand-logo{height:42px;max-width:100px}.top button{padding:6px;font-size:10px}.work{grid-template-columns:47px minmax(0,1fr)}.inspector{display:none}.tool{min-height:46px;font-size:9px}.tabs{overflow:auto}.status{gap:8px}.status .right{display:none}}
 
 /* Archicad-inspired workspace pass: real menus, categorized toolbox and quick options */
 .app{grid-template-rows:29px 64px minmax(0,1fr) 23px}
@@ -57,12 +59,14 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 .menu-pop button{width:100%;text-align:left;background:transparent;border:0;border-radius:2px;padding:7px 10px;font-size:12px;box-shadow:none}
 .menu-pop button:hover{background:#d9ebed;color:#145f66}
 .help-menu{padding:12px;gap:8px;min-width:245px;font-size:11px}
+.work{grid-template-columns:72px 238px minmax(0,1fr) 278px}
 .tools{padding:8px 5px;gap:3px}
 .toolbox-title{font-size:9px;font-weight:700;letter-spacing:.12em;color:#5a6670;text-align:center;padding:3px 0 8px;border-bottom:1px solid #d3d8dd}
 .tool-group-label{font-size:9px;font-weight:700;color:#7a858e;letter-spacing:.08em;padding:8px 2px 2px;text-align:center}
 .tool{min-height:55px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .tool b{font-size:21px}
 .tool-note{font-size:9px;color:#7b858e;line-height:1.4;text-align:center;padding:5px 2px}
+.navigator{padding:10px 9px}
 .nav-tabs{display:flex;gap:3px;margin:0 0 12px;border-bottom:1px solid #d2d7dc}
 .nav-tab{flex:1;border:0;border-radius:0;background:transparent;padding:7px 3px;font-size:10px;color:#68747e}
 .nav-tab.active{color:#176a72;border-bottom:2px solid #087e8b;font-weight:700}
@@ -79,8 +83,8 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 #zoomReadout{min-width:36px;text-align:center;font-variant-numeric:tabular-nums}
 .field-help{font-size:10px;color:#77828b;line-height:1.5;margin:0}
 button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px solid #07818c;outline-offset:2px}
-@media(max-width:1100px){}
-@media(max-width:760px){.app{grid-template-rows:27px 55px minmax(0,1fr) 23px}.tools{padding:5px 2px}.tool{min-height:44px}.toolbox-title,.tool-group-label,.tool-note{display:none}.workspace{grid-template-rows:34px minmax(0,1fr) 30px}.quick-options{gap:5px;padding:3px 5px}.quick-label{display:none}.quick-options label{gap:2px}.quick-options select{max-width:68px}.menu-group summary{padding:0 7px;font-size:10px}.menu-pop{min-width:190px}.brand{min-width:80px}.brand-logo{max-width:100px}}
+@media(max-width:1100px){.work{grid-template-columns:58px minmax(0,1fr) 240px}.navigator{display:none}}
+@media(max-width:760px){.app{grid-template-rows:27px 55px minmax(0,1fr) 23px}.work{grid-template-columns:48px minmax(0,1fr)}.tools{padding:5px 2px}.tool{min-height:44px}.toolbox-title,.tool-group-label,.tool-note{display:none}.workspace{grid-template-rows:34px minmax(0,1fr) 30px}.quick-options{gap:5px;padding:3px 5px}.quick-label{display:none}.quick-options label{gap:2px}.quick-options select{max-width:68px}.menu-group summary{padding:0 7px;font-size:10px}.menu-pop{min-width:190px}.brand{min-width:80px}.brand-logo{max-width:100px}}
 
 /* Prominent Archicad-inspired contextual Info Box ribbon */
 .app{grid-template-rows:29px 64px 48px minmax(0,1fr) 23px}
@@ -125,11 +129,13 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .ribbon-buttons button:disabled{opacity:.38}
 .ribbon-spacer{flex:1;min-width:2px}
 .context-toolbar{height:48px}
+.work{grid-template-columns:70px 245px minmax(0,1fr) 285px}
 .tools{background:#e7eaed;border-right:1px solid #aeb8c0}
 .tool{min-height:60px}
+.navigator{background:#f3f5f6}
 .inspector{background:#f3f5f6}
-@media(max-width:1000px){.ribbon-brand{min-width:85px;padding:0 7px}.ribbon-brand .brand-logo{max-width:78px;height:48px}.ribbon-group{padding-left:5px;padding-right:5px}.ribbon-buttons button{min-width:42px;padding:3px}.ribbon-buttons button span{font-size:9px}}
-@media(max-width:760px){.app{grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}.top{padding:3px 4px}.ribbon-brand{min-width:60px;padding:0 4px;margin-right:3px}.ribbon-brand .brand-logo{max-width:56px;height:38px}.ribbon-group{padding:2px 3px 0}.ribbon-group>small{font-size:7px}.ribbon-buttons{height:46px;gap:1px}.ribbon-buttons button{height:43px;min-width:35px;font-size:16px;padding:2px}.ribbon-buttons button span{font-size:8px}.inspector{display:none}.tool{min-height:46px}.context-toolbar{height:43px}.context-identity{min-width:135px}}
+@media(max-width:1000px){.ribbon-brand{min-width:85px;padding:0 7px}.ribbon-brand .brand-logo{max-width:78px;height:48px}.ribbon-group{padding-left:5px;padding-right:5px}.ribbon-buttons button{min-width:42px;padding:3px}.ribbon-buttons button span{font-size:9px}.work{grid-template-columns:58px minmax(0,1fr) 245px}.navigator{display:none}}
+@media(max-width:760px){.app{grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}.top{padding:3px 4px}.ribbon-brand{min-width:60px;padding:0 4px;margin-right:3px}.ribbon-brand .brand-logo{max-width:56px;height:38px}.ribbon-group{padding:2px 3px 0}.ribbon-group>small{font-size:7px}.ribbon-buttons{height:46px;gap:1px}.ribbon-buttons button{height:43px;min-width:35px;font-size:16px;padding:2px}.ribbon-buttons button span{font-size:8px}.work{grid-template-columns:46px minmax(0,1fr)}.inspector{display:none}.tool{min-height:46px}.context-toolbar{height:43px}.context-identity{min-width:135px}}
 
 /* Navigator layer palette */
 .layer-row{display:flex;align-items:center;gap:7px;padding:7px 5px;border-bottom:1px solid #e1e5e8;font-size:10px;cursor:pointer}
@@ -138,6 +144,9 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .layer-swatch{width:12px;height:12px;display:inline-block;border:1px solid #8797a1;background:#d6e0e5;flex:0 0 12px}
 .layer-name{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis}
 .layer-row small{color:#7b858e;font-size:9px;font-variant-numeric:tabular-nums}
+
+/* Docked BIM workspace: left Toolbox, central model canvas, right Navigator + Properties */
+.work{display:grid;grid-template-columns:156px minmax(0,1fr) 238px;grid-template-rows:minmax(0,1fr) minmax(170px,.58fr);min-height:0;background:#25262d}
 #toolbox{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:stretch;gap:1px;min-width:0;overflow:auto;padding:0 0 10px;background:#292a31;color:#f0f0f2;border-right:1px solid #17181c;scrollbar-width:thin}
 .toolbox-title{position:sticky;top:0;z-index:2;text-align:left;padding:9px 12px 8px;background:#24252b;color:#aeb0b8;border-bottom:1px solid #3c3d45;font-size:9px;letter-spacing:.12em}
 .tool-group-label{flex:0 0 auto;text-align:left;padding:7px 11px 5px;background:#202126;color:#bfc0c6;border-top:1px solid #3c3d44;border-bottom:1px solid #18191d;font-size:11px;letter-spacing:.02em;font-weight:700}
@@ -148,7 +157,16 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .tool.active b{color:#fff}
 .tool-note{padding:7px 11px;color:#9c9ea7;text-align:left;font-size:10px;line-height:1.45}
 .workspace{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-rows:34px minmax(0,1fr) 30px;min-width:0;min-height:0;background:#fff}
+.navigator{display:block;grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;padding:9px;background:#303139;color:#e6e6e9;border-left:1px solid #1d1e23;border-right:0;border-bottom:1px solid #17181c;scrollbar-width:thin}
 .inspector{display:block;grid-column:3;grid-row:2;min-width:0;min-height:0;overflow:auto;padding:9px;background:#303139;color:#e6e6e9;border-left:1px solid #1d1e23;border-right:0;scrollbar-width:thin}
+.navigator .section,.inspector .section{color:#d1d2d7;border-bottom-color:#494a53}
+.navigator .nav-tabs{border-bottom-color:#4b4c55}
+.navigator .nav-tab{color:#b5b6bf}
+.navigator .nav-tab.active{color:#fff;border-bottom-color:#64b9c0}
+.navigator .tree{color:#e2e2e6;border-color:transparent;background:transparent}
+.navigator .tree:hover,.navigator .tree.active{background:#44454e;color:#fff;border-color:#555660}
+.navigator .nav-subtitle,.navigator .nav-note{color:#aaabb4}
+.navigator hr,.inspector hr{border-top-color:#4a4b54!important}
 .inspector .field label{color:#b9bac2}
 .inspector .field input,.inspector .field select{background:#25262d;border-color:#555660;color:#f0f0f2}
 .inspector #delete{background:#4a302e;border-color:#87524b;color:#ffe4df}
@@ -172,11 +190,13 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .status{background:#25262d;color:#c8c9d0;border-top-color:#111216}
 .hint{background:#fffffff2;color:#434952;border-color:#b8bdc3}
 @media(max-width:1050px){
+ .work{grid-template-columns:142px minmax(0,1fr) 218px;grid-template-rows:minmax(0,1fr) minmax(160px,.5fr)}
  .tool{gap:8px;padding-left:7px}
  .navigator,.inspector{padding:7px}
 }
 @media(max-width:760px){
  .app{grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}
+ .work{grid-template-columns:124px minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
  #toolbox{grid-column:1;grid-row:1;display:flex!important}
  .workspace{grid-column:2;grid-row:1;grid-template-rows:34px minmax(0,1fr) 30px}
  .navigator,.inspector{display:none!important}
@@ -232,6 +252,7 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 @media(max-width:900px){
   html,body,.app{height:100%;height:100dvh;overflow:hidden}
   .top{overflow-x:auto;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+  .work{min-height:0}
   .tools{overflow-y:auto;overscroll-behavior:contain}
   .tool{min-height:48px;touch-action:manipulation}
   .quick-options{overflow-x:auto;overflow-y:hidden;white-space:nowrap;gap:8px;padding-left:8px;padding-right:8px;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
@@ -257,8 +278,10 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .app{min-width:0;min-height:0}
 .work,#toolbox,.workspace,.canvaswrap{min-width:0;min-height:0}
 @media (min-width:761px) and (max-width:1180px){
+ .work{grid-template-columns:132px minmax(0,1fr) 210px;grid-template-rows:minmax(0,1fr) minmax(145px,.42fr)}
  #toolbox{grid-column:1;grid-row:1 / span 2}
  .workspace{grid-column:2;grid-row:1 / span 2;grid-template-rows:34px minmax(0,1fr) 30px}
+ .navigator{grid-column:3;grid-row:1;min-width:0}
  .inspector{grid-column:3;grid-row:2;min-width:0}
  .tool{gap:7px;padding-left:6px;font-size:11px}
  .tool b{flex-basis:23px;width:23px;font-size:18px}
@@ -297,6 +320,7 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .context-control select{max-width:78px;font-size:10px;padding:3px}
  .context-input{gap:2px;padding:2px 4px}
  .context-input input{width:40px;font-size:11px}
+ .work{grid-template-columns: minmax(88px, 28vw) minmax(0,1fr);grid-template-rows:minmax(0,1fr);min-height:0;min-width:0;overflow:hidden}
  #toolbox{grid-column:1;grid-row:1;width:100%;min-width:0;max-width:none;overflow-y:auto;overflow-x:hidden;padding:0 0 calc(env(safe-area-inset-bottom,0px) + 8px);overscroll-behavior:contain}
  .toolbox-title{position:sticky;top:0;padding:7px 6px;font-size:8px}
  .tool-group-label{padding:6px;font-size:9px;white-space:normal}
@@ -381,12 +405,20 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 
 /* Compact touch workspace: icon-only toolbox and hideable side panels */
 @media(max-width:900px){
+ .work{grid-template-columns:48px minmax(0,1fr) 0px!important}
  #toolbox{padding:4px 2px;overflow-x:hidden}
  #toolbox .tool-group-label,#toolbox .tool-note,#toolbox .toolbox-title{display:none!important}
  #toolbox .tool{width:40px;min-width:40px;min-height:42px;margin:2px auto;padding:4px;justify-content:center;gap:0}
  #toolbox .tool b{flex:0 0 auto;width:auto;font-size:22px}
  #toolbox .tool span{display:none!important}
+ .work.navigator-hidden{grid-template-columns:48px minmax(0,1fr) 0px!important}
+ .work.navigator-hidden .navigator,.work.navigator-hidden .inspector{display:none!important}
+ .work.navigator-hidden .workspace{grid-column:2}
+ .navigator{min-width:0}
 }
+.work.navigator-hidden{grid-template-columns:156px minmax(0,1fr)!important}
+.work.navigator-hidden .navigator,.work.navigator-hidden .inspector{display:none!important}
+.work.navigator-hidden .workspace{grid-column:2;grid-row:1 / span 2}
 
 /* Mobile-first compact toolbox and a real, touch-accessible panel toggle. */
 @media(max-width:900px){
@@ -396,9 +428,25 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
   #toolbox .tool b{flex:0 0 auto;width:auto;font-size:22px}
   #toolbox .tool span{display:none!important}
 }
+.work.navigator-hidden{grid-template-columns:156px minmax(0,1fr)!important}
+.work.navigator-hidden .navigator,.work.navigator-hidden .inspector{display:none!important}
+.work.navigator-hidden .workspace{grid-column:2;grid-row:1 / span 2}
+#navigatorToggle{margin-left:8px;flex:0 0 auto;white-space:nowrap;min-height:34px;padding:5px 9px;font-size:11px;touch-action:manipulation}
 @media(max-width:900px){
+  .work.navigator-hidden{grid-template-columns:48px minmax(0,1fr)!important}
+  #navigatorToggle{padding:5px 7px;font-size:10px}
 }
+
+/* ARQENVO tablet Navigator: persistent touch control and usable slide-in panel. */
+#navigatorToggle.navigator-toggle{position:sticky;left:0;z-index:1200;flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;justify-content:center;min-height:38px;padding:7px 12px;margin-right:6px;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 1px 3px #0002;touch-action:manipulation;cursor:pointer}
 @media(max-width:900px){
+ #navigatorToggle.navigator-toggle{position:sticky;left:0;min-width:100px;min-height:42px;padding:8px 10px;font-size:12px;background:#fff;z-index:1202}
+ .work.navigator-open{position:relative}
+ .work.navigator-open .navigator{display:block!important;position:fixed!important;left:48px!important;top:calc(28px + 54px + 8px)!important;bottom:28px!important;width:min(310px,calc(100vw - 64px))!important;max-width:calc(100vw - 64px)!important;height:auto!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;border:1px solid #9ba4ad!important;background:#f4f5f6!important;color:#252d35!important;padding:12px!important;overscroll-behavior:contain}
+ .work.navigator-open .navigator .section{color:#68737e!important}
+ .work.navigator-open .navigator .tree{color:#252d35!important}
+ .work.navigator-open .navigator .nav-tabs{color:#252d35!important}
+ .work.navigator-open:after{content:"";position:fixed;inset:90px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
 }
 
 /* Final mobile toolbox override: icon-only buttons, no headings or text labels. */
@@ -414,13 +462,37 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 
 /* Place the Navigator show/hide control inside the Navigator header itself. */
 #navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#navigatorToggle.navigator-toggle{position:static;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:30px;min-width:54px;padding:4px 8px;margin:0 0 0 auto;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 2px #0002;touch-action:manipulation;cursor:pointer}
 @media(max-width:900px){
+ #navigatorToggle.navigator-toggle{min-height:38px;min-width:64px;font-size:12px}
 }
+
+/* Keep Show Navigator reachable outside the panel when the panel is hidden. */
+#navigatorToggle.navigator-toggle{position:static;z-index:1300;flex:0 0 auto;align-self:center;display:inline-flex;align-items:center;justify-content:center;min-height:32px;min-width:60px;padding:5px 9px;margin:4px;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 3px #0002;touch-action:manipulation;cursor:pointer}
 @media(max-width:900px){
+ .work>#navigatorToggle.navigator-toggle{position:fixed;left:52px;top:90px;min-height:42px;min-width:96px;margin:0;z-index:1305;font-size:12px;box-shadow:0 2px 8px #0004}
+ .work.navigator-open>#navigatorToggle.navigator-toggle{position:fixed;left:auto;right:8px;top:94px;min-width:74px;z-index:1305}
+ #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static;min-width:64px;min-height:38px;margin:0 0 0 auto;z-index:1305}
 }
 
 /* Keep the floating Show Navigator control directly beside the canvas top edge. */
 @media(max-width:900px){
+ .work>#navigatorToggle.navigator-toggle{
+   position:fixed!important;
+   left:56px!important;
+   top:92px!important;
+   bottom:auto!important;
+   right:auto!important;
+   margin:0!important;
+   min-width:102px!important;
+   min-height:40px!important;
+   z-index:1500!important;
+ }
+ .work.navigator-open>#navigatorToggle.navigator-toggle{
+   left:auto!important;
+   right:8px!important;
+   top:92px!important;
+ }
 }
 
 /* Final iPad compact ribbon: preserve tooltips, show icons only. */
@@ -435,6 +507,9 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 }
 /* The Show control stays adjacent to the top of the workspace, not at the bottom. */
 @media(max-width:900px){
+ .work>#navigatorToggle.navigator-toggle{position:fixed!important;left:54px!important;top:90px!important;right:auto!important;bottom:auto!important;min-width:100px!important;min-height:40px!important;margin:0!important;z-index:1600!important}
+ .work.navigator-open>#navigatorToggle.navigator-toggle{position:fixed!important;left:auto!important;right:8px!important;top:90px!important}
+ #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;min-width:64px!important;min-height:38px!important;margin:0 0 0 auto!important}
 }
 
 /* iPad Safari may report a desktop-width viewport; detect touch tablets as well. */
@@ -450,6 +525,13 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none!important;visibility:hidden!important}
  #toolbox .tool{display:flex!important;align-items:center!important;justify-content:center!important;width:42px!important;min-width:42px!important;max-width:42px!important;min-height:42px!important;margin:2px auto!important;padding:4px!important;gap:0!important;font-size:0!important;line-height:0!important;white-space:nowrap!important}
  #toolbox .tool b{display:block!important;flex:0 0 auto!important;width:auto!important;margin:0!important;font-size:22px!important;line-height:1!important;visibility:visible!important}
+ .work{grid-template-columns:48px minmax(0,1fr) 0px!important}
+ .work.navigator-open .navigator{display:block!important;position:fixed!important;left:48px!important;top:182px!important;bottom:28px!important;width:min(310px,calc(100vw - 64px))!important;max-width:calc(100vw - 64px)!important;height:auto!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;border:1px solid #9ba4ad!important;background:#f4f5f6!important;color:#252d35!important;padding:12px!important;overscroll-behavior:contain}
+ .work.navigator-open .navigator .section,.work.navigator-open .navigator .tree,.work.navigator-open .navigator .nav-tabs{color:#252d35!important}
+ .work.navigator-open:after{content:"";position:fixed;inset:146px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
+ .work>#navigatorToggle.navigator-toggle{position:fixed!important;left:54px!important;top:146px!important;right:auto!important;bottom:auto!important;min-width:100px!important;min-height:40px!important;margin:0!important;z-index:1600!important}
+ .work.navigator-open>#navigatorToggle.navigator-toggle{left:auto!important;right:8px!important;top:146px!important}
+ #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;min-width:64px!important;min-height:38px!important;margin:0 0 0 auto!important}
 }
 
 
@@ -464,16 +546,40 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .top .ribbon-buttons{height:40px!important;min-height:40px!important;align-items:center!important}
  .top .ribbon-buttons button{width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;font-size:20px!important}
  .context-toolbar{height:42px!important;min-height:42px!important;max-height:42px!important;overflow-x:auto!important;overflow-y:hidden!important}
+ .work>#navigatorToggle.navigator-toggle{top:182px!important;left:54px!important;right:auto!important;position:fixed!important;z-index:1600!important}
+ .work.navigator-open>#navigatorToggle.navigator-toggle{top:182px!important;left:auto!important;right:8px!important}
+ .work.navigator-open .navigator{top:182px!important}
+ .work.navigator-open:after{inset:182px 0 24px 48px!important}
 }
 
 
 /* Hide Navigator means remove the entire left panel column; only the toggle remains. */
 @media (pointer:coarse) {
+ .work.navigator-hidden{grid-template-columns:48px minmax(0,1fr)!important}
+ .work.navigator-hidden>.navigator,.work.navigator-hidden>.inspector{display:none!important;visibility:hidden!important;width:0!important;min-width:0!important;max-width:0!important}
+ .work.navigator-hidden>.workspace{grid-column:2!important;grid-row:1!important}
+ .work:not(.navigator-open):not(.navigator-hidden)>.navigator{display:none!important}
+ .work.navigator-open>.navigator{display:block!important}
 }
 
 
 /* Tablet Navigator is a RIGHT-side drawer. Toolbox remains on the left. */
 @media (pointer:coarse), (max-width:1200px) {
+ .work.navigator-open>.navigator{
+  position:fixed!important;left:auto!important;right:0!important;
+  top:182px!important;bottom:24px!important;
+  width:min(310px,calc(100vw - 64px))!important;
+  max-width:calc(100vw - 64px)!important;
+  display:block!important;z-index:1201!important;
+  overflow:auto!important;box-shadow:-8px 0 24px #0005!important
+ }
+ .work:not(.navigator-open)>.navigator{display:none!important}
+ .work>#navigatorToggle.navigator-toggle{
+  position:fixed!important;left:auto!important;right:12px!important;
+  top:182px!important;bottom:auto!important;z-index:1600!important
+ }
+ .work.navigator-open:after{inset:182px 0 24px 48px!important}
+ #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;margin-left:auto!important}
 }
 
 
@@ -499,6 +605,32 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 
 /* Single source of truth for iPad Navigator behavior (tablet landscape/portrait). */
 @media (pointer:coarse) and (min-width:601px) {
+ .work {
+  display:grid!important;
+  grid-template-columns:48px 240px minmax(0,1fr) 250px!important;
+  min-width:0!important;
+  position:relative!important;
+ }
+ .work>.tools {grid-column:1!important;grid-row:1!important;display:flex!important;min-width:0!important;}
+ .work>.navigator {
+  grid-column:2!important;grid-row:1!important;
+  display:block!important;position:relative!important;inset:auto!important;
+  width:auto!important;min-width:0!important;max-width:none!important;
+  height:auto!important;min-height:0!important;visibility:visible!important;
+  overflow:auto!important;z-index:auto!important;box-shadow:none!important;
+ }
+ .work>.workspace {grid-column:3!important;grid-row:1!important;display:grid!important;min-width:0!important;}
+ .work>.inspector {grid-column:4!important;grid-row:1!important;display:block!important;visibility:visible!important;min-width:0!important;width:auto!important;max-width:none!important;}
+ .work.navigator-hidden {grid-template-columns:48px 0 minmax(0,1fr) 250px!important;}
+ .work.navigator-hidden>.navigator {display:none!important;visibility:hidden!important;width:0!important;min-width:0!important;max-width:0!important;overflow:hidden!important;}
+ .work.navigator-hidden>.workspace {grid-column:3!important;grid-row:1!important;}
+ .work.navigator-hidden>.inspector {display:block!important;visibility:visible!important;grid-column:4!important;}
+ .work>#navigatorToggle.navigator-toggle {
+  position:absolute!important;left:52px!important;right:auto!important;top:8px!important;bottom:auto!important;
+  display:inline-flex!important;z-index:1600!important;margin:0!important;
+ }
+ .work:not(.navigator-hidden):not(.navigator-open)>.navigator {display:block!important;}
+ .work.navigator-open:after {display:none!important;}
 }
 
 /* Context Toolbar / Info Box: keep SVG tool icons as visible outline icons, not black-filled shapes. */
@@ -506,77 +638,6 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 #contextToolIcon svg{display:block!important;width:26px!important;height:26px!important;overflow:visible!important;fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
 #contextToolIcon svg *{fill:none!important;stroke:currentColor!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
 #contextToolIcon svg path[d="M5 3 19 15l-6 1-3 5z"]{fill:currentColor!important;stroke:currentColor!important}
-
-
-/* === Canonical workspace layout: one source of truth === */
-.app{height:100dvh;min-height:540px;overflow:hidden;display:grid;grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}
-.tools{grid-column:1;grid-row:1;display:flex;flex-direction:column}
-.workspace{grid-column:3;grid-row:1;display:grid;grid-template-rows:34px minmax(0,1fr) 30px;min-width:0;min-height:0;overflow:hidden}
-.inspector{grid-column:4;grid-row:1;display:block;visibility:visible;min-width:0;overflow:auto;border-right:0;border-left:1px solid var(--line);padding:12px}
-@media (pointer:coarse) and (min-width:601px){
- .app{grid-template-rows:34px 59px 54px minmax(0,1fr) 23px}
-}
-@media (max-width:600px){
- .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px}
-}
-@media (hover:hover) and (pointer:fine) and (min-width:901px){
-}
-
-
-/* Context Toolbar icon styling: inherit the light outline used by Toolbox icons. */
-#contextToolIcon{color:#e7edf3!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 38px!important;width:38px!important;height:38px!important}
-#contextToolIcon svg{display:block!important;width:26px!important;height:26px!important;overflow:visible!important;fill:none!important;stroke:#e7edf3!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
-#contextToolIcon svg *{fill:none!important;stroke:#e7edf3!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
-#contextToolIcon svg path[d="M5 3 19 15l-6 1-3 5z"]{fill:#e7edf3!important;stroke:#e7edf3!important}
-
-
-/* === Canonical workspace layout: one source of truth === */
-.app{height:100dvh;min-height:540px;overflow:hidden;display:grid;grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}
-.work{display:grid;grid-template-columns:56px 235px minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr);min-height:0;min-width:0;overflow:hidden;position:relative}
-.tools,.navigator,.inspector{min-width:0;min-height:0;overflow:auto}
-.tools{grid-column:1;grid-row:1;display:flex;flex-direction:column}
-.navigator{grid-column:2;grid-row:1;display:block;position:relative;inset:auto;width:auto;max-width:none;visibility:visible;overflow:auto;padding:12px;background:var(--panel);border-right:1px solid var(--line);box-shadow:none}
-.workspace{grid-column:3;grid-row:1;display:grid;grid-template-rows:34px minmax(0,1fr) 30px;min-width:0;min-height:0;overflow:hidden}
-.inspector{grid-column:4;grid-row:1;display:block;visibility:visible;min-width:0;overflow:auto;border-right:0;border-left:1px solid var(--line);padding:12px}
-#navigatorToggle.navigator-toggle{display:none;position:absolute;left:52px;right:auto;top:8px;bottom:auto;z-index:1600;align-items:center;justify-content:center;min-height:38px;min-width:94px;padding:7px 10px;margin:0;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:12px;font-weight:700;white-space:nowrap;box-shadow:0 1px 3px #0002;touch-action:manipulation;cursor:pointer}
-@media (pointer:coarse) and (min-width:601px){
- .app{grid-template-rows:34px 59px 54px minmax(0,1fr) 23px}
- .work{grid-template-columns:48px 240px minmax(0,1fr) 250px}
- #navigatorToggle.navigator-toggle{display:inline-flex}
- .work.navigator-hidden{grid-template-columns:48px 0 minmax(0,1fr) 250px}
- .work.navigator-hidden>.navigator{display:none;visibility:hidden;width:0;min-width:0;max-width:0;overflow:hidden}
- .work.navigator-hidden>.workspace{grid-column:3}
- .work.navigator-hidden>.inspector{display:block;visibility:visible;grid-column:4}
- .work>#navigatorToggle.navigator-toggle{position:absolute;left:52px;top:8px}
- #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static;left:auto;top:auto;margin:0 0 0 auto;min-width:94px}
- .work:not(.navigator-hidden)>.navigator{display:block;visibility:visible}
- .work.navigator-open:after{display:none}
-}
-@media (max-width:600px){
- .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px}
- .work{grid-template-columns:48px minmax(0,1fr)}
- .work>.tools{grid-column:1;grid-row:1}
- .work>.navigator{display:none}
- .work>.workspace{grid-column:2;grid-row:1}
- .work>.inspector{display:none}
- .work.navigator-open>.navigator{display:block;position:fixed;left:48px;right:auto;top:182px;bottom:24px;width:min(310px,calc(100vw - 64px));max-width:calc(100vw - 64px);z-index:1201;overflow:auto;box-shadow:8px 0 24px #0005;background:var(--panel)}
- .work>#navigatorToggle.navigator-toggle{display:inline-flex;position:fixed;left:54px;top:90px;z-index:1600}
- .work.navigator-open>#navigatorToggle.navigator-toggle{left:auto;right:8px;top:90px}
- .work.navigator-open:after{content:"";position:fixed;inset:182px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
-}
-@media (hover:hover) and (pointer:fine) and (min-width:901px){
- #navigatorToggle.navigator-toggle{display:none!important}
- .work{grid-template-columns:56px 235px minmax(0,1fr) 250px!important}
- .work>.navigator{display:block!important}
- .work>.inspector{display:block!important}
-}
-
-
-/* Context Toolbar icon styling: inherit the light outline used by Toolbox icons. */
-#contextToolIcon{color:#e7edf3!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 38px!important;width:38px!important;height:38px!important}
-#contextToolIcon svg{display:block!important;width:26px!important;height:26px!important;overflow:visible!important;fill:none!important;stroke:#e7edf3!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
-#contextToolIcon svg *{fill:none!important;stroke:#e7edf3!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
-#contextToolIcon svg path[d="M5 3 19 15l-6 1-3 5z"]{fill:#e7edf3!important;stroke:#e7edf3!important}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
