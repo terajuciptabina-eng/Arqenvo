@@ -713,7 +713,7 @@ function renderModelSnapshot(ctx,rect,source,storyId,scaleDenominator=100,frameW
  if(!items.length){ctx.fillStyle="#7a8188";ctx.font="12px Arial";ctx.fillText(source==="3d"?"No 3D model elements yet":"No elements in this story",rect.x+10,rect.y+20);ctx.restore();return}
  if(!points.length){ctx.restore();return}
  const minX=Math.min(...points.map(v=>v.x)),maxX=Math.max(...points.map(v=>v.x)),minY=Math.min(...points.map(v=>v.y)),maxY=Math.max(...points.map(v=>v.y)),ex=Math.max(1,maxX-minX),ey=Math.max(1,maxY-minY);
- const modelFit=Math.min(Math.max(1,rect.width-16)/ex,Math.max(1,rect.height-16)/ey),scaleFactor=Math.max(.0001,Math.min(modelFit,rect.width/Math.max(1,frameWidthMm)*1000/Math.max(1,scaleDenominator))),ox=rect.x+rect.width/2-(minX+maxX)*scaleFactor/2,oy=rect.y+rect.height/2+(minY+maxY)*scaleFactor/2,pt=v=>({x:ox+v.x*scaleFactor,y:oy-v.y*scaleFactor});
+ const scaleFactor=Math.max(.0001,rect.width/Math.max(1,frameWidthMm)*1000/Math.max(1,scaleDenominator)),ox=rect.x+rect.width/2-(minX+maxX)*scaleFactor/2,oy=rect.y+rect.height/2+(minY+maxY)*scaleFactor/2,pt=v=>({x:ox+v.x*scaleFactor,y:oy-v.y*scaleFactor});
  if(source==="3d"){
   const span=Math.max(ex,ey,1),factor=Math.min((rect.width-24)/span,(rect.height-32)/(span*1.5)),cx=(minX+maxX)/2,cy=(minY+maxY)/2,baseY=rect.y+rect.height*.64,iso=q=>({x:rect.x+rect.width/2+((q.x-cx)-(q.y-cy)*.55)*factor,y:baseY+((q.x-cx)+(q.y-cy)*.45)*factor*.34});
   ctx.strokeStyle="#4c5963";ctx.fillStyle="#e1e7ea";ctx.lineWidth=.9;
