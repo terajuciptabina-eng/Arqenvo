@@ -324,14 +324,17 @@ try {
   assert.equal(placedDoor.swingDirection,"inside","Cursor placed on the positive side of the wall should choose inside swing");
   // Anchor selector exposes usable edge modes and keeps Center as the default.
   await openingPage.locator("#openingAlignment").selectOption("left");
-  await modelPoint(1, wallY);
+  // Anchor mode applies to the cursor's projected position on the host wall.
+  // Place the cursor at the wall start to assert a zero offset.
+  await modelPoint(-4, wallY);
   const leftPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
-  assert.equal(leftPreview?.offset,0,"Left edge anchor should start the opening at the host-wall start");
+  assert.equal(leftPreview?.offset,0,"Left anchor at the host-wall start should produce zero offset");
   await openingPage.keyboard.press("Escape");
   await openingPage.locator("#openingAlignment").selectOption("right");
-  await modelPoint(1, wallY);
+  // Place the cursor at the wall end so the right anchor lands on the wall end.
+  await modelPoint(4, wallY);
   const rightPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
-  assert.ok(Math.abs((rightPreview?.offset||0)+ (rightPreview?.width||0)-8)<1e-6,"Right edge anchor should end the opening at the host-wall end");
+  assert.ok(Math.abs((rightPreview?.offset||0)+ (rightPreview?.width||0)-8)<1e-6,"Right anchor at the host-wall end should end the opening at the host-wall end");
   await openingPage.keyboard.press("Escape");
   await openingPage.locator("#openingAlignment").selectOption("center");
 
