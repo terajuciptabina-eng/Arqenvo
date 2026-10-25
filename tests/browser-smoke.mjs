@@ -310,7 +310,11 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("committed") || document.querySelector("#undo")?.disabled === false);
   await openingPage.locator('[data-tool="door"]').click();
    await openingPage.waitForFunction(()=>document.querySelector("#openingAlignment")?.value==="center");
+   assert.equal(await openingPage.locator("#openingAlignment").count(),1,"There must be only one anchor selector ID");
    assert.equal(await openingPage.locator("#openingAlignment").isVisible(),true,"Door anchor selector should be visible before placement");
+   await openingPage.locator("#openingAlignment").selectOption("left");
+   assert.equal(await openingPage.locator("#openingAlignment").inputValue(),"left","Anchor selector changes must remain on the live dynamic control");
+   await openingPage.locator("#openingAlignment").selectOption("center");
   await modelPoint(0, wallY);
   await modelPoint(0, wallY + .8, "move");
   await modelPoint(1.7, wallY + 1.2); // Blank paper click confirms cursor-selected opening orientation.
@@ -455,6 +459,57 @@ try {
   await confirmPage.close();
 
 
+  // Anchor / swing regression: cursor controls swing, not the opening anchor or hinge.
+  const anchorPage=await browser.newPage({viewport:{width:1100,height:800}});
+  anchorPage.setDefaultTimeout(8000);
+  anchorPage.on("pageerror",error=>pageErrors.push(error.message));
+  await anchorPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await anchorPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await anchorPage.locator("#snapToggle").click();
+  await anchorPage.locator("#gridQuick").selectOption("0.1");
+  const anchorPoint=async(wx,wy,action="click")=>{
+    const pt=await anchorPage.evaluate(({wx,wy})=>{
+      const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;
+      return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)};
+    },{wx,wy});
+    if(action==="move")await anchorPage.mouse.move(pt.x,pt.y);else await anchorPage.mouse.click(pt.x,pt.y);
+  };
+  await anchorPage.locator('[data-tool="wall"]').click();
+  await anchorPage.locator("#wallGeometryMethod").selectOption("single");
+  await anchorPoint(-2,0);await anchorPoint(2,0);await anchorPage.keyboard.press("Enter");
+  await anchorPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="wall"));
+  await anchorPage.locator('[data-tool="door"]').click();
+  assert.equal(await anchorPage.locator("#openingAlignment").count(),1,"Only one anchor selector should exist");
+  await anchorPage.locator("#openingAlignment").selectOption("center");
+  await anchorPoint(0,0);
+  await anchorPoint(0,0.8,"move");
+  const previewBefore=await anchorPage.evaluate(()=>window.__arqenvoOpeningPreview);
+  await anchorPoint(0,-0.8,"move");
+  const previewAfter=await anchorPage.evaluate(()=>window.__arqenvoOpeningPreview);
+  assert.ok(previewBefore&&previewAfter,"Door preview should be active while cursor is moved");
+  assert.equal(previewAfter.offset,previewBefore.offset,"Cursor side change must not move the opening anchor");
+  assert.equal(previewAfter.anchor,previewBefore.anchor,"Cursor side change must preserve the selected anchor");
+  assert.equal(previewAfter.hingeSide,previewBefore.hingeSide,"Cursor side change must not flip hinge selection");
+  assert.notEqual(previewAfter.swingDirection,previewBefore.swingDirection,"Moving the cursor across a wall must change swing direction");
+  await anchorPoint(0,-0.8);
+  await anchorPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Door placed"));
+  await anchorPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.some(e=>e.type==="door"));
+  const centeredDoor=await anchorPage.evaluate(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door")});
+  assert.equal(centeredDoor.offset,1.55,"Center anchor should center a 0.9 m door in a 4 m wall");
+  await anchorPage.locator('[data-tool="door"]').click();
+  await anchorPage.locator("#openingAlignment").selectOption("left");
+  await anchorPoint(0,0);
+  const leftPreview=await anchorPage.evaluate(()=>window.__arqenvoOpeningPreview);
+  assert.equal(leftPreview.offset,0,"Left anchor should start at the host wall start");
+  await anchorPage.keyboard.press("Escape");
+  await anchorPage.locator('[data-tool="door"]').click();
+  await anchorPage.locator("#openingAlignment").selectOption("right");
+  await anchorPoint(0,0);
+  const rightPreview=await anchorPage.evaluate(()=>window.__arqenvoOpeningPreview);
+  assert.equal(rightPreview.offset,3.1,"Right anchor should end at the host wall end");
+  await anchorPage.keyboard.press("Escape");
+  await anchorPage.close();
+
   // Mobile 3D zoom controls must be visible in 3D view and change the actual camera readout.
   const mobileZoomPage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
   mobileZoomPage.setDefaultTimeout(8000);
@@ -473,9 +528,76 @@ try {
   assert.ok(touchZoomRestored<touchZoomAfter,"Mobile 3D Zoom Out must decrease camera zoom");
   await mobileZoomPage.close();
 
-  const {openingPlacementDirection}=await import("../src/core/authoring.js");
+  // Direct touch-pointer regression: two fingers pinch-zoom and pan the 3D camera.
+  const gesturePage=await browser.newPage({viewport:{width:390,height:844},hasTouch:true,isMobile:true});
+  gesturePage.setDefaultTimeout(8000);
+  gesturePage.on("pageerror",error=>pageErrors.push(error.message));
+  await gesturePage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await gesturePage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await gesturePage.locator("#threeTab").click();
+  const beforeGesture=await gesturePage.evaluate(()=>({...window.__arqenvoCamera3d}));
+  await gesturePage.evaluate(()=>{
+    const canvas=document.querySelector("#canvas");
+    const emit=(type,pointerId,x,y,buttons)=>canvas.dispatchEvent(new PointerEvent(type,{
+      pointerId,pointerType:"touch",isPrimary:pointerId===901,clientX:x,clientY:y,
+      button:0,buttons,bubbles:true,cancelable:true
+    }));
+    emit("pointerdown",901,120,240,1);
+    emit("pointerdown",902,220,240,1);
+    emit("pointermove",901,90,270,1);
+    emit("pointermove",902,250,280,1);
+    emit("pointerup",901,90,270,0);
+    emit("pointerup",902,250,280,0);
+  });
+  const afterGesture=await gesturePage.evaluate(()=>({...window.__arqenvoCamera3d}));
+  assert.ok(afterGesture.zoom>beforeGesture.zoom,`Pinch must change actual 3D camera zoom: ${beforeGesture.zoom} -> ${afterGesture.zoom}`);
+  assert.ok(afterGesture.panX!==beforeGesture.panX||afterGesture.panY!==beforeGesture.panY||afterGesture.targetZ!==beforeGesture.targetZ,
+    "Two-finger drag must pan the 3D camera");
+  assert.equal(await gesturePage.locator("#selectionInfo").textContent(),"No selection",
+    "Two-finger navigation must not accidentally select a model element");
+
+  // One-finger drag stays an orbit gesture; it should not select model geometry.
+  const beforeOrbit=await gesturePage.evaluate(()=>({...window.__arqenvoCamera3d}));
+  await gesturePage.evaluate(()=>{
+    const canvas=document.querySelector("#canvas");
+    const emit=(type,pointerId,x,y,buttons)=>canvas.dispatchEvent(new PointerEvent(type,{
+      pointerId,pointerType:"touch",isPrimary:true,clientX:x,clientY:y,
+      button:0,buttons,bubbles:true,cancelable:true
+    }));
+    emit("pointerdown",903,150,310,1);
+    emit("pointermove",903,188,330,1);
+    emit("pointerup",903,188,330,0);
+  });
+  const afterOrbit=await gesturePage.evaluate(()=>({...window.__arqenvoCamera3d}));
+  assert.notEqual(afterOrbit.yaw,beforeOrbit.yaw,"One-finger touch drag must orbit the 3D view");
+  assert.equal(await gesturePage.locator("#selectionInfo").textContent(),"No selection",
+    "Orbit gesture must not select a model element");
+
+  // A cancelled pinch should not leave stale pointer IDs that break the next touch.
+  await gesturePage.evaluate(()=>{
+    const canvas=document.querySelector("#canvas");
+    canvas.dispatchEvent(new PointerEvent("pointerdown",{pointerId:904,pointerType:"touch",isPrimary:true,clientX:100,clientY:220,button:0,buttons:1,bubbles:true}));
+    canvas.dispatchEvent(new PointerEvent("pointerdown",{pointerId:905,pointerType:"touch",isPrimary:false,clientX:200,clientY:220,button:0,buttons:1,bubbles:true}));
+    canvas.dispatchEvent(new PointerEvent("pointercancel",{pointerId:905,pointerType:"touch",isPrimary:false,clientX:200,clientY:220,button:0,buttons:0,bubbles:true}));
+  });
+  const beforeFreshOrbit=await gesturePage.evaluate(()=>({...window.__arqenvoCamera3d}));
+  await gesturePage.evaluate(()=>{
+    const canvas=document.querySelector("#canvas");
+    canvas.dispatchEvent(new PointerEvent("pointerdown",{pointerId:906,pointerType:"touch",isPrimary:true,clientX:150,clientY:300,button:0,buttons:1,bubbles:true}));
+    canvas.dispatchEvent(new PointerEvent("pointermove",{pointerId:906,pointerType:"touch",isPrimary:true,clientX:175,clientY:310,button:0,buttons:1,bubbles:true}));
+    canvas.dispatchEvent(new PointerEvent("pointerup",{pointerId:906,pointerType:"touch",isPrimary:true,clientX:175,clientY:310,button:0,buttons:0,bubbles:true}));
+  });
+  const afterFreshOrbit=await gesturePage.evaluate(()=>({...window.__arqenvoCamera3d}));
+  assert.notEqual(afterFreshOrbit.yaw,beforeFreshOrbit.yaw,"3D touch must still orbit after pointercancel");
+  await gesturePage.close();
+
+  const {openingPlacementDirection,openingOffsetForAnchor}=await import("../src/core/authoring.js");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:1}),"inside","Cursor above a horizontal wall chooses inside swing");
   assert.equal(openingPlacementDirection({x:0,y:0},{x:4,y:0},{x:2,y:-1}),"outside","Cursor below a horizontal wall chooses outside swing");
+  assert.equal(openingOffsetForAnchor(4,.9,"center"),1.55,"Center anchor centers the opening in the host wall");
+  assert.equal(openingOffsetForAnchor(4,.9,"left"),0,"Left anchor begins at the host wall start");
+  assert.equal(openingOffsetForAnchor(4,.9,"right"),3.1,"Right anchor ends at the host wall end");
+  assert.throws(()=>openingOffsetForAnchor(.8,.9,"center"),/fit within the host wall/,"Opening must fit inside a host wall");
 
   // Space temporarily activates Magic Wand and restores the prior tool on release.
   const spacePage=await browser.newPage({viewport:{width:1100,height:800}});

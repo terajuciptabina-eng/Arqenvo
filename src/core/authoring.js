@@ -4,6 +4,29 @@
  * Units are metres for model coordinates; rendered coordinates may be pixels.
  */
 
+/**
+ * Computes a hosted opening's offset along the host wall's start -> end axis.
+ * Swing direction is independent of this anchor calculation.
+ */
+export function openingOffsetForAnchor(hostLength, openingWidth, anchor = "center") {
+  if (!Number.isFinite(hostLength) || hostLength <= 0) {
+    throw new RangeError("Host wall length must be positive");
+  }
+  if (!Number.isFinite(openingWidth) || openingWidth <= 0) {
+    throw new RangeError("Opening width must be positive");
+  }
+  if (openingWidth > hostLength + 1e-8) {
+    throw new RangeError("Opening must fit within the host wall");
+  }
+  const available = Math.max(0, hostLength - openingWidth);
+  switch (String(anchor || "center").toLowerCase()) {
+    case "left": return 0;
+    case "right": return available;
+    case "center": return available / 2;
+    default: throw new TypeError("Anchor must be center, left or right");
+  }
+}
+
 export function openingPlacementDirection(wallStart, wallEnd, cursor) {
   const dx = wallEnd.x - wallStart.x;
   const dy = wallEnd.y - wallStart.y;
