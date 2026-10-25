@@ -602,6 +602,10 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .top .ribbon-brand .brand-logo{display:block!important;width:46px!important;height:auto!important;max-width:46px!important;max-height:36px!important;object-fit:contain!important}
 }
 
+
+/* Keep contextual tool icons legible and consistent with the Toolbox SVG line style. */
+#contextToolIcon svg{display:block;width:22px;height:22px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#contextToolIcon svg path[d="M5 3 19 15l-6 1-3 5z"]{fill:currentColor;stroke:currentColor}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
