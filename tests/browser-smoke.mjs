@@ -487,15 +487,34 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Opening updated");
   assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
     "Pressing Enter should apply the new door width to the hosted opening");
-  // Alignment=Left moved the opening to the host wall start (-4 m); hit the updated visible arc and opening span.
-  await modelPoint(-3.434, wallY + 0.566);
+  // Recompute the visible leaf and hinge from the current hosted geometry after Width/Alignment edits.
+  const doorSymbolGeometry = async () => openingPage.evaluate(() => {
+    const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),viewport=window.__arqenvoDebug?.getViewport();
+    const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}");
+    const door=model.elements?.find(e=>e.type==="door");
+    const wall=model.elements?.find(e=>e.id===door?.hostWallId&&e.type==="wall");
+    if(!door||!wall)throw new Error("Hosted door or host wall missing from saved model");
+    const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1;
+    const offset=Math.max(0,Number(door.offset)||0),width=Math.max(0,Number(door.width)||0);
+    const at=distance=>({x:wall.start.x+dx*distance/len,y:wall.start.y+dy*distance/len});
+    const scale=viewport?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=viewport?.origin||{x:0,y:0};
+    const project=p=>({x:rect.left+canvas.clientWidth/2+origin.x+p.x*scale,y:rect.top+canvas.clientHeight/2+origin.y-p.y*scale});
+    const a=project(at(offset)),b=project(at(offset+width)),radius=Math.hypot(b.x-a.x,b.y-a.y)||1;
+    const nx=-(b.y-a.y)/radius,ny=(b.x-a.x)/radius;
+    const hinge=door.hingeSide==="right"?b:a,side=door.swingDirection==="outside"?-1:1;
+    const openFree={x:hinge.x+nx*side*radius,y:hinge.y+ny*side*radius};
+    return {leaf:{x:(hinge.x+openFree.x)/2,y:(hinge.y+openFree.y)/2},hinge,unitScreen:{x:(b.x-a.x)/radius,y:(b.y-a.y)/radius},scale};
+  });
+  let doorGeom=await doorSymbolGeometry();
+  await openingPage.mouse.click(doorGeom.leaf.x,doorGeom.leaf.y);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
-  await modelPoint(-3.55, wallY);
+  doorGeom=await doorSymbolGeometry();
+  await openingPage.mouse.click(doorGeom.hinge.x,doorGeom.hinge.y);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
   const doorOffsetBeforeMove = Number(await openingPage.locator('[data-prop="offset"]').inputValue());
-  const dragScreenPoint = async (wx, wy) => openingPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
-  const doorDragStart = await dragScreenPoint(-3.434, wallY + 0.566);
-  const doorDragEnd = await dragScreenPoint(-2.634, wallY + 0.566);
+  doorGeom=await doorSymbolGeometry();
+  const doorDragStart=doorGeom.leaf;
+  const doorDragEnd={x:doorDragStart.x+doorGeom.unitScreen.x*0.8*doorGeom.scale,y:doorDragStart.y+doorGeom.unitScreen.y*0.8*doorGeom.scale};
   await openingPage.mouse.move(doorDragStart.x, doorDragStart.y);
   await openingPage.mouse.down();
   await openingPage.mouse.move(doorDragEnd.x, doorDragEnd.y, {steps:6});
