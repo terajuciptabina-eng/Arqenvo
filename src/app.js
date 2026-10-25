@@ -693,6 +693,8 @@ document.querySelectorAll("[data-view-command]").forEach(b=>b.addEventListener("
 document.querySelectorAll("[data-tool-command]").forEach(b=>b.addEventListener("click",()=>{setTool(b.dataset.toolCommand);document.querySelectorAll(".menu-group[open]").forEach(m=>m.open=false)}));
 document.querySelectorAll("[data-panel-command]").forEach(b=>b.addEventListener("click",()=>{const target=$(b.dataset.panelCommand);if(target){target.style.display=target.style.display==="none"?(target.id==="toolbox"?"flex":"block"):"none"}document.querySelectorAll(".menu-group[open]").forEach(m=>m.open=false)}));
 document.querySelectorAll("[data-navtab]").forEach(b=>b.addEventListener("click",()=>{document.querySelectorAll("[data-navtab]").forEach(t=>t.classList.toggle("active",t===b));document.querySelectorAll("[data-navpanel]").forEach(panel=>panel.hidden=panel.dataset.navpanel!==b.dataset.navtab);if(b.dataset.navtab==="layouts"){renderLayoutList();if(!layoutMode&&layoutSheet())openLayoutBook()}if(b.dataset.navtab==="publisher"){renderPublisherList();const scope=$("publisherScope");if(scope)scope.value="all"};if(b.dataset.navtab==="layers")renderLayerPanel()}));
+$("viewMapFloor")?.addEventListener("click",()=>{const id=$("viewMapStory")?.value;if(id)activeStoryId=id;enterModelView("floor");refreshStories()});
+$("viewMap3d")?.addEventListener("click",()=>enterModelView("3d"));
 const LAYOUT_PAPER_MM={A0:[1189,841],A1:[841,594],A2:[594,420],A3:[420,297],A4:[297,210]};
 let activeLayoutDrawingId=null,layoutPointerGesture=null;
 const layoutSheet=()=> (p.layouts||[]).find(s=>s.id===activeLayoutId)||null;
@@ -712,18 +714,25 @@ function renderModelSnapshot(ctx,rect,source,storyId,scaleDenominator=100,frameW
  ctx.save();ctx.beginPath();ctx.rect(rect.x,rect.y,rect.width,rect.height);ctx.clip();ctx.fillStyle="#fff";ctx.fillRect(rect.x,rect.y,rect.width,rect.height);
  if(!items.length){ctx.fillStyle="#7a8188";ctx.font="12px Arial";ctx.fillText(source==="3d"?"No 3D model elements yet":"No elements in this story",rect.x+10,rect.y+20);ctx.restore();return}
  if(!points.length){ctx.restore();return}
- const minX=Math.min(...points.map(v=>v.x)),maxX=Math.max(...points.map(v=>v.x)),minY=Math.min(...points.map(v=>v.y)),maxY=Math.max(...points.map(v=>v.y));
- const sc=Math.max(.0001,rect.width/Math.max(1,frameWidthMm)*1000/Math.max(1,scaleDenominator));
- const ox=rect.x+rect.width/2-(minX+maxX)*sc/2,oy=rect.y+rect.height/2+(minY+maxY)*sc/2;
- const pt=v=>({x:ox+v.x*sc,y:oy-v.y*sc});
- for(const el of items){
-  ctx.save();ctx.strokeStyle=el.type==="gridline"?"#7b8892":el.type==="door"?"#986743":el.type==="window"?"#238da0":"#303943";ctx.fillStyle=el.type==="room"?"#f5fafb":"#fff";ctx.lineWidth=el.type==="wall"?Math.max(.8,(Number(el.thickness)||.15)*sc):.9;
-  if(el.type==="wall"||el.type==="beam"||el.type==="dimension"||el.type==="gridline"){const aa=pt(el.start),bb=pt(el.end);ctx.beginPath();ctx.moveTo(aa.x,aa.y);ctx.lineTo(bb.x,bb.y);ctx.stroke();if(el.type==="wall"){for(const o of (el.openings||[])){const len=wallLength(el)||1,ratioA=o.offset/len,ratioB=(o.offset+o.width)/len,oa={x:aa.x+(bb.x-aa.x)*ratioA,y:aa.y+(bb.y-aa.y)*ratioA},ob={x:aa.x+(bb.x-aa.x)*ratioB,y:aa.y+(bb.y-aa.y)*ratioB};ctx.strokeStyle="#fff";ctx.lineWidth=Math.max(2,(el.thickness||.15)*sc+2);ctx.beginPath();ctx.moveTo(oa.x,oa.y);ctx.lineTo(ob.x,ob.y);ctx.stroke();ctx.strokeStyle=o.type==="window"?"#238da0":"#986743";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(oa.x,oa.y);ctx.lineTo(ob.x,ob.y);ctx.stroke()}}}
-  else if(el.boundary?.length){ctx.beginPath();el.boundary.forEach((v,i)=>{const q=pt(v);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.closePath();ctx.fill();ctx.stroke()}
-  else if(el.position){const q=pt(el.position);ctx.strokeRect(q.x-2.5,q.y-2.5,5,5)}
-  ctx.restore();
+ const minX=Math.min(...points.map(v=>v.x)),maxX=Math.max(...points.map(v=>v.x)),minY=Math.min(...points.map(v=>v.y)),maxY=Math.max(...points.map(v=>v.y)),ex=Math.max(1,maxX-minX),ey=Math.max(1,maxY-minY);
+ const modelFit=Math.min(Math.max(1,rect.width-16)/ex,Math.max(1,rect.height-16)/ey),scaleFactor=Math.max(.0001,Math.min(modelFit,rect.width/Math.max(1,frameWidthMm)*1000/Math.max(1,scaleDenominator))),ox=rect.x+rect.width/2-(minX+maxX)*scaleFactor/2,oy=rect.y+rect.height/2+(minY+maxY)*scaleFactor/2,pt=v=>({x:ox+v.x*scaleFactor,y:oy-v.y*scaleFactor});
+ if(source==="3d"){
+  const span=Math.max(ex,ey,1),factor=Math.min((rect.width-24)/span,(rect.height-32)/(span*1.5)),cx=(minX+maxX)/2,cy=(minY+maxY)/2,baseY=rect.y+rect.height*.64,iso=q=>({x:rect.x+rect.width/2+((q.x-cx)-(q.y-cy)*.55)*factor,y:baseY+((q.x-cx)+(q.y-cy)*.45)*factor*.34});
+  ctx.strokeStyle="#4c5963";ctx.fillStyle="#e1e7ea";ctx.lineWidth=.9;
+  for(const el of items){
+   if(el.type==="wall"&&el.start&&el.end){const a=iso(el.start),b=iso(el.end),z=Math.max(2,(el.height||3)*factor*.34);ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.lineTo(b.x,b.y-z);ctx.lineTo(a.x,a.y-z);ctx.closePath();ctx.fill();ctx.stroke();ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(a.x,a.y-z);ctx.moveTo(b.x,b.y);ctx.lineTo(b.x,b.y-z);ctx.stroke()}
+   else if(el.type==="column"&&el.position){const q=iso(el.position),z=Math.max(2,(el.height||3)*factor*.34),cw=Math.max(1,(el.width||.3)*factor*.5);ctx.fillRect(q.x-cw/2,q.y-z,cw,z);ctx.strokeRect(q.x-cw/2,q.y-z,cw,z)}
+   else if(el.type==="beam"&&el.start&&el.end){const a=iso(el.start),b=iso(el.end);ctx.beginPath();ctx.moveTo(a.x,a.y-2);ctx.lineTo(b.x,b.y-2);ctx.stroke()}
+   else if(["slab","roof"].includes(el.type)&&el.boundary?.length){ctx.beginPath();el.boundary.forEach((q,i)=>{const v=iso(q);i?ctx.lineTo(v.x,v.y):ctx.moveTo(v.x,v.y)});ctx.closePath();ctx.fill();ctx.stroke()}
+  }
+  ctx.restore();return
  }
- ctx.restore();
+ for(const el of items){ctx.save();ctx.strokeStyle=el.type==="gridline"?"#7b8892":el.type==="door"?"#986743":el.type==="window"?"#238da0":"#303943";ctx.fillStyle=el.type==="room"?"#f5fafb":"#fff";ctx.lineWidth=el.type==="wall"?Math.max(.8,(Number(el.thickness)||.15)*scaleFactor):.9;
+  if(["wall","beam","dimension","gridline"].includes(el.type)&&el.start&&el.end){const aa=pt(el.start),bb=pt(el.end);ctx.beginPath();ctx.moveTo(aa.x,aa.y);ctx.lineTo(bb.x,bb.y);ctx.stroke();if(el.type==="wall")for(const o of (el.openings||[])){const len=wallLength(el)||1,r1=o.offset/len,r2=(o.offset+o.width)/len,oa={x:aa.x+(bb.x-aa.x)*r1,y:aa.y+(bb.y-aa.y)*r1},ob={x:aa.x+(bb.x-aa.x)*r2,y:aa.y+(bb.y-aa.y)*r2};ctx.strokeStyle="#fff";ctx.lineWidth=Math.max(2,(el.thickness||.15)*scaleFactor+2);ctx.beginPath();ctx.moveTo(oa.x,oa.y);ctx.lineTo(ob.x,ob.y);ctx.stroke();ctx.strokeStyle=o.type==="window"?"#238da0":"#986743";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(oa.x,oa.y);ctx.lineTo(ob.x,ob.y);ctx.stroke()}}
+  else if(el.boundary?.length){ctx.beginPath();el.boundary.forEach((v,i)=>{const q=pt(v);i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y)});ctx.closePath();ctx.fillStyle=el.type==="room"?"#eaf5f5":"#e6eaec";ctx.fill();ctx.stroke()}
+  else if(el.position){const q=pt(el.position);ctx.strokeRect(q.x-2.5,q.y-2.5,5,5)}ctx.restore()
+ }
+ ctx.restore()
 }
 function renderLayoutCanvas(w,h){
  const sheet=layoutSheet();x.save();x.fillStyle="#d5d9de";x.fillRect(0,0,w,h);
