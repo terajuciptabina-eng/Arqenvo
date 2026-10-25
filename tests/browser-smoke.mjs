@@ -115,9 +115,9 @@ try {
   await page.keyboard.press("Tab");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
   // Direction-dependent area selection: drag left-to-right around one wall segment.
-  await page.mouse.move(cx - 100, cy - 25);
+  await page.mouse.move(cx - 100, cy - 10);
   await page.mouse.down();
-  await page.mouse.move(cx + 100, cy - 10, { steps: 5 });
+  await page.mouse.move(cx + 100, cy + 10, { steps: 5 });
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"));
   assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
