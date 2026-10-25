@@ -595,6 +595,13 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 #toolbox .tool[data-tool="select"] b svg{fill:currentColor;stroke-width:1.2}
 @media(pointer:coarse){#toolbox .tool b svg{width:25px;height:25px;stroke-width:1.8}}
 
+
+/* Keep the original ARQENVO logo visible on iPad in a compact brand slot. */
+@media (pointer:coarse), (max-width:1200px) {
+ .top .ribbon-brand{display:flex!important;flex:0 0 52px!important;width:52px!important;min-width:52px!important;height:40px!important;align-items:center!important;justify-content:center!important;padding:0 4px!important;margin:0 4px 0 0!important}
+ .top .ribbon-brand .brand-logo{display:block!important;width:46px!important;height:auto!important;max-width:46px!important;max-height:36px!important;object-fit:contain!important}
+}
+
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
