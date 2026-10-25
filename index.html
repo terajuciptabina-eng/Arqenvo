@@ -638,6 +638,16 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-open:after{display:none!important}
  .work:not(.navigator-open):not(.navigator-hidden)>.navigator{display:block!important}
 }
+
+/* Navigator toggle is a touch/tablet-only feature. Desktop keeps the original fixed Navigator. */
+@media (hover:hover) and (pointer:fine) and (min-width:901px){
+ #navigatorToggle.navigator-toggle{display:none!important}
+ .work.navigator-hidden{grid-template-columns:56px 235px minmax(0,1fr) 250px!important}
+ .work>.navigator{display:block!important;visibility:visible!important;position:relative!important;left:auto!important;right:auto!important;top:auto!important;bottom:auto!important;width:auto!important;max-width:none!important;min-width:0!important}
+ .work>.inspector{display:block!important;visibility:visible!important;grid-column:4!important}
+ .work>.workspace{grid-column:3!important;grid-row:1!important}
+ .work:not(.navigator-open):not(.navigator-hidden)>.navigator{display:block!important}
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -719,7 +729,7 @@ document.addEventListener("keydown",event=>{
   var toggle=document.getElementById('navigatorToggle');
   if(!toggle){toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';}
   /* Only phones use the slide-in drawer. iPad/tablet keeps the original docked Navigator. */
-  function isMobile(){return window.matchMedia('(max-width:600px)').matches;}
+  function isMobile(){return window.matchMedia('(max-width:900px), (pointer:coarse)').matches;}
   function sync(){
    var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
    var heading=nav.querySelector('.section');
