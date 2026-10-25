@@ -563,23 +563,23 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 }
 
 
-/* Tablet Navigator is a RIGHT-side drawer. Toolbox remains on the left. */
-@media (pointer:coarse), (max-width:1200px) {
- .work.navigator-open>.navigator{
-  position:fixed!important;left:auto!important;right:0!important;
-  top:182px!important;bottom:24px!important;
-  width:min(310px,calc(100vw - 64px))!important;
-  max-width:calc(100vw - 64px)!important;
-  display:block!important;z-index:1201!important;
-  overflow:auto!important;box-shadow:-8px 0 24px #0005!important
+/* iPad/tablet Navigator: keep its original docked column and toggle at that column's edge. */
+@media (pointer:coarse) and (min-width:601px) {
+ .work.navigator-open>.navigator,
+ .work:not(.navigator-open):not(.navigator-hidden)>.navigator{
+  position:relative!important;left:auto!important;right:auto!important;
+  top:auto!important;bottom:auto!important;width:auto!important;max-width:none!important;
+  display:block!important;z-index:auto!important;overflow:auto!important;box-shadow:none!important
  }
- .work:not(.navigator-open)>.navigator{display:none!important}
  .work>#navigatorToggle.navigator-toggle{
-  position:fixed!important;left:auto!important;right:12px!important;
-  top:182px!important;bottom:auto!important;z-index:1600!important
+  position:absolute!important;left:52px!important;right:auto!important;
+  top:8px!important;bottom:auto!important;z-index:1600!important
  }
- .work.navigator-open:after{inset:182px 0 24px 48px!important}
+ .work.navigator-open:after{display:none!important}
  #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;margin-left:auto!important}
+}
+@media (max-width:600px) {
+ .work.navigator-open>.navigator{left:48px!important;right:auto!important}
 }
 
 
