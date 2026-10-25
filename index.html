@@ -459,6 +459,13 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
   #toolbox .tool { display:flex!important; align-items:center!important; justify-content:center!important; width:42px!important; min-width:42px!important; max-width:42px!important; min-height:42px!important; margin:2px auto!important; padding:4px!important; gap:0!important; font-size:0!important; line-height:0!important; white-space:nowrap!important; }
   #toolbox .tool b { display:block!important; flex:0 0 auto!important; width:auto!important; margin:0!important; font-size:22px!important; line-height:1!important; visibility:visible!important; }
 }
+
+/* Place the Navigator show/hide control inside the Navigator header itself. */
+#navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#navigatorToggle.navigator-toggle{position:static;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-height:30px;min-width:54px;padding:4px 8px;margin:0 0 0 auto;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 2px #0002;touch-action:manipulation;cursor:pointer}
+@media(max-width:900px){
+ #navigatorToggle.navigator-toggle{min-height:38px;min-width:64px;font-size:12px}
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -534,18 +541,26 @@ document.addEventListener("keydown",event=>{
 <script>
 (function(){
  function initWorkspacePanels(){
-  var work=document.querySelector('.work'),toolbar=document.querySelector('.top'),nav=document.querySelector('.navigator');
-  if(!work||!toolbar||!nav)return;
+  var work=document.querySelector('.work'),nav=document.querySelector('.navigator');
+  if(!work||!nav)return;
   nav.id='navigator-panel';
   var toggle=document.getElementById('navigatorToggle');
-  if(!toggle){toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';toolbar.insertBefore(toggle,toolbar.firstChild);}
+  if(!toggle){
+   toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';
+   var heading=nav.querySelector('.section');
+   if(heading)heading.appendChild(toggle);else nav.insertBefore(toggle,nav.firstChild);
+  }else{
+   var heading=nav.querySelector('.section');
+   if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
+  }
   function isMobile(){return window.matchMedia('(max-width:900px)').matches;}
   function sync(){
    var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
-   toggle.textContent=mobile?(open?'✕ Close Navigator':'☰ Navigator'):(hidden?'Show Navigator':'Hide Navigator');
+   toggle.textContent=mobile?(open?'✕ Close':'☰ Open'):(hidden?'Show':'Hide');
    toggle.setAttribute('aria-controls','navigator-panel');
    toggle.setAttribute('aria-expanded',mobile?(open?'true':'false'):(hidden?'false':'true'));
    toggle.setAttribute('aria-label',mobile?(open?'Close Navigator panel':'Open Navigator panel'):(hidden?'Show Navigator and Properties':'Hide Navigator and Properties'));
+   toggle.title=mobile?(open?'Close Navigator':'Open Navigator'):(hidden?'Show Navigator and Properties':'Hide Navigator and Properties');
   }
   toggle.addEventListener('click',function(){
    if(isMobile()){work.classList.toggle('navigator-open');}
