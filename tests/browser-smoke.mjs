@@ -174,30 +174,43 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
-  await page.locator('[data-tool="select"]').click();
-  // Tool/context changes can resize the workspace; recompute the live canvas centre.
-  const marqueeCanvasRect = await canvas.boundingBox();
-  assert.ok(marqueeCanvasRect, "Canvas must remain visible before marquee selection");
-  cx = marqueeCanvasRect.x + marqueeCanvasRect.width / 2;
-  cy = marqueeCanvasRect.y + marqueeCanvasRect.height / 2;
+  // Isolate marquee behavior from previous drawing/undo state.
+  const marqueePage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
+  marqueePage.setDefaultTimeout(8000);
+  marqueePage.on("pageerror", error => pageErrors.push(error.message));
+  await marqueePage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await marqueePage.waitForFunction(() => {
+    const el = document.querySelector("#canvas");
+    return el && el.clientWidth > 100 && el.clientHeight > 100;
+  });
+  const marqueeCanvas = marqueePage.locator("#canvas");
+  await marqueePage.locator('[data-tool="wall"]').click();
+  await marqueePage.locator("#wallGeometryMethod").selectOption("single");
+  await marqueePage.waitForTimeout(80);
+  let marqueeRect = await marqueeCanvas.boundingBox();
+  assert.ok(marqueeRect, "Canvas must remain visible for marquee test");
+  let marqueeCx = marqueeRect.x + marqueeRect.width / 2;
+  let marqueeCy = marqueeRect.y + marqueeRect.height / 2;
+  await marqueePage.mouse.click(marqueeCx - 72, marqueeCy);
+  await marqueePage.mouse.click(marqueeCx + 72, marqueeCy);
+  await marqueePage.keyboard.press("Enter");
+  await marqueePage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Wall drawing committed"));
+  await marqueePage.locator('[data-tool="select"]').click();
+  marqueeRect = await marqueeCanvas.boundingBox();
+  assert.ok(marqueeRect, "Canvas must remain visible before marquee selection");
+  marqueeCx = marqueeRect.x + marqueeRect.width / 2;
+  marqueeCy = marqueeRect.y + marqueeRect.height / 2;
   // Start outside the 10 px element hit tolerance, but enclose the horizontal wall.
-  // This distinguishes a marquee gesture from a click on the wall.
-  await page.mouse.move(cx - 100, cy - 30);
-  await page.mouse.down();
-  await page.mouse.move(cx + 100, cy + 30, { steps: 5 });
-  await page.mouse.up();
-  await page.waitForTimeout(100);
-  const marqueeProbe = await page.evaluate(() => ({
-    status: document.querySelector("#status")?.textContent || "",
-    tool: window.__arqenvoDebug?.getTool() || "unknown",
-    canvas: (() => { const r=document.querySelector("#canvas").getBoundingClientRect(); return {left:r.left,top:r.top,width:r.width,height:r.height}; })()
-  }));
-  assert.ok(marqueeProbe.status.includes("Marquee area defined"),
-    `Expected marquee area after blank-space drag; got status="${marqueeProbe.status}", tool="${marqueeProbe.tool}", canvas=${JSON.stringify(marqueeProbe.canvas)}`);
-  await page.keyboard.press("Control+a");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected in marquee"));
-  assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
+  await marqueePage.mouse.move(marqueeCx - 100, marqueeCy - 30);
+  await marqueePage.mouse.down();
+  await marqueePage.mouse.move(marqueeCx + 100, marqueeCy + 30, { steps: 5 });
+  await marqueePage.mouse.up();
+  await marqueePage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Marquee area defined"));
+  await marqueePage.keyboard.press("Control+a");
+  await marqueePage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected in marquee"));
+  assert.ok(Number((await marqueePage.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
     "Selecting within the marquee should select at least one element");
+  await marqueePage.close();
 
   // Existing element edits must end on Enter and remain fixed when the pointer moves.
   const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
