@@ -175,6 +175,11 @@ try {
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
   await page.locator('[data-tool="select"]').click();
+  // Tool/context changes can resize the workspace; recompute the live canvas centre.
+  const marqueeCanvasRect = await canvas.boundingBox();
+  assert.ok(marqueeCanvasRect, "Canvas must remain visible before marquee selection");
+  cx = marqueeCanvasRect.x + marqueeCanvasRect.width / 2;
+  cy = marqueeCanvasRect.y + marqueeCanvasRect.height / 2;
   // Start outside the 10 px element hit tolerance, but enclose the horizontal wall.
   // This distinguishes a marquee gesture from a click on the wall.
   await page.mouse.move(cx - 100, cy - 30);
