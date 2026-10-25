@@ -526,7 +526,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  #toolbox .tool{display:flex!important;align-items:center!important;justify-content:center!important;width:42px!important;min-width:42px!important;max-width:42px!important;min-height:42px!important;margin:2px auto!important;padding:4px!important;gap:0!important;font-size:0!important;line-height:0!important;white-space:nowrap!important}
  #toolbox .tool b{display:block!important;flex:0 0 auto!important;width:auto!important;margin:0!important;font-size:22px!important;line-height:1!important;visibility:visible!important}
  .work{grid-template-columns:48px minmax(0,1fr) 0px!important}
- .work.navigator-open .navigator{display:block!important;position:fixed!important;left:48px!important;top:146px!important;bottom:28px!important;width:min(310px,calc(100vw - 64px))!important;max-width:calc(100vw - 64px)!important;height:auto!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;border:1px solid #9ba4ad!important;background:#f4f5f6!important;color:#252d35!important;padding:12px!important;overscroll-behavior:contain}
+ .work.navigator-open .navigator{display:block!important;position:fixed!important;left:48px!important;top:182px!important;bottom:28px!important;width:min(310px,calc(100vw - 64px))!important;max-width:calc(100vw - 64px)!important;height:auto!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;border:1px solid #9ba4ad!important;background:#f4f5f6!important;color:#252d35!important;padding:12px!important;overscroll-behavior:contain}
  .work.navigator-open .navigator .section,.work.navigator-open .navigator .tree,.work.navigator-open .navigator .nav-tabs{color:#252d35!important}
  .work.navigator-open:after{content:"";position:fixed;inset:146px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
  .work>#navigatorToggle.navigator-toggle{position:fixed!important;left:54px!important;top:146px!important;right:auto!important;bottom:auto!important;min-width:100px!important;min-height:40px!important;margin:0!important;z-index:1600!important}
@@ -550,6 +550,16 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-open>#navigatorToggle.navigator-toggle{top:182px!important;left:auto!important;right:8px!important}
  .work.navigator-open .navigator{top:182px!important}
  .work.navigator-open:after{inset:182px 0 24px 48px!important}
+}
+
+
+/* Hide Navigator means remove the entire left panel column; only the toggle remains. */
+@media (pointer:coarse) {
+ .work.navigator-hidden{grid-template-columns:48px minmax(0,1fr)!important}
+ .work.navigator-hidden>.navigator,.work.navigator-hidden>.inspector{display:none!important;visibility:hidden!important;width:0!important;min-width:0!important;max-width:0!important}
+ .work.navigator-hidden>.workspace{grid-column:2!important;grid-row:1!important}
+ .work:not(.navigator-open):not(.navigator-hidden)>.navigator{display:none!important}
+ .work.navigator-open>.navigator{display:block!important}
 }
 
 </style></head>
