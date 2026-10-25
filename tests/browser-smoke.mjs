@@ -45,6 +45,56 @@ try {
     const canvas = document.querySelector("#canvas");
     return canvas && canvas.clientWidth > 100 && canvas.clientHeight > 100;
   });
+  assert.equal(await page.locator("#navigatorToggle").isVisible(), false,
+    "Desktop must not expose Hide/Show Navigator");
+
+  // Use the tablet viewport with coarse-pointer emulation so this actually exercises iPad CSS.
+  const tabletPanelPage = await browser.newPage({ viewport: { width: 1024, height: 768 }, hasTouch: true, isMobile: true });
+  tabletPanelPage.setDefaultTimeout(8000);
+  tabletPanelPage.on("pageerror", error => pageErrors.push(error.message));
+  await tabletPanelPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await tabletPanelPage.waitForFunction(() => document.querySelector("#canvas")?.clientWidth > 100);
+  const tabletBefore = await tabletPanelPage.evaluate(() => {
+    const work = document.querySelector(".work");
+    const nav = document.querySelector(".navigator");
+    const workspace = document.querySelector(".workspace");
+    const inspector = document.querySelector(".inspector");
+    const toggle = document.querySelector("#navigatorToggle");
+    const box = element => { const r=element.getBoundingClientRect(); return {left:r.left,width:r.width,display:getComputedStyle(element).display}; };
+    return {columns:getComputedStyle(work).gridTemplateColumns,nav:box(nav),workspace:box(workspace),inspector:box(inspector),toggleInHeading:toggle.parentElement===nav.querySelector(".section")};
+  });
+  assert.ok(tabletBefore.nav.display!=="none" && tabletBefore.nav.width>100, "iPad Navigator must be docked in its original column");
+  assert.ok(tabletBefore.inspector.display!=="none" && tabletBefore.inspector.width>100, "iPad Inspector must be visible beside the workspace");
+  assert.ok(tabletBefore.workspace.width>200, "iPad workspace must retain usable width");
+  assert.equal(tabletBefore.toggleInHeading,true,"When shown, Hide Navigator stays inside the Navigator header");
+  await tabletPanelPage.locator("#navigatorToggle").click();
+  const tabletHidden = await tabletPanelPage.evaluate(() => {
+    const work = document.querySelector(".work");
+    const nav = document.querySelector(".navigator");
+    const workspace = document.querySelector(".workspace");
+    const inspector = document.querySelector(".inspector");
+    const toggle = document.querySelector("#navigatorToggle");
+    const box = element => { const r=element.getBoundingClientRect(); return {left:r.left,width:r.width,display:getComputedStyle(element).display}; };
+    return {columns:getComputedStyle(work).gridTemplateColumns,nav:box(nav),workspace:box(workspace),inspector:box(inspector),toggleInWork:toggle.parentElement===work,togglePosition:getComputedStyle(toggle).position};
+  });
+  assert.equal(tabletHidden.nav.display,"none","Hide must collapse the Navigator only");
+  assert.ok(tabletHidden.inspector.display!=="none" && tabletHidden.inspector.width>100, "Inspector must remain visible when Navigator is hidden");
+  assert.ok(tabletHidden.workspace.width>tabletBefore.workspace.width, "Workspace must expand into the Navigator's collapsed column");
+  assert.equal(tabletHidden.toggleInWork,true,"Show control must remain reachable after hiding Navigator");
+  assert.equal(tabletHidden.togglePosition,"fixed","Show control must not become an extra grid item ahead of the Toolbox");
+  await tabletPanelPage.locator("#navigatorToggle").click();
+  const tabletRestored = await tabletPanelPage.evaluate(() => {
+    const nav=document.querySelector(".navigator"), workspace=document.querySelector(".workspace"), inspector=document.querySelector(".inspector"), toggle=document.querySelector("#navigatorToggle");
+    const box=element=>{const r=element.getBoundingClientRect();return {left:r.left,width:r.width,display:getComputedStyle(element).display}};
+    return {nav:box(nav),workspace:box(workspace),inspector:box(inspector),toggleInHeading:toggle.parentElement===nav.querySelector(".section")};
+  });
+  assert.notEqual(tabletRestored.nav.display,"none","Show must restore the Navigator");
+  assert.ok(Math.abs(tabletRestored.nav.left-tabletBefore.nav.left)<2,"Navigator must return to the same column after Show");
+  assert.ok(tabletRestored.inspector.display!=="none" && tabletRestored.inspector.width>100,"Inspector must remain visible after Show");
+  assert.equal(tabletRestored.toggleInHeading,true,"Hide button returns to the Navigator header after Show");
+  await tabletPanelPage.close();
+  console.log("[PASS] Tablet Navigator Hide/Show preserves column position and Inspector");
+
   const canvas = page.locator("#canvas");
   await page.locator('[data-tool="wall"]').click();
   await page.locator("#wallGeometryMethod").selectOption("single");
