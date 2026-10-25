@@ -511,6 +511,29 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-open>#navigatorToggle.navigator-toggle{position:fixed!important;left:auto!important;right:8px!important;top:90px!important}
  #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;min-width:64px!important;min-height:38px!important;margin:0 0 0 auto!important}
 }
+
+/* iPad Safari may report a desktop-width viewport; detect touch tablets as well. */
+@media (max-width:1200px), (pointer:coarse) {
+ .top{display:flex!important;align-items:center!important;gap:5px!important;padding:4px 6px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important}
+ .top .ribbon-brand{display:none!important}
+ .top .ribbon-group{display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;padding:0 3px!important;margin:0!important;border:0!important}
+ .top .ribbon-group>small,.top .ribbon-buttons button span{display:none!important;visibility:hidden!important}
+ .top .ribbon-buttons{display:flex!important;align-items:center!important;gap:3px!important}
+ .top .ribbon-buttons button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;font-size:21px!important;line-height:1!important;white-space:nowrap!important}
+ .top .ribbon-spacer,.top>.spacer{display:none!important}
+ #toolbox{width:48px!important;min-width:48px!important;max-width:48px!important;padding:4px 2px!important;overflow-x:hidden!important}
+ #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none!important;visibility:hidden!important}
+ #toolbox .tool{display:flex!important;align-items:center!important;justify-content:center!important;width:42px!important;min-width:42px!important;max-width:42px!important;min-height:42px!important;margin:2px auto!important;padding:4px!important;gap:0!important;font-size:0!important;line-height:0!important;white-space:nowrap!important}
+ #toolbox .tool b{display:block!important;flex:0 0 auto!important;width:auto!important;margin:0!important;font-size:22px!important;line-height:1!important;visibility:visible!important}
+ .work{grid-template-columns:48px minmax(0,1fr) 0px!important}
+ .work.navigator-open .navigator{display:block!important;position:fixed!important;left:48px!important;top:146px!important;bottom:28px!important;width:min(310px,calc(100vw - 64px))!important;max-width:calc(100vw - 64px)!important;height:auto!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;border:1px solid #9ba4ad!important;background:#f4f5f6!important;color:#252d35!important;padding:12px!important;overscroll-behavior:contain}
+ .work.navigator-open .navigator .section,.work.navigator-open .navigator .tree,.work.navigator-open .navigator .nav-tabs{color:#252d35!important}
+ .work.navigator-open:after{content:"";position:fixed;inset:146px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
+ .work>#navigatorToggle.navigator-toggle{position:fixed!important;left:54px!important;top:146px!important;right:auto!important;bottom:auto!important;min-width:100px!important;min-height:40px!important;margin:0!important;z-index:1600!important}
+ .work.navigator-open>#navigatorToggle.navigator-toggle{left:auto!important;right:8px!important;top:146px!important}
+ #navigator-panel>.section #navigatorToggle.navigator-toggle{position:static!important;min-width:64px!important;min-height:38px!important;margin:0 0 0 auto!important}
+}
+
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -591,7 +614,7 @@ document.addEventListener("keydown",event=>{
   nav.id='navigator-panel';
   var toggle=document.getElementById('navigatorToggle');
   if(!toggle){toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';}
-  function isMobile(){return window.matchMedia('(max-width:900px)').matches;}
+  function isMobile(){return window.matchMedia('(max-width:900px), (pointer:coarse)').matches;}
   function sync(){
    var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
    var heading=nav.querySelector('.section');
