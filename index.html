@@ -639,7 +639,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 #contextToolbar .context-properties>.field,#contextToolbar .context-properties>.field-row{flex:0 0 auto!important;min-width:max-content!important}
 
 /* Palette geometry only: leave existing dock grid layout rules untouched. */
-.work>.arq-palette-floating{position:absolute!important;display:flex!important;grid-column:auto!important;grid-row:auto!important;inset:auto!important;left:var(--arq-float-left,4px)!important;top:var(--arq-float-top,4px)!important;right:auto!important;bottom:auto!important;width:var(--arq-float-width,280px)!important;height:var(--arq-float-height,360px)!important;min-width:0!important;min-height:0!important;max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;z-index:1800!important;overflow:auto!important;box-sizing:border-box!important;box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:5px!important}
+.work>.arq-palette-floating{position:absolute!important;display:flex!important;flex-direction:column!important;grid-column:auto!important;grid-row:auto!important;inset:auto!important;left:var(--arq-float-left,4px)!important;top:var(--arq-float-top,4px)!important;right:auto!important;bottom:auto!important;width:var(--arq-float-width,280px)!important;height:var(--arq-float-height,360px)!important;min-width:0!important;min-height:0!important;max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;z-index:1800!important;overflow:auto!important;box-sizing:border-box!important;box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:5px!important}
 .work>#toolbox.arq-palette-floating{min-width:0!important}
 .work>.arq-palette-floating>.toolbox-title,.work>.arq-palette-floating>.section{position:sticky;top:0;z-index:3;cursor:grab;touch-action:none}
 .arq-palette-drag-handle{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
@@ -654,6 +654,10 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  #toolbox .toolbox-title,.work>.navigator>.section{min-height:28px!important;display:block!important;visibility:visible!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;white-space:nowrap}
  .arq-dock-resize{min-width:12px;min-height:12px}
 }
+
+/* Navigator keeps its native stacked section/tree/tab layout when floating; only Toolbox is a vertical flex palette. */
+.work>.navigator.arq-palette-floating{display:block!important;flex-direction:initial!important;}
+.work>#toolbox.arq-palette-floating{display:flex!important;flex-direction:column!important;}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
