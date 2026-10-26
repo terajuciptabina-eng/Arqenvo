@@ -625,7 +625,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 #contextToolbar .context-properties{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
 #contextToolbar .context-properties>.field,#contextToolbar .context-properties>.field-row{flex:0 0 auto!important;min-width:max-content!important}
 
-/* Palette manager geometry: keep normal docking rules intact and bound floating panels. */
+/* Palette geometry only: leave existing dock grid layout rules untouched. */
 .work>.arq-palette-floating{position:absolute!important;display:flex!important;grid-column:auto!important;grid-row:auto!important;inset:auto!important;left:var(--arq-float-left,4px)!important;top:var(--arq-float-top,4px)!important;right:auto!important;bottom:auto!important;width:var(--arq-float-width,280px)!important;height:var(--arq-float-height,360px)!important;min-width:0!important;min-height:0!important;max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;z-index:1800!important;overflow:auto!important;box-sizing:border-box!important;box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:5px!important}
 .work>#toolbox.arq-palette-floating{min-width:0!important}
 .work>.arq-palette-floating>.toolbox-title,.work>.arq-palette-floating>.section{position:sticky;top:0;z-index:3;cursor:grab;touch-action:none}
