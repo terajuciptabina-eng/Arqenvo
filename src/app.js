@@ -948,9 +948,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(mobile()||e.target.closest('button,input,select,a'))return;
    if(e.pointerType==='mouse'&&e.button!==0)return;
    const r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
-   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,originX:r.left-wr.left,originY:r.top-wr.top,moved:false};
-   e.preventDefault();
-   try{handle.setPointerCapture(e.pointerId)}catch{}
+   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false};
+   e.preventDefault();try{handle.setPointerCapture(e.pointerId)}catch{}
   };
   const move=e=>{
    if(!drag||drag.id!==e.pointerId)return;
@@ -962,22 +961,26 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
     applyGrid();save(key);
    }
    const wr=work.getBoundingClientRect(),s=state[key];
-   s.x=clamp(e.clientX-wr.left-drag.ox,4,Math.max(4,work.clientWidth-panel.offsetWidth-4));
-   s.y=clamp(e.clientY-wr.top-drag.oy,4,Math.max(4,work.clientHeight-panel.offsetHeight-4));
+   s.x=clamp(e.clientX-wr.left-drag.ox,4,Math.max(4,work.clientWidth-s.w-4));
+   s.y=clamp(e.clientY-wr.top-drag.oy,4,Math.max(4,work.clientHeight-s.h-4));
    boundFloat(key);
   };
-  const removeCapture=()=>{window.removeEventListener('pointermove',move,true);window.removeEventListener('pointerup',finish,true);window.removeEventListener('pointercancel',cancel,true)};
   const finish=e=>{
    if(!drag||drag.id!==e.pointerId)return;
-   const a=drag;drag=null;removeCapture();if(!a.moved)return;
-   const wr=work.getBoundingClientRect(),x=e.clientX-wr.left,y=e.clientY-wr.top,w=work.clientWidth,h=work.clientHeight,edge=28;let side=null;
-   if(y>h-edge)side='bottom';else if(x<edge)side='left';else if(x>w-edge)side='right';
-   if(side)setMode(key,'dock',side);
-   else{const r=panel.getBoundingClientRect(),s=state[key];s.w=r.width;s.h=r.height;save(key)}
-   applyGrid();save(key);
+   const a=drag;drag=null;if(!a.moved)return;
+   // Dock detection uses the drop point, not a clamped panel edge.
+   const wr=work.getBoundingClientRect(),x=e.clientX-wr.left,y=e.clientY-wr.top,w=work.clientWidth,h=work.clientHeight,edge=28;
+   let side=null;
+   if(y>=h-edge)side='bottom';else if(x<=edge)side='left';else if(x>=w-edge)side='right';
+   if(side){setMode(key,'dock',side);return}
+   const r=panel.getBoundingClientRect(),s=state[key];s.w=r.width;s.h=r.height;applyGrid();save(key);
   };
-  const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;const moved=drag.moved;drag=null;removeCapture();if(moved){applyGrid();save(key)}};
+  const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;applyGrid();save(key)};
   handle.addEventListener('pointerdown',down);
+  handle.addEventListener('pointermove',move);
+  handle.addEventListener('pointerup',finish);
+  handle.addEventListener('pointercancel',cancel);
+  // Pointer capture retargets the event stream; window capture keeps dragging reliable across both panel edges.
   window.addEventListener('pointermove',move,true);
   window.addEventListener('pointerup',finish,true);
   window.addEventListener('pointercancel',cancel,true);
