@@ -713,6 +713,29 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  #navigator-panel>.section{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:34px!important;gap:8px!important}
  #navigator-panel>.section>#navigatorToggle.navigator-toggle{width:auto!important;max-width:none!important;flex:0 0 auto!important}
 }
+
+/* Root fix: a top-docked Navigator occupies its own grid row; it must never overlay the canvas. */
+@media (min-width:901px) and (pointer:fine){
+ .work.dock-navigator-top{
+  grid-template-columns:var(--palette-toolbox-w,156px) minmax(0,1fr) var(--palette-inspector-w,238px)!important;
+  grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)!important;
+ }
+ .work.dock-navigator-top>.navigator{grid-column:1 / -1!important;grid-row:1!important;min-width:0!important;min-height:0!important;max-height:none!important;position:relative!important;inset:auto!important;width:auto!important;height:auto!important;overflow:auto!important}
+ .work.dock-navigator-top>#toolbox{grid-column:1!important;grid-row:2!important;min-height:0!important;max-height:none!important}
+ .work.dock-navigator-top>.workspace{grid-column:2!important;grid-row:2!important;min-height:0!important}
+ .work.dock-navigator-top>.inspector{grid-column:3!important;grid-row:2!important;min-height:0!important}
+}
+@media (pointer:coarse) and (min-width:601px){
+ .work.dock-navigator-top{
+  grid-template-columns:48px minmax(0,1fr) 250px!important;
+  grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)!important;
+ }
+ .work.dock-navigator-top>.navigator{grid-column:1 / -1!important;grid-row:1!important;min-width:0!important;min-height:0!important;max-height:none!important;position:relative!important;inset:auto!important;width:auto!important;height:auto!important;overflow:auto!important}
+ .work.dock-navigator-top>#toolbox{grid-column:1!important;grid-row:2!important;min-height:0!important}
+ .work.dock-navigator-top>.workspace{grid-column:2!important;grid-row:2!important;min-width:0!important;min-height:0!important}
+ .work.dock-navigator-top>.inspector{grid-column:3!important;grid-row:2!important;min-height:0!important}
+}
+
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
