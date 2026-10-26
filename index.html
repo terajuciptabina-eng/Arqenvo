@@ -575,25 +575,25 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 /* On tablets, keep the side palette widths practical and the canvas as the flexible track. */
 @media(pointer:coarse) and (min-width:601px){
  /* Keep the show/hide control at the far end of the Navigator heading, not over its drag target. */
- .work:not(.navigator-hidden)>#navigatorToggle.navigator-toggle{left:calc(48px + var(--palette-nav-w,238px) - 84px)!important;top:0!important}
+ .work:not(.navigator-hidden)>#navigatorToggle.navigator-toggle{left:calc(var(--palette-toolbox-w,48px) + var(--palette-nav-w,238px) - 84px)!important;top:0!important}
  /* Archicad-like tablet order: Toolbox, Navigator, drawing workspace, Inspector. */
- .work{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr)}
+ .work{grid-template-columns:var(--palette-toolbox-w,48px) var(--palette-nav-w) minmax(180px,1fr)}
  .work>#toolbox{grid-column:1;grid-row:1}
  .work>.navigator{grid-column:2;grid-row:1}
  .work>.workspace{grid-column:3;grid-row:1}
  .work>.inspector{grid-column:4;grid-row:1}
- .work.dock-toolbox-right{grid-template-columns:minmax(180px,1fr) 48px var(--palette-nav-w)}
+ .work.dock-toolbox-right{grid-template-columns:minmax(180px,1fr) var(--palette-toolbox-w,48px) var(--palette-nav-w)}
  .work.dock-toolbox-right>#toolbox{grid-column:2}.work.dock-toolbox-right>.workspace{grid-column:1}
- .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr)}
+ .work.dock-navigator-left{grid-template-columns:var(--palette-toolbox-w,48px) var(--palette-nav-w) minmax(180px,1fr)}
  .work.dock-navigator-left>.navigator{grid-column:2}.work.dock-navigator-left>.workspace{grid-column:3}
- .work.dock-navigator-right{grid-template-columns:48px minmax(180px,1fr) var(--palette-nav-w)}
+ .work.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w,48px) minmax(180px,1fr) var(--palette-nav-w)}
  .work.dock-navigator-right>.navigator{grid-column:3}.work.dock-navigator-right>.workspace{grid-column:2}
  /* A floating panel leaves the grid and its old dock track is reclaimed. */
  .work.toolbox-floating:not(.navigator-floating){grid-template-columns:var(--palette-nav-w) minmax(180px,1fr) var(--palette-inspector-w)}
  .work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:1}
  .work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:2}
  .work.toolbox-floating:not(.navigator-floating)>.inspector{grid-column:3}
- .work.navigator-floating:not(.toolbox-floating){grid-template-columns:48px minmax(180px,1fr) var(--palette-inspector-w)}
+ .work.navigator-floating:not(.toolbox-floating){grid-template-columns:var(--palette-toolbox-w,48px) minmax(180px,1fr) var(--palette-inspector-w)}
  .work.navigator-floating:not(.toolbox-floating)>.workspace{grid-column:2}
  .work.navigator-floating:not(.toolbox-floating)>.inspector{grid-column:3}
  .work.toolbox-floating.navigator-floating{grid-template-columns:minmax(180px,1fr) var(--palette-inspector-w)}
@@ -601,26 +601,26 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work.toolbox-floating.navigator-floating>.inspector{grid-column:2}
 
  /* Inspector is hidden on touch/tablet layouts. Remove its grid track too; a hidden grid child must not leave an empty right-hand column. */
- .work{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr)!important}
+ .work{grid-template-columns:var(--palette-toolbox-w,48px) var(--palette-nav-w) minmax(180px,1fr)!important}
  .work>#toolbox{grid-column:1!important;grid-row:1!important}
  .work>.navigator{grid-column:2!important;grid-row:1!important}
  .work>.workspace{grid-column:3!important;grid-row:1!important}
  .work>.inspector{display:none!important}
- .work.dock-toolbox-right{grid-template-columns:minmax(180px,1fr) 48px var(--palette-nav-w)!important}
+ .work.dock-toolbox-right{grid-template-columns:minmax(180px,1fr) var(--palette-toolbox-w,48px) var(--palette-nav-w)!important}
  .work.dock-toolbox-right>#toolbox{grid-column:2!important}.work.dock-toolbox-right>.workspace{grid-column:1!important}
- .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr)!important}
+ .work.dock-navigator-left{grid-template-columns:var(--palette-toolbox-w,48px) var(--palette-nav-w) minmax(180px,1fr)!important}
  .work.dock-navigator-left>.navigator{grid-column:2!important}.work.dock-navigator-left>.workspace{grid-column:3!important}
- .work.dock-navigator-right{grid-template-columns:48px minmax(180px,1fr) var(--palette-nav-w)!important}
+ .work.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w,48px) minmax(180px,1fr) var(--palette-nav-w)!important}
  .work.dock-navigator-right>.navigator{grid-column:3!important}.work.dock-navigator-right>.workspace{grid-column:2!important}
  /* Hiding Navigator must collapse its grid track as well, otherwise its old width becomes a blank strip. */
- .work.navigator-hidden{grid-template-columns:48px 0 minmax(180px,1fr)!important}
+ .work.navigator-hidden{grid-template-columns:var(--palette-toolbox-w,48px) 0 minmax(180px,1fr)!important}
  .work.navigator-hidden>#toolbox{grid-column:1!important}
  .work.navigator-hidden>.navigator{grid-column:2!important;width:0!important;min-width:0!important;display:none!important}
  .work.navigator-hidden>.workspace{grid-column:3!important}
  .work.toolbox-floating:not(.navigator-floating){grid-template-columns:var(--palette-nav-w) minmax(180px,1fr)!important}
  .work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:1!important}
  .work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:2!important}
- .work.navigator-floating:not(.toolbox-floating){grid-template-columns:48px minmax(180px,1fr)!important}
+ .work.navigator-floating:not(.toolbox-floating){grid-template-columns:var(--palette-toolbox-w,48px) minmax(180px,1fr)!important}
  .work.navigator-floating:not(.toolbox-floating)>.workspace{grid-column:2!important}
  .work.toolbox-floating.navigator-floating{grid-template-columns:minmax(180px,1fr)!important}
  .work.toolbox-floating.navigator-floating>.workspace{grid-column:1!important}
