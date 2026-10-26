@@ -460,7 +460,12 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work>#navigatorToggle.navigator-toggle{display:inline-flex;position:absolute;left:52px;top:8px;right:auto;z-index:1600}
  .work.navigator-hidden>#navigatorToggle.navigator-toggle{visibility:visible}
 }
-@media (min-width:901px) and (pointer:fine){#navigatorToggle.navigator-toggle{display:none!important}}
+@media (min-width:901px) and (pointer:fine){
+ #navigatorToggle.navigator-toggle{display:none!important}
+ .work.navigator-hidden>.navigator{display:none!important}
+ .work.navigator-hidden>.workspace{grid-column:2;grid-row:1 / span 2}
+ .work.navigator-hidden>.inspector{grid-column:3;grid-row:2;display:block}
+}
 @media (max-width:900px) and (pointer:fine){#navigatorToggle.navigator-toggle{display:none!important}}
 @media (max-width:600px) and (pointer:coarse){
  .work{position:relative;grid-template-columns:48px minmax(0,1fr);grid-template-rows:minmax(0,1fr);min-height:0}
