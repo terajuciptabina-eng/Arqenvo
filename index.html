@@ -533,11 +533,6 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.dock-navigator-top>.inspector{grid-column:3;grid-row:2}
 }
 @media (pointer:coarse) and (min-width:601px){
- .work.dock-navigator-top{grid-template-columns:48px minmax(0,1fr) 250px;grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)}
- .work.dock-navigator-top>.navigator{grid-column:1 / -1;grid-row:1;position:relative;inset:auto;width:auto;height:auto;max-height:none;min-width:0;min-height:0;overflow:auto}
- .work.dock-navigator-top>#toolbox{grid-column:1;grid-row:2}
- .work.dock-navigator-top>.workspace{grid-column:2;grid-row:2;min-width:0;min-height:0}
- .work.dock-navigator-top>.inspector{grid-column:3;grid-row:2;min-height:0}
 }
 
 .work.dock-toolbox-bottom.dock-navigator-bottom{grid-template-columns:minmax(0,1fr) var(--palette-inspector-w);grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h,220px) var(--palette-nav-h,240px)}
@@ -678,28 +673,35 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work.dock-toolbox-top>.arq-dock-resize.toolbox,.work.dock-navigator-top>.arq-dock-resize.navigator{left:0;right:0;width:auto;height:10px;cursor:ns-resize}
 .work.dock-toolbox-top>.arq-dock-resize.toolbox,.work.dock-navigator-top>.arq-dock-resize.navigator{top:auto;bottom:-5px}
 @media (min-width:901px) and (pointer:fine){
- .work.dock-toolbox-top,.work.dock-navigator-top{grid-template-rows:var(--palette-toolbox-h,220px) minmax(0,1fr) minmax(170px,.58fr)!important}
+ .work.dock-toolbox-top{grid-template-rows:var(--palette-toolbox-h,220px) minmax(0,1fr) minmax(170px,.58fr)!important}
  .work.dock-toolbox-top>#toolbox{grid-column:1 / -1!important;grid-row:1!important;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;overflow:auto}
- .work.dock-toolbox-top>.workspace,.work.dock-navigator-top>.workspace{grid-column:2!important;grid-row:2 / span 2!important}
- .work.dock-toolbox-top>.navigator,.work.dock-navigator-top>.navigator{grid-column:3!important;grid-row:2!important}
- .work.dock-toolbox-top>.inspector,.work.dock-navigator-top>.inspector{grid-column:3!important;grid-row:3!important}
- .work.dock-navigator-top{grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr) minmax(170px,.58fr)!important}
- .work.dock-navigator-top>.navigator{grid-column:1 / -1!important;grid-row:1!important}
- .work.dock-navigator-top>#toolbox{grid-column:1!important;grid-row:2 / span 2!important}
- .work.dock-navigator-top>.workspace{grid-column:2!important;grid-row:2 / span 2!important}
- .work.dock-navigator-top>.inspector{grid-column:3!important;grid-row:3!important}
+ .work.dock-toolbox-top>.workspace{grid-column:2!important;grid-row:2 / span 2!important}
+ .work.dock-toolbox-top>.navigator{grid-column:3!important;grid-row:2!important}
+ .work.dock-toolbox-top>.inspector{grid-column:3!important;grid-row:3!important}
 }
 @media (pointer:coarse) and (min-width:601px){
- .work.dock-toolbox-top,.work.dock-navigator-top{grid-template-rows:var(--palette-toolbox-h,220px) minmax(0,1fr)!important}
+ .work.dock-toolbox-top{grid-template-rows:var(--palette-toolbox-h,220px) minmax(0,1fr)!important}
  .work.dock-toolbox-top>#toolbox{grid-column:1 / -1!important;grid-row:1!important;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;overflow:auto}
  .work.dock-toolbox-top>.navigator{grid-column:2!important;grid-row:2!important}
  .work.dock-toolbox-top>.workspace{grid-column:3!important;grid-row:2!important}
  .work.dock-toolbox-top>.inspector{grid-column:4!important;grid-row:2!important}
- .work.dock-navigator-top{grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)!important}
- .work.dock-navigator-top>.navigator{grid-column:1 / -1!important;grid-row:1!important}
- .work.dock-navigator-top>#toolbox{grid-column:1!important;grid-row:2!important}
- .work.dock-navigator-top>.workspace{grid-column:3!important;grid-row:2!important}
- .work.dock-navigator-top>.inspector{grid-column:4!important;grid-row:2!important}
+}
+
+
+/* Canonical top-docked Navigator geometry. */
+@media (min-width:901px) and (pointer:fine){
+ .work.dock-navigator-top{grid-template-columns:var(--palette-toolbox-w,156px) minmax(0,1fr) var(--palette-inspector-w,238px);grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)}
+ .work.dock-navigator-top>.navigator{grid-column:1 / -1;grid-row:1;position:relative;inset:auto;width:auto;height:auto;max-height:none;min-width:0;min-height:0;overflow:auto}
+ .work.dock-navigator-top>#toolbox{grid-column:1;grid-row:2}
+ .work.dock-navigator-top>.workspace{grid-column:2;grid-row:2}
+ .work.dock-navigator-top>.inspector{grid-column:3;grid-row:2}
+}
+@media (pointer:coarse) and (min-width:601px){
+ .work.dock-navigator-top{grid-template-columns:48px minmax(0,1fr) 250px;grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)}
+ .work.dock-navigator-top>.navigator{grid-column:1 / -1;grid-row:1;position:relative;inset:auto;width:auto;height:auto;max-height:none;min-width:0;min-height:0;overflow:auto}
+ .work.dock-navigator-top>#toolbox{grid-column:1;grid-row:2}
+ .work.dock-navigator-top>.workspace{grid-column:2;grid-row:2;min-width:0;min-height:0}
+ .work.dock-navigator-top>.inspector{grid-column:3;grid-row:2;min-height:0}
 }
 
 /* Palette geometry only: leave existing dock grid layout rules untouched. */
