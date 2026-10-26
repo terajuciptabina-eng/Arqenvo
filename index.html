@@ -500,6 +500,10 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media (min-width:901px) and (pointer:fine){.work.toolbox-floating{grid-template-columns:0 minmax(0,1fr) var(--inspector-width,238px)!important}}
 @media (pointer:coarse) and (min-width:601px){.work.toolbox-floating{grid-template-columns:0 var(--navigator-width,220px) minmax(0,1fr) var(--inspector-width,250px)!important}.work.navigator-floating{grid-template-columns:var(--toolbox-width,48px) 0 minmax(0,1fr) var(--inspector-width,250px)!important}.work.toolbox-floating.navigator-floating,.work.navigator-hidden.toolbox-floating{grid-template-columns:0 0 minmax(0,1fr) var(--inspector-width,250px)!important}}
 
+/* Dedicated, always-visible Info Box heading in the Ribbon. */
+.info-box-heading{display:flex!important;visibility:visible!important;align-items:center;justify-content:center;flex:0 0 auto;align-self:stretch;padding:0 10px;background:#dce8ed;border:1px solid #a9bdc6;border-radius:4px;color:#203e4b;font-size:10px;font-weight:800;letter-spacing:.06em;white-space:nowrap;line-height:1}
+@media (pointer:coarse){.info-box-heading{padding:0 7px;font-size:9px;letter-spacing:.02em}}
+@media (max-width:760px){.info-box-heading{padding:0 6px;font-size:8px;letter-spacing:0}}
 /* Keep the Info Box / Settings label visibly anchored in the contextual ribbon on desktop and touch devices. */
 .context-identity .info-box-label{display:block!important;visibility:visible!important;font-size:9px;line-height:1.2;letter-spacing:.08em;font-weight:800;color:#334b59;padding-bottom:2px}
 @media (pointer:coarse){.context-identity .info-box-label{display:block!important;visibility:visible!important;font-size:8px;letter-spacing:.04em}}
@@ -545,7 +549,8 @@ document.addEventListener("keydown",event=>{
 <div class="ribbon-group verify-group"><div class="ribbon-buttons"><button id="validateModel" title="Validate Model" aria-label="Validate Model"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>Validate</span></button></div><small>MODEL</small></div>
 <span class="ribbon-spacer"></span>
 </header>
-<div class="context-toolbar" id="contextToolbar" aria-label="Contextual tool settings">
+<div class="context-toolbar" id="contextToolbar" aria-label="Info Box and contextual tool settings">
+  <div class="info-box-heading" aria-label="Info Box / Settings">INFO BOX / SETTINGS</div>
   <div class="context-identity"><span class="context-eyebrow info-box-label">INFO BOX / SETTINGS</span><strong id="contextToolIcon">↖</strong><div><b id="contextToolName">Arrow / Select</b><small id="contextToolHint">Select, inspect and edit model elements</small></div></div>
   <button id="mobileMagicWand" type="button" aria-pressed="false" title="Activate Magic Wand for one click">✳ Magic Wand</button>
   <div id="mobile3dZoom" aria-label="3D touch zoom"><button id="mobile3dZoomOut" type="button" aria-label="Zoom out 3D" title="Zoom out">−</button><span id="mobile3dZoomReadout">100%</span><button id="mobile3dZoomIn" type="button" aria-label="Zoom in 3D" title="Zoom in">＋</button><button id="mobile3dFit" type="button" aria-label="Fit 3D model">Fit</button></div>
