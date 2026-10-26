@@ -554,11 +554,11 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work>.arq-palette-floating>.arq-floating-resize.edge-e,.work>.arq-palette-floating>.arq-floating-resize.edge-w{border-left:1px solid #9aa7b1;border-right:1px solid #9aa7b1}
 .work>.arq-palette-floating>.arq-floating-resize.edge-ne,.work>.arq-palette-floating>.arq-floating-resize.edge-nw,.work>.arq-palette-floating>.arq-floating-resize.edge-sw{border:1px solid #9aa7b1;border-radius:3px;background:#e7ecef!important}
 /* Left/right docking: the palette order changes; the canvas always occupies the remaining track. */
-.work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w) var(--palette-nav-w) var(--palette-inspector-w)}
+.work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w) var(--palette-nav-w)}
 .work.dock-toolbox-right>#toolbox{grid-column:2}.work.dock-toolbox-right>.workspace{grid-column:1}
-.work.dock-navigator-left{grid-template-columns:var(--palette-toolbox-w) var(--palette-nav-w) minmax(0,1fr) var(--palette-inspector-w)}
+.work.dock-navigator-left{grid-template-columns:var(--palette-toolbox-w) var(--palette-nav-w) minmax(0,1fr)}
 .work.dock-navigator-left>.navigator{grid-column:2}.work.dock-navigator-left>.workspace{grid-column:3}
-.work.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
+.work.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w)}
 .work.dock-navigator-right>.navigator{grid-column:3}.work.dock-navigator-right>.workspace{grid-column:2}
 /* Top and bottom docking become real workspace rows, not overlays on the drawing. */
 .work.dock-toolbox-top{grid-template-rows:var(--palette-toolbox-h) minmax(0,1fr)}
@@ -583,16 +583,16 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  /* Keep the show/hide control at the far end of the Navigator heading, not over its drag target. */
  .work:not(.navigator-hidden)>#navigatorToggle.navigator-toggle{left:calc(48px + var(--palette-nav-w,238px) - 84px)!important;top:0!important}
  /* Archicad-like tablet order: Toolbox, Navigator, drawing workspace, Inspector. */
- .work{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr) var(--palette-inspector-w)}
+ .work{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr)}
  .work>#toolbox{grid-column:1;grid-row:1}
  .work>.navigator{grid-column:2;grid-row:1}
  .work>.workspace{grid-column:3;grid-row:1}
  .work>.inspector{grid-column:4;grid-row:1}
- .work.dock-toolbox-right{grid-template-columns:minmax(180px,1fr) 48px var(--palette-nav-w) var(--palette-inspector-w)}
+ .work.dock-toolbox-right{grid-template-columns:minmax(180px,1fr) 48px var(--palette-nav-w)}
  .work.dock-toolbox-right>#toolbox{grid-column:2}.work.dock-toolbox-right>.workspace{grid-column:1}
- .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr) var(--palette-inspector-w)}
+ .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr)}
  .work.dock-navigator-left>.navigator{grid-column:2}.work.dock-navigator-left>.workspace{grid-column:3}
- .work.dock-navigator-right{grid-template-columns:48px minmax(180px,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
+ .work.dock-navigator-right{grid-template-columns:48px minmax(180px,1fr) var(--palette-nav-w)}
  .work.dock-navigator-right>.navigator{grid-column:3}.work.dock-navigator-right>.workspace{grid-column:2}
  /* A floating panel leaves the grid and its old dock track is reclaimed. */
  .work.toolbox-floating:not(.navigator-floating){grid-template-columns:var(--palette-nav-w) minmax(180px,1fr) var(--palette-inspector-w)}
