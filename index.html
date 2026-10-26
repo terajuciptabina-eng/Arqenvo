@@ -500,7 +500,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work{--palette-toolbox-w:156px;--palette-nav-w:238px;--palette-inspector-w:238px;position:relative;overflow:hidden;grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w);grid-template-rows:minmax(0,1fr)}
 .work>#toolbox{grid-column:1;grid-row:1;min-width:0;min-height:0;overflow:auto}
 .work>.workspace{grid-column:2;grid-row:1;min-width:0;min-height:0}
-.work>.navigator{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto}
+.work>.navigator{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;box-sizing:border-box;background:#f4f5f6;color:#26313b}
 .work>.inspector{grid-column:4;grid-row:1;min-width:0;min-height:0;overflow:auto}
 .work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w) var(--palette-nav-w) var(--palette-inspector-w)}
 .work.dock-toolbox-right>#toolbox{grid-column:2;grid-row:1}
@@ -524,6 +524,22 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work.dock-navigator-bottom>.navigator{grid-column:1 / span 3;grid-row:2;min-height:120px;max-height:var(--palette-nav-h,240px)}
 .work.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
 .work.dock-navigator-bottom>.inspector{grid-column:3;grid-row:1}
+/* Top docking is part of the canonical workspace grid, not a floating-palette override. */
+@media (min-width:901px) and (pointer:fine){
+ .work.dock-navigator-top{grid-template-columns:var(--palette-toolbox-w,156px) minmax(0,1fr) var(--palette-inspector-w,238px);grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)}
+ .work.dock-navigator-top>.navigator{grid-column:1 / -1;grid-row:1;position:relative;inset:auto;width:auto;height:auto;max-height:none;min-width:0;min-height:0;overflow:auto}
+ .work.dock-navigator-top>#toolbox{grid-column:1;grid-row:2}
+ .work.dock-navigator-top>.workspace{grid-column:2;grid-row:2}
+ .work.dock-navigator-top>.inspector{grid-column:3;grid-row:2}
+}
+@media (pointer:coarse) and (min-width:601px){
+ .work.dock-navigator-top{grid-template-columns:48px minmax(0,1fr) 250px;grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)}
+ .work.dock-navigator-top>.navigator{grid-column:1 / -1;grid-row:1;position:relative;inset:auto;width:auto;height:auto;max-height:none;min-width:0;min-height:0;overflow:auto}
+ .work.dock-navigator-top>#toolbox{grid-column:1;grid-row:2}
+ .work.dock-navigator-top>.workspace{grid-column:2;grid-row:2;min-width:0;min-height:0}
+ .work.dock-navigator-top>.inspector{grid-column:3;grid-row:2;min-height:0}
+}
+
 .work.dock-toolbox-bottom.dock-navigator-bottom{grid-template-columns:minmax(0,1fr) var(--palette-inspector-w);grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h,220px) var(--palette-nav-h,240px)}
 .work.dock-toolbox-bottom.dock-navigator-bottom>#toolbox{grid-column:1;grid-row:2}
 .work.dock-toolbox-bottom.dock-navigator-bottom>.navigator{grid-column:1 / span 2;grid-row:3}
@@ -712,53 +728,6 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media(pointer:coarse) and (min-width:601px){
  #navigator-panel>.section{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:34px!important;gap:8px!important}
  #navigator-panel>.section>#navigatorToggle.navigator-toggle{width:auto!important;max-width:none!important;flex:0 0 auto!important}
-}
-
-/* Root fix: a top-docked Navigator occupies its own grid row; it must never overlay the canvas. */
-@media (min-width:901px) and (pointer:fine){
- .work.dock-navigator-top{
-  grid-template-columns:var(--palette-toolbox-w,156px) minmax(0,1fr) var(--palette-inspector-w,238px)!important;
-  grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)!important;
- }
- .work.dock-navigator-top>.navigator{grid-column:1 / -1!important;grid-row:1!important;min-width:0!important;min-height:0!important;max-height:none!important;position:relative!important;inset:auto!important;width:auto!important;height:auto!important;overflow:auto!important}
- .work.dock-navigator-top>#toolbox{grid-column:1!important;grid-row:2!important;min-height:0!important;max-height:none!important}
- .work.dock-navigator-top>.workspace{grid-column:2!important;grid-row:2!important;min-height:0!important}
- .work.dock-navigator-top>.inspector{grid-column:3!important;grid-row:2!important;min-height:0!important}
-}
-@media (pointer:coarse) and (min-width:601px){
- .work.dock-navigator-top{
-  grid-template-columns:48px minmax(0,1fr) 250px!important;
-  grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)!important;
- }
- .work.dock-navigator-top>.navigator{grid-column:1 / -1!important;grid-row:1!important;min-width:0!important;min-height:0!important;max-height:none!important;position:relative!important;inset:auto!important;width:auto!important;height:auto!important;overflow:auto!important}
- .work.dock-navigator-top>#toolbox{grid-column:1!important;grid-row:2!important;min-height:0!important}
- .work.dock-navigator-top>.workspace{grid-column:2!important;grid-row:2!important;min-width:0!important;min-height:0!important}
- .work.dock-navigator-top>.inspector{grid-column:3!important;grid-row:2!important;min-height:0!important}
-}
-
-
-/* Floating Navigator must remain an opaque palette after drag; transparent descendants inherit this solid surface. */
-.work>.navigator.arq-palette-floating{
- background:#f4f5f6!important;
- color:#26313b!important;
- opacity:1!important;
- isolation:isolate!important;
- backdrop-filter:none!important;
- -webkit-backdrop-filter:none!important;
- box-shadow:0 8px 28px #15233135!important;
-}
-.work>.navigator.arq-palette-floating>.section{
- background:#eef1f3!important;
- color:#596671!important;
- border-bottom:1px solid #c6cbd1!important;
-}
-.work>.navigator.arq-palette-floating>.nav-tabs{
- background:#f4f5f6!important;
-}
-.work>.navigator.arq-palette-floating>.nav-subtitle,
-.work>.navigator.arq-palette-floating>.tree,
-.work>.navigator.arq-palette-floating>[data-navpanel]{
- background-color:transparent;
 }
 
 </style></head>
