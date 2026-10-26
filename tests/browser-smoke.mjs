@@ -121,14 +121,23 @@ try {
   await page.mouse.move(cx, cy);
   await page.keyboard.press("Tab");
   await page.waitForTimeout(150);
-  // Direction-dependent area selection: drag left-to-right around one wall segment.
-  await page.mouse.move(cx - 100, cy - 10);
+  // Marquee selection is a two-step workflow: define the rectangle, then select its contents.
+  await page.locator('[data-tool="marquee"]').click();
+  await page.waitForFunction(() => document.querySelector('[data-tool="marquee"]')?.classList.contains("active"));
+  await page.waitForTimeout(100);
+  rect = await canvas.boundingBox();
+  assert.ok(rect, "Canvas must remain visible for marquee selection");
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
+  await page.mouse.move(cx - 120, cy - 18);
   await page.mouse.down();
-  await page.mouse.move(cx + 100, cy + 10, { steps: 5 });
+  await page.mouse.move(cx + 120, cy + 18, { steps: 5 });
   await page.mouse.up();
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"));
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Marquee area defined"));
+  await page.keyboard.press(process.platform === "darwin" ? "Meta+a" : "Control+a");
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected in marquee"));
   assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
-    "Area selection should select at least one element");
+    "Marquee selection should select at least one element");
 
   // Existing element edits must end on Enter and remain fixed when the pointer moves.
   const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
