@@ -932,7 +932,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  const coarse=()=>window.matchMedia('(pointer: coarse) and (min-width: 601px)').matches;
  const desktop=()=>window.matchMedia('(min-width: 901px) and (pointer: fine)').matches;
  const read=(key,fallback,min,max)=>{try{const n=Number(localStorage.getItem('arqenvo-'+key));return Number.isFinite(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
- let toolboxWidth=read('toolbox-width',156,124,280);
+ let toolboxWidth=read('toolbox-width',coarse()?48:156,coarse()?48:124,coarse()?180:280);
  let navigatorWidth=read('navigator-width',220,190,360);
  let inspectorWidth=read('inspector-width',238,200,360);
  const apply=()=>{
@@ -940,7 +940,8 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    work.style.setProperty('--navigator-width',navigatorWidth+'px');
    work.style.setProperty('--inspector-width',inspectorWidth+'px');
    const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');
-   if(t)t.style.left=(desktop()?toolboxWidth:48)+'px';
+   if(t)t.style.left=(desktop()||coarse()?toolboxWidth:48)+'px';
+   work.classList.toggle('toolbox-expanded',coarse()&&toolboxWidth>72);
    if(n){
      if(coarse()){n.style.left=(48+navigatorWidth)+'px';n.style.right='auto'}
      else {n.style.left='auto';n.style.right=inspectorWidth+'px'}
@@ -956,7 +957,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
      e.preventDefault();el.setPointerCapture?.(e.pointerId);
      const startX=e.clientX, startToolbox=toolboxWidth,startNav=navigatorWidth,startInspector=inspectorWidth;
      const move=ev=>{
-       if(kind==='toolbox'&&desktop())toolboxWidth=Math.max(124,Math.min(280,startToolbox+ev.clientX-startX));
+       if(kind==='toolbox'&&(desktop()||coarse()))toolboxWidth=desktop()?Math.max(124,Math.min(280,startToolbox+ev.clientX-startX)):Math.max(48,Math.min(180,startToolbox+ev.clientX-startX));
        else if(kind==='navigator'&&coarse())navigatorWidth=Math.max(190,Math.min(360,startNav+ev.clientX-startX));
        else if(kind==='navigator'&&desktop())inspectorWidth=Math.max(200,Math.min(360,startInspector-(ev.clientX-startX)));
        apply();
@@ -967,7 +968,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    el.addEventListener('keydown',e=>{
      if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();
      const delta=e.key==='ArrowRight'?10:-10;
-     if(kind==='toolbox'&&desktop())toolboxWidth=Math.max(124,Math.min(280,toolboxWidth+delta));
+     if(kind==='toolbox'&&(desktop()||coarse()))toolboxWidth=desktop()?Math.max(124,Math.min(280,toolboxWidth+delta)):Math.max(48,Math.min(180,toolboxWidth+delta));
      else if(kind==='navigator'&&coarse())navigatorWidth=Math.max(190,Math.min(360,navigatorWidth+delta));
      else if(kind==='navigator'&&desktop())inspectorWidth=Math.max(200,Math.min(360,inspectorWidth-delta));
      apply();try{localStorage.setItem('arqenvo-toolbox-width',String(toolboxWidth));localStorage.setItem('arqenvo-navigator-width',String(navigatorWidth));localStorage.setItem('arqenvo-inspector-width',String(inspectorWidth))}catch{}
