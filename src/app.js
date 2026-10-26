@@ -925,32 +925,32 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
 
 /* Workspace palette manager: resize, move, float, dock, and persist Toolbox/Navigator layout. */
 (()=>{
- const work=document.querySelector('.work'),toolbox=document.getElementById('toolbox'),nav=work?.querySelector(':scope > .navigator');
- if(!work||!toolbox||!nav)return;
+ const work=document.querySelector('.work'),toolbox=document.getElementById('toolbox'),nav=work?.querySelector(':scope > .navigator'),inspector=document.getElementById('inspector');
+ if(!work||!toolbox||!nav||!inspector)return;
  const coarse=()=>matchMedia('(pointer:coarse) and (min-width:601px)').matches;
  const desktop=()=>matchMedia('(min-width:901px) and (pointer:fine)').matches;
  const mobile=()=>matchMedia('(max-width:600px)').matches;
  const read=(key,fallback,min,max)=>{try{const n=Number(localStorage.getItem('arqenvo-'+key));return Number.isFinite(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
  let toolboxWidth=read('toolbox-width',coarse()?48:156,coarse()?48:124,coarse()?180:280),navigatorWidth=read('navigator-width',220,190,360),inspectorWidth=read('inspector-width',238,200,360);
  const state={};
- for(const [key,panel] of [['toolbox',toolbox],['navigator',nav]]){
-   let mode='dock',left=key==='toolbox'?8:Math.max(8,work.clientWidth-300),top=8,width=key==='toolbox'?210:280;
+ for(const [key,panel] of [['toolbox',toolbox],['navigator',nav],['inspector',inspector]]){
+   let mode='dock',left=key==='toolbox'?8:Math.max(8,work.clientWidth-(key==='inspector'?340:300)),top=key==='inspector'?Math.max(8,work.clientHeight-330):8,width=key==='toolbox'?210:key==='inspector'?300:280;
    try{const saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null');if(saved&&['dock','float'].includes(saved.mode)){mode=saved.mode;left=Number.isFinite(saved.left)?saved.left:left;top=Number.isFinite(saved.top)?saved.top:top;width=Number.isFinite(saved.width)?saved.width:width}}catch{}
    state[key]={mode,left,top,width};
  }
  const persist=key=>{try{localStorage.setItem('arqenvo-palette-'+key,JSON.stringify(state[key]))}catch{}};
  const setFloating=(key,on,left,top)=>{
-   const panel=key==='toolbox'?toolbox:nav,s=state[key];s.mode=on?'float':'dock';panel.classList.toggle('arq-palette-floating',on);
+   const panel=key==='toolbox'?toolbox:key==='navigator'?nav:inspector,s=state[key];s.mode=on?'float':'dock';panel.classList.toggle('arq-palette-floating',on);
    if(on){s.left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,left??s.left));s.top=Math.max(4,Math.min(work.clientHeight-90,top??s.top));panel.style.left=s.left+'px';panel.style.top=s.top+'px';panel.style.setProperty('--arq-float-width',s.width+'px');panel.style.right='auto';panel.style.bottom='auto'}
    else{panel.style.removeProperty('left');panel.style.removeProperty('top');panel.style.removeProperty('--arq-float-width');panel.style.removeProperty('right');panel.style.removeProperty('bottom')}
    persist(key);applyGrid();
  };
  const applyGrid=()=>{
    work.style.setProperty('--toolbox-width',toolboxWidth+'px');work.style.setProperty('--navigator-width',navigatorWidth+'px');work.style.setProperty('--inspector-width',inspectorWidth+'px');
-   work.classList.toggle('toolbox-expanded',coarse()&&(toolboxWidth>72||state.toolbox.mode==='float'));work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');
+   work.classList.toggle('toolbox-expanded',coarse()&&(toolboxWidth>72||state.toolbox.mode==='float'));work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');work.classList.toggle('inspector-floating',state.inspector.mode==='float');
    const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');if(t)t.style.left=(desktop()||coarse()?toolboxWidth:48)+'px';
    if(n){if(coarse()){n.style.left=(toolboxWidth+navigatorWidth)+'px';n.style.right='auto'}else{n.style.left='auto';n.style.right=inspectorWidth+'px'}}
-   for(const key of ['toolbox','navigator'])if(state[key].mode==='float'){const p=key==='toolbox'?toolbox:nav,s=state[key];p.style.left=s.left+'px';p.style.top=s.top+'px';p.style.setProperty('--arq-float-width',s.width+'px')}
+   for(const key of ['toolbox','navigator','inspector'])if(state[key].mode==='float'){const p=key==='toolbox'?toolbox:key==='navigator'?nav:inspector,s=state[key];p.style.left=s.left+'px';p.style.top=s.top+'px';p.style.setProperty('--arq-float-width',s.width+'px')}
  };
  const makeResizeHandle=(kind,label)=>{
    const el=document.createElement('div');el.className='arq-resize-handle '+kind+'-resize';el.setAttribute('role','separator');el.setAttribute('aria-label',label);el.setAttribute('aria-orientation','vertical');el.tabIndex=0;
@@ -971,8 +971,8 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
      if(nearHome)setFloating(key,false);else{state[key].mode='float';state[key].left=parseFloat(panel.style.left)||4;state[key].top=parseFloat(panel.style.top)||4;state[key].width=Math.max(190,panel.getBoundingClientRect().width);persist(key)}applyGrid()};
    handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end);
  };
- addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));addDrag('navigator',nav,nav.querySelector('.section'));
- if(!mobile())for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,true,state[key].left,state[key].top);
+ addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));addDrag('navigator',nav,nav.querySelector('.section'));addDrag('inspector',inspector,inspector.querySelector(':scope > .section'));
+ if(!mobile())for(const key of ['toolbox','navigator','inspector'])if(state[key].mode==='float')setFloating(key,true,state[key].left,state[key].top);
  applyGrid();
- window.addEventListener('resize',()=>{if(mobile()){for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,false)}else applyGrid()});
+ window.addEventListener('resize',()=>{if(mobile()){for(const key of ['toolbox','navigator','inspector'])if(state[key].mode==='float')setFloating(key,false)}else applyGrid()});
 })();
