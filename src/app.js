@@ -937,7 +937,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  for(const key of Object.keys(panels)){
   let saved=null;try{saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null')}catch{}
   const d=defaults[key],sz=dims[key],valid=saved?.version===layoutVersion;
-  state[key]={version:layoutVersion,mode:valid&&saved?.mode==='float'?'float':'dock',side:valid&&['left','right','top','bottom'].includes(saved?.side)?saved.side:d.side,x:valid&&Number.isFinite(saved?.x)?saved.x:(key==='toolbox'?4:Math.max(4,work.clientWidth-sz.w-4)),y:valid&&Number.isFinite(saved?.y)?saved.y:4,w:valid&&Number.isFinite(saved?.w)?saved.w:sz.w,h:valid&&Number.isFinite(saved?.h)?saved.h:sz.h};
+  state[key]={version:layoutVersion,mode:valid&&saved?.mode==='float'?'float':'dock',side:valid&&['left','right','top','bottom'].includes(saved?.side)?saved.side:d.side,x:valid&&Number.isFinite(saved?.x)?saved.x:(key==='toolbox'?4:Math.max(4,work.clientWidth-sz.w-4)),y:valid&&Number.isFinite(saved?.y)?saved.y:4,w:valid&&Number.isFinite(saved?.w)?saved.w:sz.w,h:valid&&Number.isFinite(saved?.h)?saved.h:sz.h,dockRect:valid&&saved?.dockRect&&['left','top','right','bottom'].every(k=>Number.isFinite(saved.dockRect[k]))?saved.dockRect:null};
  }
  const save=key=>{try{localStorage.setItem('arqenvo-palette-'+key,JSON.stringify({...state[key],version:layoutVersion}))}catch{}};
  const saveDims=key=>{try{localStorage.setItem('arqenvo-'+key+'-width',String(dims[key].w));localStorage.setItem('arqenvo-'+key+'-height',String(dims[key].h))}catch{}};
@@ -1003,8 +1003,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(!d.moved)return;
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
-   const origin=d.originRect;
-   if(d.originMode==='dock'&&origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24){setMode(key,'dock',d.originSide);return}
+   const origin=state[key].dockRect||(d.originMode==='dock'?d.originRect:null);
+   if(origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24){setMode(key,'dock',state[key].side||d.originSide);return}
    const r=panel.getBoundingClientRect(),s=state[key];
    s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key);saveDims(key);
   };
@@ -1014,6 +1014,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    /* Navigator's header is also its tab strip. Start a pending gesture there; only turn it into a drag after movement, so a normal tab click remains a click. */
    if(e.target.closest('input,select,a')||e.target.closest('#navigatorToggle')||(key==='toolbox'&&e.target.closest('button')))return;
    const r=panel.getBoundingClientRect();
+   if(state[key].mode==='dock')state[key].dockRect={left:r.left,top:r.top,right:r.right,bottom:r.bottom};
    drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom}};
    active=true;
    document.addEventListener('pointermove',move,true);
