@@ -179,6 +179,23 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .work>#navigatorToggle.navigator-toggle{position:absolute;left:52px;right:auto;top:8px;z-index:1600;pointer-events:auto}
  .work.navigator-hidden>#navigatorToggle.navigator-toggle{display:inline-flex;visibility:visible}
 }
+
+ /* Tablet-only compact ribbon and Toolbox: one source of truth for coarse pointers. */
+ .menu{height:27px;min-height:27px}
+ .top{height:48px;min-height:48px;max-height:48px;padding:3px 6px;align-items:center;overflow-x:auto;overflow-y:hidden}
+ .top .ribbon-brand{display:flex;flex:0 0 52px;width:52px;min-width:52px;height:40px;align-items:center;justify-content:center;padding:0 4px;margin:0 4px 0 0}
+ .top .ribbon-brand .brand-logo{display:block;width:46px;height:auto;max-width:46px;max-height:36px;object-fit:contain}
+ .top .ribbon-group{height:42px;min-height:42px;max-height:42px;align-self:center;padding:0 3px}
+ .top .ribbon-group>small,.top .ribbon-buttons button span{display:none}
+ .top .ribbon-buttons{height:40px;min-height:40px;align-items:center}
+ .top .ribbon-buttons button{width:36px;min-width:36px;height:36px;min-height:36px;padding:0;font-size:20px}
+ .top .ribbon-buttons button svg{width:24px;height:24px;stroke-width:1.9}
+ .context-toolbar{height:42px;min-height:42px;max-height:42px;overflow-x:auto;overflow-y:hidden}
+ #toolbox{width:48px;min-width:48px;max-width:48px;padding:4px 2px;overflow-x:hidden}
+ #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none;visibility:hidden}
+ #toolbox .tool{display:flex;align-items:center;justify-content:center;width:42px;min-width:42px;max-width:42px;min-height:42px;margin:2px auto;padding:4px;gap:0;font-size:0;line-height:0;white-space:nowrap}
+ #toolbox .tool b{display:block;flex:0 0 auto;width:auto;margin:0;font-size:22px;line-height:1;visibility:visible}
+ #toolbox .tool b svg{width:25px;height:25px;stroke-width:1.8}
 @media (min-width:901px) and (pointer:fine){
  #navigatorToggle.navigator-toggle{display:none!important}
 }
@@ -430,61 +447,6 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 /* Layout Book adds its own controls row; reserve space for tabs, controls, canvas and quick options. */
 .workspace:has(#layoutControls.active){grid-template-rows:32px auto minmax(0,1fr) 28px}
 @media(max-width:760px){.workspace:has(#layoutControls.active){grid-template-rows:34px auto minmax(0,1fr) 30px}}
-
-/* Compact touch Toolbox icons only; desktop Toolbox remains unchanged. */
-@media (max-width:900px), (pointer:coarse) {
- #toolbox{width:48px!important;min-width:48px!important;max-width:48px!important;padding:4px 2px!important;overflow-x:hidden!important}
- #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none!important;visibility:hidden!important}
- #toolbox .tool{display:flex!important;align-items:center!important;justify-content:center!important;width:42px!important;min-width:42px!important;max-width:42px!important;min-height:42px!important;margin:2px auto!important;padding:4px!important;gap:0!important;font-size:0!important;line-height:0!important;white-space:nowrap!important}
- #toolbox .tool b{display:block!important;flex:0 0 auto!important;width:auto!important;margin:0!important;font-size:22px!important;line-height:1!important;visibility:visible!important}
-}
-/* Final iPad compact ribbon: preserve tooltips, show icons only. */
-@media(max-width:900px){
- .top{display:flex!important;align-items:center!important;gap:5px!important;padding:4px 6px!important;overflow-x:auto!important;overflow-y:hidden!important;white-space:nowrap!important}
- .top .ribbon-brand{display:none!important}
- .top .ribbon-group{display:flex!important;flex:0 0 auto!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;padding:0 3px!important;margin:0!important;border:0!important}
- .top .ribbon-group>small,.top .ribbon-buttons button span{display:none!important;visibility:hidden!important}
- .top .ribbon-buttons{display:flex!important;align-items:center!important;gap:3px!important}
- .top .ribbon-buttons button{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:38px!important;min-width:38px!important;height:38px!important;min-height:38px!important;padding:0!important;font-size:21px!important;line-height:1!important;white-space:nowrap!important}
- .top .ribbon-spacer,.top>.spacer{display:none!important}
-}
-
-/* Final tablet layout correction: compact ribbon and align Navigator to its own panel. */
-@media (pointer:coarse) {
- 
- .menu{height:27px!important;min-height:27px!important}
- .top{height:48px!important;min-height:48px!important;max-height:48px!important;padding:3px 6px!important;align-items:center!important;overflow-x:auto!important;overflow-y:hidden!important}
- .top .ribbon-brand{display:none!important}
- .top .ribbon-group{height:42px!important;min-height:42px!important;max-height:42px!important;align-self:center!important;padding:0 3px!important}
- .top .ribbon-group>small,.top .ribbon-buttons button span{display:none!important}
- .top .ribbon-buttons{height:40px!important;min-height:40px!important;align-items:center!important}
- .top .ribbon-buttons button{width:36px!important;min-width:36px!important;height:36px!important;min-height:36px!important;padding:0!important;font-size:20px!important}
- .context-toolbar{height:42px!important;min-height:42px!important;max-height:42px!important;overflow-x:auto!important;overflow-y:hidden!important}
-}
-
-
-
-/* Clear, consistent ribbon iconography for desktop and iPad. */
-.top .ribbon-buttons button svg{display:block;width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:0 0 auto}
-@media (pointer:coarse), (max-width:1200px){
- .top .ribbon-buttons button svg{width:24px;height:24px;stroke-width:1.9}
-}
-
-
-/* Architectural tool icons: consistent line-art geometry at touch size. */
-#toolbox .tool b svg{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-#toolbox .tool[data-tool="select"] b svg{fill:currentColor;stroke-width:1.2}
-@media(pointer:coarse){#toolbox .tool b svg{width:25px;height:25px;stroke-width:1.8}}
-
-
-/* Keep the original ARQENVO logo visible on iPad in a compact brand slot. */
-@media (pointer:coarse), (max-width:1200px) {
- .top .ribbon-brand{display:flex!important;flex:0 0 52px!important;width:52px!important;min-width:52px!important;height:40px!important;align-items:center!important;justify-content:center!important;padding:0 4px!important;margin:0 4px 0 0!important}
- .top .ribbon-brand .brand-logo{display:block!important;width:46px!important;height:auto!important;max-width:46px!important;max-height:36px!important;object-fit:contain!important}
-}
-
-
-
 
 @media(max-width:760px){.inspector{position:absolute;z-index:30;right:0;top:calc(29px + 68px + 32px);bottom:24px;width:min(340px,88vw);max-width:88vw;overflow:auto;background:var(--panel);box-shadow:-8px 0 24px #0003;border-left:1px solid var(--line);padding:12px}}@media (max-width:760px){
  .work{grid-template-columns:48px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important}
