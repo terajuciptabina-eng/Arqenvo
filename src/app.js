@@ -945,23 +945,19 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  function applyFloatBounds(key){const s=state[key],p=panels[key];bounds(key);p.style.setProperty('--arq-float-left',s.x+'px');p.style.setProperty('--arq-float-top',s.y+'px');p.style.setProperty('--arq-float-width',s.w+'px');p.style.setProperty('--arq-float-height',s.h+'px')}
  function clearFloatStyles(p){p.classList.remove('arq-palette-floating');['left','top','right','bottom','width','height','max-height','max-width','min-width','min-height'].forEach(x=>p.style.removeProperty(x));['--arq-float-left','--arq-float-top','--arq-float-width','--arq-float-height'].forEach(x=>p.style.removeProperty(x))}
  function positionDockGrip(key){
-  const panel=panels[key],grip=panel&&panel.querySelector('.arq-dock-resize');
-  if(!grip)return;
-  const s=state[key];
-  grip.style.left='';grip.style.right='';grip.style.top='';grip.style.bottom='';
-  grip.style.width='';grip.style.height='';grip.style.cursor='';
-  if(s.side==='right'){
-   grip.style.left='0';grip.style.right='auto';grip.style.top='0';grip.style.bottom='0';
-   grip.style.width='12px';grip.style.height='auto';grip.style.cursor='ew-resize';
-  }else if(s.side==='top'){
-   grip.style.left='0';grip.style.right='0';grip.style.top='auto';grip.style.bottom='0';
-   grip.style.width='auto';grip.style.height='12px';grip.style.cursor='ns-resize';
-  }else if(s.side==='bottom'){
-   grip.style.left='0';grip.style.right='0';grip.style.top='0';grip.style.bottom='auto';
-   grip.style.width='auto';grip.style.height='12px';grip.style.cursor='ns-resize';
+  const panel=panels[key],grip=work.querySelector('.arq-dock-resize[data-palette="'+key+'"]');
+  if(!panel||!grip)return;
+  const s=state[key],wr=work.getBoundingClientRect(),pr=panel.getBoundingClientRect();
+  if(s.mode!=='dock'||!wr.width||!wr.height){grip.style.display='none';return}
+  grip.style.display='block';grip.style.position='absolute';grip.style.right='auto';grip.style.bottom='auto';
+  if(s.side==='top'||s.side==='bottom'){
+   const edgeY=(s.side==='top'?pr.bottom:pr.top)-wr.top;
+   grip.style.left=Math.max(0,pr.left-wr.left)+'px';grip.style.top=(edgeY-6)+'px';
+   grip.style.width=Math.max(0,pr.width)+'px';grip.style.height='12px';grip.style.cursor='ns-resize';
   }else{
-   grip.style.left='auto';grip.style.right='0';grip.style.top='0';grip.style.bottom='0';
-   grip.style.width='12px';grip.style.height='auto';grip.style.cursor='ew-resize';
+   const edgeX=(s.side==='right'?pr.left:pr.right)-wr.left;
+   grip.style.left=(edgeX-6)+'px';grip.style.top=Math.max(0,pr.top-wr.top)+'px';
+   grip.style.width='12px';grip.style.height=Math.max(0,pr.height)+'px';grip.style.cursor='ew-resize';
   }
  }
  function applyGrid(){
@@ -1045,12 +1041,32 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   }
  }
  function addDockResize(key,panel){
-  const grip=document.createElement('div');grip.className='arq-dock-resize '+key;grip.dataset.palette=key;grip.setAttribute('role','separator');grip.setAttribute('aria-label','Resize docked '+key);grip.title='Drag to resize docked panel';panel.append(grip);
-  let drag=null;const remove=()=>{document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',done,true);document.removeEventListener('pointercancel',cancel,true)};
-  const move=e=>{if(!drag||drag.id!==e.pointerId)return;const s=state[key],dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(drag.axis==='x'){const minW=key==='toolbox'?124:180,sign=s.side==='right'?-1:1;dims[key].w=clamp(drag.w+dx*sign,minW,Math.max(minW,work.clientWidth-250));s.w=dims[key].w}else{const sign=s.side==='bottom'?-1:1;dims[key].h=clamp(drag.h+dy*sign,140,Math.max(140,work.clientHeight-100));s.h=dims[key].h}applyGrid()};
+  /* The splitter is a sibling of the scrollable palette, never a child that overflow:auto can clip or cover. */
+  const grip=document.createElement('div');grip.className='arq-dock-resize '+key;grip.dataset.palette=key;grip.setAttribute('role','separator');grip.setAttribute('aria-label','Resize docked '+key);grip.title='Drag to resize docked panel';grip.style.position='absolute';grip.style.zIndex='2000';grip.style.touchAction='none';work.append(grip);
+  let drag=null;
+  const remove=()=>{document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',done,true);document.removeEventListener('pointercancel',cancel,true)};
+  const move=e=>{
+   if(!drag||drag.id!==e.pointerId)return;
+   const s=state[key],dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+   if(drag.axis==='x'){
+    const minW=key==='toolbox'?124:180,maxW=Math.max(minW,work.clientWidth-250);
+    const sign=s.side==='right'?-1:1;dims[key].w=clamp(drag.w+dx*sign,minW,maxW);s.w=dims[key].w;
+   }else{
+    const minH=140,maxH=Math.max(minH,work.clientHeight-100),sign=s.side==='bottom'?-1:1;
+    dims[key].h=clamp(drag.h+dy*sign,minH,maxH);s.h=dims[key].h;
+   }
+   applyGrid();
+  };
   const done=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();save(key);saveDims(key);applyGrid()};
   const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid()};
-  grip.addEventListener('pointerdown',e=>{if(state[key].mode!=='dock'||(e.pointerType==='mouse'&&e.button!==0))return;const r=panel.getBoundingClientRect(),vertical=state[key].side==='top'||state[key].side==='bottom';drag={id:e.pointerId,x:e.clientX,y:e.clientY,axis:vertical?'y':'x',w:r.width,h:r.height};try{grip.setPointerCapture(e.pointerId)}catch{}document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',cancel,true);e.preventDefault();e.stopPropagation()})
+  grip.addEventListener('pointerdown',e=>{
+   if(state[key].mode!=='dock'||(e.pointerType==='mouse'&&e.button!==0))return;
+   const r=panel.getBoundingClientRect(),vertical=state[key].side==='top'||state[key].side==='bottom';
+   drag={id:e.pointerId,x:e.clientX,y:e.clientY,axis:vertical?'y':'x',w:r.width,h:r.height};
+   try{grip.setPointerCapture(e.pointerId)}catch{}
+   document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',cancel,true);
+   e.preventDefault();e.stopPropagation();
+  });
  }
  /* Docked resizing is handled only by each palette's active .arq-dock-resize splitter. */
  addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));
