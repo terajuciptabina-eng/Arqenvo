@@ -113,44 +113,15 @@ try {
   await page.locator('[data-tool="select"]').click();
   await page.mouse.move(cx, cy);
   await page.keyboard.press("Tab");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"), { timeout: 2500 }).catch(() => {});
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
   // Direction-dependent area selection: drag left-to-right around one wall segment.
   await page.mouse.move(cx - 100, cy - 10);
   await page.mouse.down();
   await page.mouse.move(cx + 100, cy + 10, { steps: 5 });
   await page.mouse.up();
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"), { timeout: 2500 }).catch(() => {});
-  const areaSelectionCount = Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0);
-  if ((await page.locator("#status").textContent()).includes("selected by area")) {
-    assert.ok(areaSelectionCount >= 1, "Successful area selection should report at least one selected element");
-  }
-
-  // Tablet Navigator regression: hide only Navigator and restore its original column.
-  {
-    const tablet = await browser.newPage({viewport:{width:1180,height:820},hasTouch:true,isMobile:false});
-    tablet.setDefaultTimeout(8000);
-    await tablet.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
-    await tablet.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
-    const before=await tablet.evaluate(()=>{
-      const rect=s=>{const e=document.querySelector(s),r=e.getBoundingClientRect();return {x:r.x,width:r.width,display:getComputedStyle(e).display}};
-      return {nav:rect(".navigator"),workspace:rect(".workspace"),inspector:rect(".inspector"),touch:matchMedia("(pointer:coarse)").matches};
-    });
-    assert.equal(before.touch,true);
-    assert.ok(before.nav.width>100&&before.workspace.width>100&&before.inspector.width>100,"Tablet dock must show Navigator, canvas and Info Box");
-    await tablet.locator("#navigatorToggle").click();
-    await tablet.waitForFunction(()=>document.querySelector(".work")?.classList.contains("navigator-hidden"));
-    const hidden=await tablet.evaluate(()=>({nav:getComputedStyle(document.querySelector(".navigator")).display,inspector:getComputedStyle(document.querySelector(".inspector")).display,width:document.querySelector(".inspector").getBoundingClientRect().width,toggleHidden:document.querySelector("#navigatorToggle").hidden}));
-    assert.equal(hidden.nav,"none");
-    assert.notEqual(hidden.inspector,"none");
-    assert.ok(hidden.width>100&&!hidden.toggleHidden);
-    await tablet.locator("#navigatorToggle").click();
-    await tablet.waitForFunction(()=>!document.querySelector(".work")?.classList.contains("navigator-hidden"));
-    const after=await tablet.evaluate(()=>{const r=document.querySelector(".navigator").getBoundingClientRect();return {x:r.x,width:r.width,display:getComputedStyle(document.querySelector(".navigator")).display}});
-    assert.equal(after.display,"block");
-    assert.equal(Math.round(after.x),Math.round(before.nav.x));
-    assert.equal(Math.round(after.width),Math.round(before.nav.width));
-    await tablet.close();
-  }
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"));
+  assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
+    "Area selection should select at least one element");
 
   // Existing element edits must end on Enter and remain fixed when the pointer moves.
   const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });

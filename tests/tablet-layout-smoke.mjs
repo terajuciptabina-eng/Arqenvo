@@ -1,0 +1,28 @@
+import assert from "node:assert/strict";
+import { createServer } from "node:http";
+import { readFile } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { chromium } from "playwright";
+const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),"..");
+const mime={".html":"text/html; charset=utf-8",".js":"text/javascript; charset=utf-8",".css":"text/css; charset=utf-8",".json":"application/json; charset=utf-8",".svg":"image/svg+xml",".png":"image/png",".ico":"image/x-icon"};
+const server=createServer(async(req,res)=>{try{const pathname=decodeURIComponent(new URL(req.url,"http://127.0.0.1").pathname);const requested=pathname==="/"?"/index.html":pathname;const file=path.resolve(root,"."+requested);if(file!==root&&!file.startsWith(root+path.sep)){res.writeHead(403).end("Forbidden");return}const body=await readFile(file);res.writeHead(200,{"content-type":mime[path.extname(file)]||"application/octet-stream"});res.end(body)}catch{res.writeHead(404).end("Not found")}});
+await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
+const address=server.address(),browser=await chromium.launch({headless:true});
+try{
+ const errors=[],tablet=await browser.newPage({viewport:{width:1180,height:820},hasTouch:true,isMobile:false});tablet.setDefaultTimeout(8000);tablet.on("pageerror",e=>errors.push(e.message));
+ await tablet.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});await tablet.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100&&document.querySelector("#navigatorToggle"));
+ const before=await tablet.evaluate(()=>{const rect=s=>{const e=document.querySelector(s),r=e.getBoundingClientRect();return{x:r.x,width:r.width,display:getComputedStyle(e).display}};return{coarse:matchMedia("(pointer:coarse)").matches,nav:rect(".navigator"),workspace:rect(".workspace"),inspector:rect(".inspector"),toggleHidden:document.querySelector("#navigatorToggle").hidden}});
+ assert.equal(before.coarse,true);assert.ok(before.nav.width>100&&before.workspace.width>100&&before.inspector.width>100);assert.ok(before.nav.x<before.workspace.x&&before.workspace.x<before.inspector.x);assert.equal(before.toggleHidden,false);
+ await tablet.locator("#navigatorToggle").click();await tablet.waitForFunction(()=>document.querySelector(".work")?.classList.contains("navigator-hidden"));
+ const hidden=await tablet.evaluate(()=>({nav:getComputedStyle(document.querySelector(".navigator")).display,inspector:getComputedStyle(document.querySelector(".inspector")).display,inspectorWidth:document.querySelector(".inspector").getBoundingClientRect().width,toggleHidden:document.querySelector("#navigatorToggle").hidden,workspaceWidth:document.querySelector(".workspace").getBoundingClientRect().width}));
+ assert.equal(hidden.nav,"none");assert.notEqual(hidden.inspector,"none");assert.ok(hidden.inspectorWidth>100&&hidden.workspaceWidth>100&&!hidden.toggleHidden);
+ await tablet.locator("#navigatorToggle").click();await tablet.waitForFunction(()=>!document.querySelector(".work")?.classList.contains("navigator-hidden"));
+ const after=await tablet.evaluate(()=>{const r=document.querySelector(".navigator").getBoundingClientRect();return{x:r.x,width:r.width,display:getComputedStyle(document.querySelector(".navigator")).display}});
+ assert.equal(after.display,"block");assert.equal(Math.round(after.x),Math.round(before.nav.x));assert.equal(Math.round(after.width),Math.round(before.nav.width));await tablet.close();
+ const desktop=await browser.newPage({viewport:{width:1440,height:1000}});desktop.on("pageerror",e=>errors.push(e.message));await desktop.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});await desktop.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100&&document.querySelector("#navigatorToggle"));
+ const state=await desktop.evaluate(()=>({toggleHidden:document.querySelector("#navigatorToggle").hidden,toolbox:document.querySelector("#toolbox").getBoundingClientRect().width,workspace:document.querySelector(".workspace").getBoundingClientRect().width,nav:getComputedStyle(document.querySelector(".navigator")).display,inspector:getComputedStyle(document.querySelector(".inspector")).display}));
+ assert.equal(state.toggleHidden,true);assert.ok(state.workspace>100&&state.toolbox>0&&state.nav==="block"&&state.inspector==="block");
+ const svgAudit=await desktop.evaluate(()=>{const svg=document.querySelector("#contextToolIcon svg");if(!svg)return{exists:false};const path=svg.querySelector("path"),s=path?getComputedStyle(path):null;return{exists:true,fill:s?.fill,stroke:s?.stroke}});
+ assert.equal(svgAudit.exists,true);assert.notEqual(svgAudit.fill,"none");assert.notEqual(svgAudit.stroke,"none");assert.deepEqual(errors,[]);await desktop.close();console.log("Tablet layout smoke passed.");
+}finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
