@@ -110,9 +110,14 @@ try {
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
   // Preselection status depends on the pointer landing on a model element.
-  // Keep this assertion deterministic by checking the Select tool activation before the Tab cycle.
+  // Recompute canvas bounds after changing tools so pointer coordinates stay current.
   await page.locator('[data-tool="select"]').click();
   await page.waitForFunction(() => document.querySelector('[data-tool="select"]')?.classList.contains("active"));
+  await page.waitForTimeout(100);
+  rect = await canvas.boundingBox();
+  assert.ok(rect, "Canvas must remain visible after selecting the Select tool");
+  cx = rect.x + rect.width / 2;
+  cy = rect.y + rect.height / 2;
   await page.mouse.move(cx, cy);
   await page.keyboard.press("Tab");
   await page.waitForTimeout(150);
