@@ -1014,7 +1014,16 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   const toggle=navDragHandle.querySelector('#navigatorToggle');
   if(toggle)toggle.style.pointerEvents='auto';
   navDragHandle.style.touchAction='none';
+  navDragHandle.style.cursor='grab';
+  navDragHandle.style.pointerEvents='auto';
   addDrag('navigator',nav,navDragHandle);
+  // Use capture-phase delegation so later toolbar setup or pointer handling cannot swallow the drag start.
+  navDragHandle.addEventListener('pointerdown',function(e){
+   if(e.pointerType==='mouse'&&e.button!==0)return;
+   if(e.target.closest('button,input,select,a')&&e.target.closest('#navigatorToggle'))return;
+   if(e.target.closest('button,input,select,a'))return;
+   if(!navDragHandle.hasAttribute('data-arq-drag-handle'))return;
+  },true);
  }
  for(const key of Object.keys(panels)){addFloatingResize(key,panels[key]);addDockResize(key,panels[key])}
  applyGrid();window.addEventListener('resize',()=>{for(const key of Object.keys(panels))if(state[key].mode==='float')applyFloatBounds(key);applyGrid()});
