@@ -452,7 +452,16 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 
 /* Phone layout only. Keep the existing touch overlay behavior below 761px. */
 /* Phone-sized touch layouts: overlay Navigator instead of squeezing docked panels. */
-@media (max-width:900px) and (pointer:coarse){
+@media (max-width:600px) and (pointer:coarse){
+ .app{grid-template-rows:27px 72px 42px minmax(0,1fr) 23px;min-height:0}
+ .top{height:72px;min-height:72px;max-height:72px;padding:3px 4px}
+ .context-toolbar{height:42px;min-height:42px;max-height:42px}
+ .canvaswrap{min-width:0;min-height:0;overflow:hidden!important}
+ .tools{width:48px;min-width:48px;max-width:48px;padding:4px 2px;overflow-x:hidden}
+ #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none!important;visibility:hidden}
+ #toolbox .tool{display:flex;align-items:center;justify-content:center;width:42px;min-width:42px;max-width:42px;min-height:42px;margin:2px auto;padding:4px;gap:0;font-size:0;line-height:1;white-space:nowrap}
+ #toolbox .tool b{display:block;flex:0 0 auto;width:auto;margin:0;font-size:22px;line-height:1;visibility:visible}
+ #toolbox .tool b svg{width:25px;height:25px;stroke-width:1.8}
  .work{position:relative;grid-template-columns:48px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;min-width:0;min-height:0;overflow:hidden}
  .work>#toolbox{grid-column:1!important;grid-row:1!important;display:flex!important;min-width:0}
  .work>.workspace{grid-column:2!important;grid-row:1!important;min-width:0;min-height:0;width:100%;max-width:100%;overflow:hidden}
