@@ -950,7 +950,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');
   if(t){t.style.left=dims.toolbox.w+'px';t.style.right='auto'}if(n){n.style.left=coarse()?'calc(var(--palette-toolbox-w,48px) + var(--palette-nav-w,220px))':'auto';n.style.right=desktop()?'var(--palette-inspector-w,238px)':'auto'}
  }
- function setMode(key,mode,side,x,y){const s=state[key];s.mode=mode;if(side)s.side=side;if(Number.isFinite(x))s.x=x;if(Number.isFinite(y))s.y=y;if(mode==='float')bounds(key);applyGrid();save(key)}
+ function setMode(key,mode,side,x,y){const s=state[key],p=panels[key];if(mode==='dock'&&s.mode==='float'){const r=p.getBoundingClientRect();if(r.width>0&&r.height>0){s.w=r.width;s.h=r.height;dims[key].w=r.width;dims[key].h=r.height;saveDims(key)}}s.mode=mode;if(side)s.side=side;if(Number.isFinite(x))s.x=x;if(Number.isFinite(y))s.y=y;if(mode==='float')bounds(key);else{dims[key].w=s.w;dims[key].h=s.h}applyGrid();save(key);saveDims(key)}
  function dockSideAt(clientX,clientY,key){const r=work.getBoundingClientRect(),x=clientX-r.left,y=clientY-r.top,edge=Math.max(28,Math.min(48,Math.round(Math.min(r.width,r.height)*.045)));if(y>=r.height-edge)return'bottom';if(key==='navigator'&&x<Math.max(90,r.width*.38))return'left';if(x<=edge)return'left';if(x>=r.width-edge)return'right';return null}
  function addDrag(key,panel,handle){
   if(!handle)return;handle.classList.add('arq-palette-drag-handle');handle.title='Drag to move. Drop near the left, right or bottom edge to dock';
