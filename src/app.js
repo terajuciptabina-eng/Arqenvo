@@ -1046,7 +1046,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  }
  function addDockResize(key,panel){
   /* The splitter is a sibling of the scrollable palette, never a child that overflow:auto can clip or cover. */
-  const grip=document.createElement('div');grip.className='arq-dock-resize '+key;grip.dataset.palette=key;grip.setAttribute('role','separator');grip.setAttribute('aria-label','Resize docked '+key);grip.title='Drag to resize docked panel';grip.style.position='absolute';grip.style.zIndex='2000';grip.style.touchAction='none';work.append(grip);
+  const grip=document.createElement('div');grip.className='arq-dock-resize '+key+'-resize';grip.dataset.palette=key;grip.setAttribute('role','separator');grip.setAttribute('aria-label','Resize docked '+key);grip.title='Drag to resize docked panel';grip.style.position='absolute';grip.style.zIndex='2000';grip.style.touchAction='none';work.append(grip);
   let drag=null;
   const remove=()=>{document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',done,true);document.removeEventListener('pointercancel',cancel,true)};
   const move=e=>{
