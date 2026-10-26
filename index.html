@@ -496,131 +496,106 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media (max-width:600px){.work{--toolbox-width:48px!important;--navigator-width:0px!important}}
 
 
-/* Canonical panel layout: one grid contract for docked and floating palettes. */
-.work{--palette-toolbox-w:156px;--palette-nav-w:238px;--palette-inspector-w:238px;position:relative;overflow:hidden;grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w);grid-template-rows:minmax(0,1fr)}
-.work>#toolbox{grid-column:1;grid-row:1;position:relative;min-width:0;min-height:0;overflow:auto}
-.work>.workspace{grid-column:2;grid-row:1;min-width:0;min-height:0}
-.work>.navigator{grid-column:3;grid-row:1;position:relative;min-width:0;min-height:0;overflow:auto;box-sizing:border-box;background:#f4f5f6;color:#26313b}
-.work>.inspector{grid-column:4;grid-row:1;position:relative;min-width:0;min-height:0;overflow:auto}
 
-/* Floating palettes are removed from grid flow; rebuild only the tracks still occupied by docked panels. */
+/* ARQENVO Palette Layout — single source of truth, Archicad-inspired */
+.work{
+ --palette-toolbox-w:156px;--palette-nav-w:238px;--palette-inspector-w:238px;
+ --palette-toolbox-h:220px;--palette-nav-h:240px;
+ position:relative;display:grid;min-width:0;min-height:0;overflow:hidden;
+ grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w);
+ grid-template-rows:minmax(0,1fr);
+}
+.work>#toolbox,.work>.navigator,.work>.workspace,.work>.inspector{position:relative;min-width:0;min-height:0;box-sizing:border-box}
+.work>#toolbox{grid-column:1;grid-row:1;overflow:auto;background:var(--panel);border-right:1px solid var(--line)}
+.work>.workspace{grid-column:2;grid-row:1;overflow:hidden;background:#fff}
+.work>.navigator{grid-column:3;grid-row:1;overflow:auto;background:#f4f5f6;color:#26313b;border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.work>.inspector{grid-column:4;grid-row:1;overflow:auto;background:var(--panel);border-left:1px solid var(--line)}
+/* Floating palettes leave grid flow. Remaining docked panels reclaim the released track. */
 .work.toolbox-floating:not(.navigator-floating){grid-template-columns:minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
-.work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:1;grid-row:1}
-.work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:2;grid-row:1}
-.work.toolbox-floating:not(.navigator-floating)>.inspector{grid-column:3;grid-row:1}
+.work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:1}
+.work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:2}
+.work.toolbox-floating:not(.navigator-floating)>.inspector{grid-column:3}
 .work.navigator-floating:not(.toolbox-floating){grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-inspector-w)}
-.work.navigator-floating:not(.toolbox-floating)>.workspace{grid-column:2;grid-row:1}
-.work.navigator-floating:not(.toolbox-floating)>.inspector{grid-column:3;grid-row:1}
+.work.navigator-floating:not(.toolbox-floating)>.workspace{grid-column:2}
+.work.navigator-floating:not(.toolbox-floating)>.inspector{grid-column:3}
 .work.toolbox-floating.navigator-floating{grid-template-columns:minmax(0,1fr) var(--palette-inspector-w)}
-.work.toolbox-floating.navigator-floating>.workspace{grid-column:1;grid-row:1}
-.work.toolbox-floating.navigator-floating>.inspector{grid-column:2;grid-row:1}
-/* The palette itself scrolls vertically when necessary, but its width never creates a horizontal scrollbar. */
-.work>.arq-palette-floating{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
-
-.work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w) var(--palette-nav-w) var(--palette-inspector-w)}
-.work.dock-toolbox-right>#toolbox{grid-column:2;grid-row:1}
-.work.dock-toolbox-right>.workspace{grid-column:1;grid-row:1}
-.work.dock-toolbox-right>.navigator{grid-column:3;grid-row:1}
-.work.dock-toolbox-right>.inspector{grid-column:4;grid-row:1}
-.work.dock-navigator-left{grid-template-columns:var(--palette-toolbox-w) var(--palette-nav-w) minmax(0,1fr) var(--palette-inspector-w)}
-.work.dock-navigator-left>.navigator{grid-column:2;grid-row:1}
-.work.dock-navigator-left>.workspace{grid-column:3;grid-row:1}
-.work.dock-navigator-left>.inspector{grid-column:4;grid-row:1}
-.work.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
-.work.dock-navigator-right>.navigator{grid-column:3;grid-row:1}
-.work.dock-navigator-right>.workspace{grid-column:2;grid-row:1}
-.work.dock-navigator-right>.inspector{grid-column:4;grid-row:1}
-.work.dock-toolbox-bottom{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w);grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h,220px)}
-.work.dock-toolbox-bottom>#toolbox{grid-column:1 / span 2;grid-row:2;max-height:var(--palette-toolbox-h,220px)}
-.work.dock-toolbox-bottom>.workspace{grid-column:2;grid-row:1}
-.work.dock-toolbox-bottom>.navigator{grid-column:3;grid-row:1}
-.work.dock-toolbox-bottom>.inspector{grid-column:4;grid-row:1}
-.work.dock-navigator-bottom{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-inspector-w);grid-template-rows:minmax(0,1fr) var(--palette-nav-h,240px)}
-.work.dock-navigator-bottom>.navigator{grid-column:1 / span 3;grid-row:2;min-height:120px;max-height:var(--palette-nav-h,240px)}
-.work.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
-.work.dock-navigator-bottom>.inspector{grid-column:3;grid-row:1}
-/* Top docking is part of the canonical workspace grid, not a floating-palette override. */
-@media (min-width:901px) and (pointer:fine){
- .work.dock-navigator-top{grid-template-columns:var(--palette-toolbox-w,156px) minmax(0,1fr) var(--palette-inspector-w,238px);grid-template-rows:var(--palette-nav-h,240px) minmax(0,1fr)}
- .work.dock-navigator-top>.navigator{grid-column:1 / -1;grid-row:1;position:relative;inset:auto;width:auto;height:auto;max-height:none;min-width:0;min-height:0;overflow:auto}
- .work.dock-navigator-top>#toolbox{grid-column:1;grid-row:2}
- .work.dock-navigator-top>.workspace{grid-column:2;grid-row:2}
- .work.dock-navigator-top>.inspector{grid-column:3;grid-row:2}
+.work.toolbox-floating.navigator-floating>.workspace{grid-column:1}
+.work.toolbox-floating.navigator-floating>.inspector{grid-column:2}
+.work>.arq-palette-floating{
+ position:absolute!important;display:flex!important;flex-direction:column!important;grid-column:auto!important;grid-row:auto!important;
+ left:var(--arq-float-left,4px)!important;top:var(--arq-float-top,4px)!important;right:auto!important;bottom:auto!important;
+ width:var(--arq-float-width,280px)!important;height:var(--arq-float-height,360px)!important;
+ min-width:0!important;min-height:0!important;max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;
+ overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain;z-index:1800!important;
+ box-sizing:border-box!important;background:#f4f5f6!important;color:#26313b!important;opacity:1!important;
+ box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:4px!important;
 }
-@media (pointer:coarse) and (min-width:601px){
-}
-
-.work.dock-toolbox-bottom.dock-navigator-bottom{grid-template-columns:minmax(0,1fr) var(--palette-inspector-w);grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h,220px) var(--palette-nav-h,240px)}
-.work.dock-toolbox-bottom.dock-navigator-bottom>#toolbox{grid-column:1;grid-row:2}
-.work.dock-toolbox-bottom.dock-navigator-bottom>.navigator{grid-column:1 / span 2;grid-row:3}
-.work.dock-toolbox-bottom.dock-navigator-bottom>.workspace{grid-column:1;grid-row:1}
-.work.dock-toolbox-bottom.dock-navigator-bottom>.inspector{grid-column:2;grid-row:1}
-.work.navigator-hidden>.navigator{display:none!important}
-.work.navigator-hidden.dock-navigator-left,.work.navigator-hidden.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-inspector-w)}
-.work.navigator-hidden.dock-navigator-left>.workspace,.work.navigator-hidden.dock-navigator-right>.workspace{grid-column:2;grid-row:1}
-.work.navigator-hidden.dock-navigator-left>.inspector,.work.navigator-hidden.dock-navigator-right>.inspector{grid-column:3;grid-row:1}
-.work.navigator-hidden.dock-navigator-bottom{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-inspector-w);grid-template-rows:minmax(0,1fr)}
-.work.navigator-hidden.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
-.work.navigator-hidden.dock-navigator-bottom>.inspector{grid-column:3;grid-row:1}
-.work>.arq-palette-floating{position:absolute!important;display:flex!important;grid-column:auto!important;grid-row:auto!important;inset:auto!important;left:var(--arq-float-left,4px)!important;top:var(--arq-float-top,4px)!important;right:auto!important;bottom:auto!important;width:var(--arq-float-width,280px)!important;height:var(--arq-float-height,360px)!important;min-width:0!important;min-height:0!important;max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;z-index:1800!important;overflow:auto!important;box-sizing:border-box!important;box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:5px!important}
 .work>#toolbox.arq-palette-floating{min-width:124px!important}
-.work>.arq-palette-floating .toolbox-title,.work>.arq-palette-floating>.section{position:sticky;top:0;z-index:3;cursor:grab;touch-action:none}
+.work>.navigator.arq-palette-floating{min-width:180px!important}
+.work>.arq-palette-floating>.section,.work>.arq-palette-floating>.toolbox-title{position:sticky;top:0;z-index:3;cursor:grab;touch-action:none}
 .arq-palette-drag-handle{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
 .arq-palette-drag-handle:active{cursor:grabbing}
-.arq-resize-handle{position:absolute;display:flex;z-index:800;align-items:center;justify-content:center;touch-action:none;cursor:col-resize;background:transparent;user-select:none;-webkit-user-select:none}
-.arq-resize-handle.toolbox-resize{top:0;bottom:0;left:var(--palette-toolbox-w,156px);width:8px}
-.arq-resize-handle.navigator-resize{top:0;bottom:0;right:var(--palette-inspector-w,238px);width:8px}
-.arq-dock-resize{position:absolute;z-index:20;touch-action:none;user-select:none;background:transparent}
-.arq-dock-resize.toolbox{left:auto;right:0;top:0;bottom:0;width:10px;cursor:ew-resize}
-.arq-dock-resize.navigator{left:0;right:0;top:auto;bottom:0;height:10px;cursor:ns-resize}
+/* Docked splitters belong to their panel boundary; floating resize grips stay on all eight edges. */
+.arq-dock-resize{position:absolute;z-index:20;display:block;background:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
+.arq-dock-resize.toolbox,.arq-dock-resize.navigator{top:0;bottom:0;left:auto;right:-4px;width:8px;cursor:ew-resize}
+.work.dock-toolbox-bottom>.arq-dock-resize.toolbox,.work.dock-navigator-bottom>.arq-dock-resize.navigator,
+.work.dock-toolbox-top>.arq-dock-resize.toolbox,.work.dock-navigator-top>.arq-dock-resize.navigator{left:0;right:0;top:auto;bottom:-4px;width:auto;height:8px;cursor:ns-resize}
 .arq-palette-floating .arq-dock-resize{display:none!important}
-.arq-floating-resize{position:absolute!important;right:0!important;bottom:0!important;left:auto!important;top:auto!important;width:22px!important;height:22px!important;min-height:22px!important;flex:none!important;cursor:nwse-resize!important;touch-action:none;background:linear-gradient(135deg,transparent 0 40%,#8898a3 41% 47%,transparent 48% 60%,#8898a3 61% 67%,transparent 68%)!important;z-index:9!important}
-.work>.arq-palette-floating>.arq-floating-resize:after{content:"";display:block;width:100%;height:100%;cursor:nwse-resize}
-@media (pointer:coarse) and (min-width:601px){
- .work{grid-template-columns:48px minmax(0,1fr) minmax(190px,240px) 250px!important;grid-template-rows:minmax(0,1fr)!important}
- .work>#toolbox{grid-column:1;grid-row:1}
- .work>.navigator{grid-column:2;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;height:auto;overflow:auto}
- .work>.workspace{grid-column:3;grid-row:1;display:grid;min-width:0}
- .work>.inspector{grid-column:4;grid-row:1;display:block;position:relative;inset:auto;width:auto;height:auto;overflow:auto}
- .work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w,156px) var(--palette-nav-w,220px) 250px!important}
- .work.dock-toolbox-right>#toolbox{grid-column:2;grid-row:1}
- .work.dock-toolbox-right>.workspace{grid-column:1;grid-row:1}
- .work.dock-toolbox-right>.navigator{grid-column:3;grid-row:1}
- .work.dock-toolbox-right>.inspector{grid-column:4;grid-row:1}
- .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w,220px) minmax(0,1fr) 250px!important}
- .work.dock-navigator-left>.navigator{grid-column:2;grid-row:1}
- .work.dock-navigator-left>.workspace{grid-column:3;grid-row:1}
- .work.dock-navigator-left>.inspector{grid-column:4;grid-row:1}
- .work.dock-navigator-right{grid-template-columns:48px minmax(0,1fr) var(--palette-nav-w,220px) 250px!important}
- .work.dock-navigator-right>.navigator{grid-column:3;grid-row:1}
- .work.dock-navigator-right>.workspace{grid-column:2;grid-row:1}
- .work.dock-navigator-right>.inspector{grid-column:4;grid-row:1}
- .work.dock-navigator-bottom{grid-template-columns:48px minmax(0,1fr) 250px!important;grid-template-rows:minmax(0,1fr) var(--palette-nav-h,240px)!important}
- .work.dock-navigator-bottom>.navigator{grid-column:1 / span 3;grid-row:2}
- .work.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
- .work.dock-navigator-bottom>.inspector{grid-column:3;grid-row:1}
- .work.dock-toolbox-bottom{grid-template-columns:48px minmax(0,1fr) 250px!important;grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h,220px)!important}
- .work.dock-toolbox-bottom>#toolbox{grid-column:1 / span 2;grid-row:2}
- .work.dock-toolbox-bottom>.workspace{grid-column:2;grid-row:1}
- .work.dock-toolbox-bottom>.navigator{grid-column:3;grid-row:1}
- .work.dock-toolbox-bottom>.inspector{grid-column:3;grid-row:1}
- .work.dock-toolbox-bottom.dock-navigator-bottom{grid-template-columns:minmax(0,1fr) 250px!important;grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h,220px) var(--palette-nav-h,240px)!important}
- .work.dock-toolbox-bottom.dock-navigator-bottom>#toolbox{grid-column:1;grid-row:2}
- .work.dock-toolbox-bottom.dock-navigator-bottom>.navigator{grid-column:1 / span 2;grid-row:3}
- .work.dock-toolbox-bottom.dock-navigator-bottom>.workspace{grid-column:1;grid-row:1}
- .work.dock-toolbox-bottom.dock-navigator-bottom>.inspector{grid-column:2;grid-row:1}
- .work.navigator-hidden.dock-navigator-left,.work.navigator-hidden.dock-navigator-right{grid-template-columns:48px minmax(0,1fr) 250px!important}
- .work.navigator-hidden.dock-navigator-left>.workspace,.work.navigator-hidden.dock-navigator-right>.workspace{grid-column:2;grid-row:1}
- .work.navigator-hidden.dock-navigator-left>.inspector,.work.navigator-hidden.dock-navigator-right>.inspector{grid-column:3;grid-row:1}
- .work.navigator-hidden.dock-navigator-bottom{grid-template-columns:48px minmax(0,1fr) 250px!important;grid-template-rows:minmax(0,1fr)!important}
- .work.navigator-hidden.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
- .work.navigator-hidden.dock-navigator-bottom>.inspector{grid-column:3;grid-row:1}
- .arq-resize-handle.toolbox-resize{left:48px;right:auto}
- .arq-resize-handle.navigator-resize{left:calc(48px + var(--palette-nav-w,220px));right:auto}
+.work>.arq-palette-floating>.arq-floating-resize{position:absolute!important;display:block!important;z-index:12!important;margin:0!important;padding:0!important;background:transparent!important;touch-action:none!important;flex:none!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-n{left:12px!important;right:12px!important;top:-3px!important;height:12px!important;cursor:ns-resize!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-s{left:12px!important;right:12px!important;bottom:-3px!important;height:12px!important;cursor:ns-resize!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-e{top:12px!important;bottom:12px!important;right:-3px!important;width:12px!important;cursor:ew-resize!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-w{top:12px!important;bottom:12px!important;left:-3px!important;width:12px!important;cursor:ew-resize!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-ne{right:-3px!important;top:-3px!important;width:18px!important;height:18px!important;cursor:nesw-resize!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-nw{left:-3px!important;top:-3px!important;width:18px!important;height:18px!important;cursor:nwse-resize!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-se{right:-3px!important;bottom:-3px!important;width:18px!important;height:18px!important;cursor:nwse-resize!important;background:linear-gradient(135deg,transparent 0 40%,#8898a3 41% 47%,transparent 48% 60%,#8898a3 61% 67%,transparent 68%)!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-sw{left:-3px!important;bottom:-3px!important;width:18px!important;height:18px!important;cursor:nesw-resize!important}
+.work>.arq-palette-floating>.arq-floating-resize.edge-n,.work>.arq-palette-floating>.arq-floating-resize.edge-s{border-top:1px solid #9aa7b1;border-bottom:1px solid #9aa7b1}
+.work>.arq-palette-floating>.arq-floating-resize.edge-e,.work>.arq-palette-floating>.arq-floating-resize.edge-w{border-left:1px solid #9aa7b1;border-right:1px solid #9aa7b1}
+.work>.arq-palette-floating>.arq-floating-resize.edge-ne,.work>.arq-palette-floating>.arq-floating-resize.edge-nw,.work>.arq-palette-floating>.arq-floating-resize.edge-sw{border:1px solid #9aa7b1;border-radius:3px;background:#e7ecef!important}
+/* Left/right docking: the palette order changes; the canvas always occupies the remaining track. */
+.work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w) var(--palette-nav-w) var(--palette-inspector-w)}
+.work.dock-toolbox-right>#toolbox{grid-column:2}.work.dock-toolbox-right>.workspace{grid-column:1}
+.work.dock-navigator-left{grid-template-columns:var(--palette-toolbox-w) var(--palette-nav-w) minmax(0,1fr) var(--palette-inspector-w)}
+.work.dock-navigator-left>.navigator{grid-column:2}.work.dock-navigator-left>.workspace{grid-column:3}
+.work.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
+.work.dock-navigator-right>.navigator{grid-column:3}.work.dock-navigator-right>.workspace{grid-column:2}
+/* Top and bottom docking become real workspace rows, not overlays on the drawing. */
+.work.dock-toolbox-top{grid-template-rows:var(--palette-toolbox-h) minmax(0,1fr)}
+.work.dock-toolbox-top>#toolbox{grid-column:1/-1;grid-row:1;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;overflow:auto}
+.work.dock-toolbox-top>.workspace,.work.dock-toolbox-top>.navigator,.work.dock-toolbox-top>.inspector{grid-row:2}
+.work.dock-toolbox-bottom{grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h)}
+.work.dock-toolbox-bottom>#toolbox{grid-column:1/-1;grid-row:2;display:flex;flex-direction:row;flex-wrap:wrap;align-content:flex-start;overflow:auto}
+.work.dock-toolbox-bottom>.workspace,.work.dock-toolbox-bottom>.navigator,.work.dock-toolbox-bottom>.inspector{grid-row:1}
+.work.dock-navigator-top{grid-template-rows:var(--palette-nav-h) minmax(0,1fr)}
+.work.dock-navigator-top>.navigator{grid-column:1/-1;grid-row:1;min-width:0;max-width:none;position:relative;inset:auto;width:auto;height:auto;overflow:auto}
+.work.dock-navigator-top>#toolbox,.work.dock-navigator-top>.workspace,.work.dock-navigator-top>.inspector{grid-row:2}
+.work.dock-navigator-bottom{grid-template-rows:minmax(0,1fr) var(--palette-nav-h)}
+.work.dock-navigator-bottom>.navigator{grid-column:1/-1;grid-row:2;min-width:0;max-width:none;position:relative;inset:auto;width:auto;height:auto;overflow:auto}
+.work.dock-navigator-bottom>#toolbox,.work.dock-navigator-bottom>.workspace,.work.dock-navigator-bottom>.inspector{grid-row:1}
+/* Both panels on the same horizontal edge receive separate rows, like stacked palette groups. */
+.work.dock-toolbox-top.dock-navigator-top{grid-template-rows:var(--palette-toolbox-h) var(--palette-nav-h) minmax(0,1fr)}
+.work.dock-toolbox-top.dock-navigator-top>#toolbox{grid-row:1}.work.dock-toolbox-top.dock-navigator-top>.navigator{grid-row:2}
+.work.dock-toolbox-bottom.dock-navigator-bottom{grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h) var(--palette-nav-h)}
+.work.dock-toolbox-bottom.dock-navigator-bottom>#toolbox{grid-row:2}.work.dock-toolbox-bottom.dock-navigator-bottom>.navigator{grid-row:3}
+/* On tablets, keep the side palette widths practical and the canvas as the flexible track. */
+@media(pointer:coarse) and (min-width:601px){
+ .work{grid-template-columns:48px minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
+ .work>#toolbox{grid-column:1}
+ .work>.workspace{grid-column:2}
+ .work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) 48px var(--palette-nav-w) var(--palette-inspector-w)}
+ .work.dock-toolbox-right>#toolbox{grid-column:2}.work.dock-toolbox-right>.workspace{grid-column:1}
+ .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w) minmax(0,1fr) var(--palette-inspector-w)}
+ .work.dock-navigator-left>.navigator{grid-column:2}.work.dock-navigator-left>.workspace{grid-column:3}
+ .work.dock-navigator-right{grid-template-columns:48px minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
+ .work.dock-navigator-right>.navigator{grid-column:3}.work.dock-navigator-right>.workspace{grid-column:2}
 }
-@media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}.arq-resize-handle{display:none!important}}
-@media(max-width:900px) and (pointer:fine){.arq-resize-handle{display:none!important}}
-
+@media(max-width:900px) and (pointer:fine){.work{grid-template-columns:48px minmax(0,1fr)}.work>.inspector{display:none}.work>.navigator{display:none}}
+@media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}.arq-dock-resize{min-width:12px;min-height:12px}}
+/* Preserve the Navigator's native stacked tree and tabs while floating. */
+.work>.navigator.arq-palette-floating{display:flex!important;flex-direction:column!important;min-width:180px!important}
+#navigator-panel>.section>#navigatorToggle.navigator-toggle{width:auto!important;max-width:none!important;min-width:76px!important;flex:0 0 auto!important;position:static!important;align-self:center!important;margin:0 0 0 auto!important;white-space:nowrap!important}
+@media(pointer:coarse) and (min-width:601px){#navigator-panel>.section{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:34px!important;gap:8px!important}}
 
 /* Info Box: preserve horizontal scrolling while hiding the scrollbar track/thumb, as in a clean CAD ribbon. */
 .context-toolbar{overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important;-webkit-overflow-scrolling:touch;touch-action:pan-x}
