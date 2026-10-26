@@ -476,6 +476,8 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-hidden>.navigator{display:none!important;visibility:hidden!important;width:0!important;min-width:0!important;max-width:0!important;overflow:hidden!important}
  .work.navigator-hidden>.workspace{grid-column:3!important;grid-row:1!important}
  .work.navigator-hidden>.inspector{display:block!important;visibility:visible!important;grid-column:4!important;grid-row:1!important}
+ .work>#navigatorToggle.navigator-toggle{position:absolute!important;left:52px!important;right:auto!important;top:8px!important;z-index:1600!important;pointer-events:auto!important}
+ .work.navigator-hidden>#navigatorToggle.navigator-toggle{display:inline-flex!important;visibility:visible!important}
 }
 @media (min-width:901px) and (pointer:fine){
  #navigatorToggle.navigator-toggle{display:none!important}
@@ -581,8 +583,15 @@ document.addEventListener("keydown",event=>{
   function sync(){
    var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
    var touchTablet=isTouchTablet(),heading=nav.querySelector('.section');
-   if((mobile&&open)||(!mobile&&touchTablet&&!hidden)){if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);}
-   else if(toggle.parentNode!==work){work.appendChild(toggle);}
+   if(mobile){
+    if(open){
+     if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
+    }else if(toggle.parentNode!==work){work.appendChild(toggle);}
+   }else if(touchTablet){
+    if(hidden){
+     if(toggle.parentNode!==work)work.appendChild(toggle);
+    }else if(heading&&toggle.parentNode!==heading){heading.appendChild(toggle);}
+   }else if(toggle.parentNode!==work){work.appendChild(toggle);}
    toggle.textContent=mobile?(open?'✕ Close':'☰ Navigator'):(hidden?'Show Navigator':'Hide Navigator');
    toggle.setAttribute('aria-controls','navigator-panel');
    toggle.setAttribute('aria-expanded',mobile?(open?'true':'false'):(hidden?'false':'true'));
