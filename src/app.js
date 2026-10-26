@@ -947,7 +947,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  };
  const applyGrid=()=>{
    work.style.setProperty('--toolbox-width',toolboxWidth+'px');work.style.setProperty('--navigator-width',navigatorWidth+'px');work.style.setProperty('--inspector-width',inspectorWidth+'px');
-   work.classList.toggle('toolbox-expanded',coarse()&&toolboxWidth>72);work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');
+   work.classList.toggle('toolbox-expanded',coarse()&&(toolboxWidth>72||state.toolbox.mode==='float'));work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');
    const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');if(t)t.style.left=(desktop()||coarse()?toolboxWidth:48)+'px';
    if(n){if(coarse()){n.style.left=(toolboxWidth+navigatorWidth)+'px';n.style.right='auto'}else{n.style.left='auto';n.style.right=inspectorWidth+'px'}}
    for(const key of ['toolbox','navigator'])if(state[key].mode==='float'){const p=key==='toolbox'?toolbox:nav,s=state[key];p.style.left=s.left+'px';p.style.top=s.top+'px';p.style.setProperty('--arq-float-width',s.width+'px')}
