@@ -612,6 +612,11 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.dock-navigator-left>.navigator{grid-column:2!important}.work.dock-navigator-left>.workspace{grid-column:3!important}
  .work.dock-navigator-right{grid-template-columns:48px minmax(180px,1fr) var(--palette-nav-w)!important}
  .work.dock-navigator-right>.navigator{grid-column:3!important}.work.dock-navigator-right>.workspace{grid-column:2!important}
+ /* Hiding Navigator must collapse its grid track as well, otherwise its old width becomes a blank strip. */
+ .work.navigator-hidden{grid-template-columns:48px 0 minmax(180px,1fr)!important}
+ .work.navigator-hidden>#toolbox{grid-column:1!important}
+ .work.navigator-hidden>.navigator{grid-column:2!important;width:0!important;min-width:0!important;display:none!important}
+ .work.navigator-hidden>.workspace{grid-column:3!important}
  .work.toolbox-floating:not(.navigator-floating){grid-template-columns:var(--palette-nav-w) minmax(180px,1fr)!important}
  .work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:1!important}
  .work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:2!important}
