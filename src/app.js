@@ -971,8 +971,6 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   work.style.setProperty('--palette-toolbox-w',dims.toolbox.w+'px');work.style.setProperty('--palette-nav-w',dims.navigator.w+'px');work.style.setProperty('--palette-inspector-w',dims.inspector.w+'px');work.style.setProperty('--palette-toolbox-h',dims.toolbox.h+'px');work.style.setProperty('--palette-nav-h',dims.navigator.h+'px');
   for(const key of Object.keys(panels)){const s=state[key],p=panels[key];if(s.mode==='float'){p.classList.add('arq-palette-floating');applyFloatBounds(key)}else{clearFloatStyles(p);if(s.side!==(key==='toolbox'?'left':'right'))work.classList.add('dock-'+key+'-'+s.side)}positionDockGrip(key)}
   work.classList.toggle('toolbox-expanded',coarse()&&(dims.toolbox.w>72||state.toolbox.mode==='float'));
-  const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');
-  if(t){t.style.left=dims.toolbox.w+'px';t.style.right='auto'}if(n){n.style.left=coarse()?'calc(var(--palette-toolbox-w,48px) + var(--palette-nav-w,220px))':'auto';n.style.right=desktop()?'var(--palette-inspector-w,238px)':'auto'}
  }
  function setMode(key,mode,side,x,y){const s=state[key],p=panels[key];if(mode==='dock'&&s.mode==='float'){const r=p.getBoundingClientRect();if(r.width>0&&r.height>0){s.w=r.width;s.h=r.height;dims[key].w=r.width;dims[key].h=r.height;saveDims(key)}}s.mode=mode;if(side)s.side=side;if(Number.isFinite(x))s.x=x;if(Number.isFinite(y))s.y=y;if(mode==='float')bounds(key);else{dims[key].w=s.w;dims[key].h=s.h}applyGrid();save(key);saveDims(key)}
  function dockSideAt(clientX,clientY,key){const r=work.getBoundingClientRect(),x=clientX-r.left,y=clientY-r.top,edge=Math.max(28,Math.min(48,Math.round(Math.min(r.width,r.height)*.045)));if(y<=edge)return'top';if(y>=r.height-edge)return'bottom';if(x<=edge)return'left';if(x>=r.width-edge)return'right';return null}
@@ -1054,7 +1052,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid()};
   grip.addEventListener('pointerdown',e=>{if(state[key].mode!=='dock'||(e.pointerType==='mouse'&&e.button!==0))return;const r=panel.getBoundingClientRect(),vertical=state[key].side==='top'||state[key].side==='bottom';drag={id:e.pointerId,x:e.clientX,y:e.clientY,axis:vertical?'y':'x',w:r.width,h:r.height};try{grip.setPointerCapture(e.pointerId)}catch{}document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',cancel,true);e.preventDefault();e.stopPropagation()})
  }
- work.append(Object.assign(document.createElement('div'),{className:'arq-resize-handle toolbox-resize',title:'Resize Toolbox'}),Object.assign(document.createElement('div'),{className:'arq-resize-handle navigator-resize',title:'Resize Navigator'}));
+ /* Docked resizing is handled only by each palette's active .arq-dock-resize splitter. */
  addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));
  const navDragHandle=nav.querySelector('.section');
  if(navDragHandle){
