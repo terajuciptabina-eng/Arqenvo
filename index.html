@@ -164,16 +164,16 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 #navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
 #navigatorToggle.navigator-toggle{display:none;position:static;align-items:center;justify-content:center;flex:0 0 auto;min-height:32px;min-width:64px;padding:5px 9px;margin:0 0 0 auto;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 2px #0002;touch-action:manipulation;cursor:pointer}
 #navigator-panel>.section #navigatorToggle.navigator-toggle{display:inline-flex;position:static;margin-left:auto}
-/* Canonical touch-tablet layout.
-   Do not modify the desktop DOM grid: Toolbox stays in column 1, Navigator in 2,
-   canvas in 3 and Inspector in 4. Hide collapses only the Navigator column. */
+/* Canonical responsive layout.
+   Desktop retains the existing 3-column / 2-row grid.
+   Touch tablets only use four docked columns; Hide removes only the Navigator column. */
 @media (pointer:coarse) and (min-width:761px){
  .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px}
- .work{grid-template-columns:48px minmax(190px,240px) minmax(240px,1fr) 250px;grid-template-rows:minmax(0,1fr);min-width:0;min-height:0;position:relative;overflow:hidden}
+ .work{grid-template-columns:48px minmax(190px,240px) minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr);min-width:0;min-height:0;position:relative;overflow:hidden}
  .work>#toolbox{grid-column:1;grid-row:1;display:flex}
- .work>.navigator{grid-column:2;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;min-height:0;height:auto;visibility:visible;overflow:auto;box-shadow:none}
+ .work>.navigator{grid-column:2;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;height:auto;visibility:visible;overflow:auto;box-shadow:none}
  .work>.workspace{grid-column:3;grid-row:1;display:grid;min-width:0;min-height:0}
- .work>.inspector{grid-column:4;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;min-height:0;height:auto;visibility:visible;overflow:auto}
+ .work>.inspector{grid-column:4;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;height:auto;visibility:visible;overflow:auto}
  #navigatorToggle.navigator-toggle{display:inline-flex;position:static;min-height:34px;min-width:76px;margin:0 0 0 auto}
  .work.navigator-hidden{grid-template-columns:48px 0 minmax(240px,1fr) 250px}
  .work.navigator-hidden>.navigator{display:none;visibility:hidden;width:0;min-width:0;max-width:0;overflow:hidden}
@@ -181,7 +181,6 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .work.navigator-hidden>.inspector{display:block;visibility:visible;grid-column:4;grid-row:1}
  .work>#navigatorToggle.navigator-toggle{position:absolute;left:52px;right:auto;top:8px;z-index:1600;pointer-events:auto}
  .work.navigator-hidden>#navigatorToggle.navigator-toggle{display:inline-flex;visibility:visible}
- /* Keep the existing compact toolbar and icon-only Toolbox behavior on tablets. */
  .menu{height:27px;min-height:27px}
  .top{height:48px;min-height:48px;max-height:48px;padding:3px 6px;align-items:center;overflow-x:auto;overflow-y:hidden}
  .top .ribbon-brand{display:flex;flex:0 0 52px;width:52px;min-width:52px;height:40px;align-items:center;justify-content:center;padding:0 4px;margin:0 4px 0 0}
@@ -198,7 +197,7 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  #toolbox .tool b{display:block;flex:0 0 auto;width:auto;margin:0;font-size:22px;line-height:1;visibility:visible}
  #toolbox .tool b svg{width:25px;height:25px;stroke-width:1.8}
 }
-/* Desktop: never expose Hide/Show Navigator. */
+/* Desktop must not display Hide/Show Navigator. */
 @media (min-width:901px) and (pointer:fine){
  #navigatorToggle.navigator-toggle{display:none!important}
 }
