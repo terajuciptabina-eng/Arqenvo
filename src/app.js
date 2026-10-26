@@ -959,14 +959,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   }else{
    const leftOfCanvas=canvas?pr.right<=canvas.left+2:s.side!=='right';
    const edgeX=(leftOfCanvas?pr.right:pr.left)-wr.left;
-   /* Keep the Navigator hit area inside its own grid track. On the right dock,
-      the canvas/palette boundary can otherwise leave the narrow splitter under
-      the Navigator's painted edge on touch browsers. Toolbox retains its proven
-      centered boundary handle. */
-   const navInset=key==='navigator'?16:0;
-   const gripLeft=key==='navigator'?(leftOfCanvas?edgeX-navInset:edgeX):(edgeX-6);
-   grip.style.left=gripLeft+'px';grip.style.top=Math.max(0,pr.top-wr.top)+'px';
-   grip.style.width=(key==='navigator'?16:12)+'px';grip.style.height=Math.max(0,pr.height)+'px';grip.style.cursor='ew-resize';
+   grip.style.left=(edgeX-6)+'px';grip.style.top=Math.max(0,pr.top-wr.top)+'px';
+   grip.style.width='12px';grip.style.height=Math.max(0,pr.height)+'px';grip.style.cursor='ew-resize';
   }
  }
  function applyGrid(){
