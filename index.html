@@ -483,17 +483,11 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 
 /* Resizable Archicad-style docked palettes: pointer and touch splitters. */
 .work{position:relative;--toolbox-width:156px;--navigator-width:220px;--inspector-width:238px}
-@media (min-width:901px) and (pointer:fine){.work{grid-template-columns:var(--toolbox-width,156px) minmax(0,1fr) var(--inspector-width,238px)}.work>#toolbox{grid-column:1;grid-row:1 / span 2}.work>.workspace{grid-column:2;grid-row:1 / span 2}.work>.navigator{grid-column:3;grid-row:1;min-width:0}.work>.inspector{grid-column:3;grid-row:2;min-width:0}}
-@media (pointer:coarse) and (min-width:601px){.work{grid-template-columns:var(--toolbox-width,48px) var(--navigator-width,220px) minmax(0,1fr) var(--inspector-width,250px)}.work.navigator-hidden{grid-template-columns:var(--toolbox-width,48px) 0 minmax(240px,1fr) var(--inspector-width,250px)}}
-.arq-resize-handle{position:absolute;z-index:1800;top:0;bottom:0;width:14px;margin-left:-7px;display:flex;align-items:center;justify-content:center;touch-action:none;cursor:col-resize;background:transparent;user-select:none;-webkit-user-select:none}
-.arq-resize-handle::after{content:"";display:block;width:3px;height:54px;border-radius:4px;background:#aab5bd;opacity:.7;transition:background .12s,opacity .12s}
-.arq-resize-handle:hover::after,.arq-resize-handle:active::after{background:#087e8b;opacity:1;width:4px}
-.arq-resize-handle:focus-visible{outline:2px solid #087e8b;outline-offset:-2px}
-.arq-resize-handle.toolbox-resize{left:var(--toolbox-width,156px)}
-.arq-resize-handle.navigator-resize{right:var(--inspector-width,238px)}
-@media (pointer:coarse) and (min-width:601px){.arq-resize-handle.toolbox-resize{display:flex}.arq-resize-handle.navigator-resize{left:calc(var(--toolbox-width,48px) + var(--navigator-width,220px));right:auto} .work.toolbox-expanded #toolbox .toolbox-title,.work.toolbox-expanded #toolbox .tool-group-label,.work.toolbox-expanded #toolbox .tool-note,.work.toolbox-expanded #toolbox .tool span{display:revert;visibility:visible}.work.toolbox-expanded #toolbox .tool{width:calc(100% - 6px);min-width:0;max-width:none;justify-content:flex-start;margin:0 3px;padding:5px 6px;gap:6px;font-size:10px;white-space:normal}.work.toolbox-expanded #toolbox .tool b{flex:0 0 24px;width:24px;font-size:19px}.work.toolbox-expanded #toolbox .toolbox-title,.work.toolbox-expanded #toolbox .tool-group-label{font-size:9px;padding-left:7px;padding-right:7px}}
+/* Removed legacy desktop grid override: canonical palette grid owns dock layout. */
+/* Removed legacy tablet grid override: canonical palette grid owns dock layout. */
+/* Removed legacy inert resize bars; active splitters use .arq-dock-resize. */
+@media (pointer:coarse) and (min-width:601px){ .work.toolbox-expanded #toolbox .toolbox-title,.work.toolbox-expanded #toolbox .tool-group-label,.work.toolbox-expanded #toolbox .tool-note,.work.toolbox-expanded #toolbox .tool span{display:revert;visibility:visible}.work.toolbox-expanded #toolbox .tool{width:calc(100% - 6px);min-width:0;max-width:none;justify-content:flex-start;margin:0 3px;padding:5px 6px;gap:6px;font-size:10px;white-space:normal}.work.toolbox-expanded #toolbox .tool b{flex:0 0 24px;width:24px;font-size:19px}.work.toolbox-expanded #toolbox .toolbox-title,.work.toolbox-expanded #toolbox .tool-group-label{font-size:9px;padding-left:7px;padding-right:7px}}
 @media (max-width:900px) and (pointer:fine){.arq-resize-handle{display:none!important}}
-@media (max-width:600px){.work{--toolbox-width:48px!important;--navigator-width:0px!important}}
 
 
 
