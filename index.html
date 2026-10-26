@@ -580,6 +580,8 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work.dock-toolbox-bottom.dock-navigator-bottom>#toolbox{grid-row:2}.work.dock-toolbox-bottom.dock-navigator-bottom>.navigator{grid-row:3}
 /* On tablets, keep the side palette widths practical and the canvas as the flexible track. */
 @media(pointer:coarse) and (min-width:601px){
+ /* Keep the show/hide control at the far end of the Navigator heading, not over its drag target. */
+ .work:not(.navigator-hidden)>#navigatorToggle.navigator-toggle{left:calc(48px + var(--palette-nav-w,238px) - 84px)!important;top:0!important}
  /* Archicad-like tablet order: Toolbox, Navigator, drawing workspace, Inspector. */
  .work{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr) var(--palette-inspector-w)}
  .work>#toolbox{grid-column:1;grid-row:1}
