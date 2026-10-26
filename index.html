@@ -654,3 +654,11 @@ document.addEventListener("keydown",event=>{
 </script>
 
 </body></html>
+
+/* Final Info Box behavior: no title button; ribbon remains horizontally scrollable without a visible scrollbar. */
+.info-box-heading{display:none!important}
+#contextToolbar{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-x:contain}
+#contextToolbar::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;background:transparent!important}
+#contextToolbar>.context-selection-settings{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
+#contextToolbar .context-properties{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
+#contextToolbar .context-properties>.field,#contextToolbar .context-properties>.field-row{flex:0 0 auto!important;min-width:max-content!important}
