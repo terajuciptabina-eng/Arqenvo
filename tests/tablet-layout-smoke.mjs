@@ -19,6 +19,9 @@ try{
  const toolboxGrip=await tablet.locator(".arq-dock-resize.toolbox").boundingBox();assert.ok(toolboxGrip&&toolboxGrip.width>=8,"Toolbox dock splitter must be visible");
  await tablet.mouse.move(toolboxGrip.x+toolboxGrip.width/2,toolboxGrip.y+Math.min(100,toolboxGrip.height/2));await tablet.mouse.down();await tablet.mouse.move(toolboxGrip.x+toolboxGrip.width/2+35,toolboxGrip.y+Math.min(100,toolboxGrip.height/2),{steps:5});await tablet.mouse.up();
  const toolboxWidthAfter=await tablet.locator("#toolbox").evaluate(e=>e.getBoundingClientRect().width);assert.ok(toolboxWidthAfter>toolboxWidthBefore+20,"Dragging the docked Toolbox splitter must resize its actual grid track");
+ // Refresh the geometry baseline because resizing Toolbox moves Navigator and reduces the canvas track.
+ Object.assign(before.nav,await tablet.locator(".navigator").evaluate(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height}}));
+ Object.assign(before.workspace,await tablet.locator(".workspace").evaluate(e=>{const r=e.getBoundingClientRect();return{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right}}));
 
  // Palette movement regression: the Toolbox drag header must remain visible on a collapsed touch tablet.
  const toolboxHeader=tablet.locator("#toolbox .toolbox-title");
