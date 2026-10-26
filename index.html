@@ -656,7 +656,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 }
 
 /* Navigator keeps its native stacked section/tree/tab layout when floating; only Toolbox is a vertical flex palette. */
-.work>.navigator.arq-palette-floating{display:block!important;flex-direction:initial!important;}
+.work>.navigator.arq-palette-floating{display:flex!important;flex-direction:column!important;min-width:180px!important;}
 .work>#toolbox.arq-palette-floating{display:flex!important;flex-direction:column!important;}
 
 /* The tablet toggle lives inside the Navigator heading; it must not stretch across the entire drag handle. */
