@@ -994,14 +994,15 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid();save(key)};
   handle.addEventListener('pointerdown',e=>{
    if(e.pointerType==='mouse'&&e.button!==0)return;
-   if(e.target.closest('button,input,select,a'))return;
+   /* Navigator's header is also its tab strip. Start a pending gesture there; only turn it into a drag after movement, so a normal tab click remains a click. */
+   if(e.target.closest('input,select,a')||e.target.closest('#navigatorToggle')||(key==='toolbox'&&e.target.closest('button')))return;
    const r=panel.getBoundingClientRect();
    drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom}};
    active=true;
    document.addEventListener('pointermove',move,true);
    document.addEventListener('pointerup',finish,true);
    document.addEventListener('pointercancel',cancel,true);
-   e.preventDefault();
+   if(key==='toolbox')e.preventDefault();
   },true);
  } function addFloatingResize(key,panel){
   const edges=['n','e','s','w','ne','nw','se','sw'];
