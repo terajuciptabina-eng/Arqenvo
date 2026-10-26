@@ -923,59 +923,56 @@ $("editBackspace")?.addEventListener("click",()=>{document.dispatchEvent(new Key
 $("editCancel")?.addEventListener("click",()=>{lastMarqueeRect=null;selectionBoxGesture=null;selected.clear();if(releasedTouchEditPending){releasedTouchEditPending=false;if(releasedTouchEditSnapshot){try{const snapshot=JSON.parse(releasedTouchEditSnapshot);const current=els();current.splice(0,current.length,...snapshot)}catch(error){console.error("Could not restore touch edit snapshot",error)}}releasedTouchEditSnapshot=null;updateEditActions();scheduleAutoSave();renderProperties();redraw();$("status").textContent="Element edit cancelled";return}if(finishElementEditGesture("cancel")){releasedTouchEditPending=false;updateEditActions();return}if(pendingOpeningPlacement){openingPlacement.cancel();pendingOpeningPlacement=null;releasedTouchEditPending=false;updateEditActions();redraw();$("status").textContent="Opening placement cancelled";return}if(cancelProvisionalDrawing()){$("status").textContent="Drawing cancelled · provisional elements removed";releasedTouchEditPending=false;updateEditActions();return}draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;trackerDistanceOverride=null;trackerAngleOverride=null;releasedTouchEditPending=false;updateEditActions();redraw();$("status").textContent="Command cancelled"});
 window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAngleLock=null;if(draft.length&&view==="floor")redraw()}if(e.code==="Space"){spaceHeld=false;if(spaceMagicWandActive){spaceMagicWandActive=false;tool=spaceMagicWandReturnTool||"select";spaceMagicWandReturnTool=null;document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));$("toolName").value=tool;updateContextUI();redraw();}}});window.addEventListener("blur",()=>{spaceHeld=false;if(spaceMagicWandActive){spaceMagicWandActive=false;tool=spaceMagicWandReturnTool||"select";spaceMagicWandReturnTool=null;document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));$("toolName").value=tool;updateContextUI();redraw();}isPanning=false;panStart=null;orbiting=false;lastCameraPointer=null;c.style.cursor=""});window.addEventListener("resize",resize);setTool("select");refreshStories();renderProperties();for(const sheet of p.layouts||[])ensureLayoutDefaults(sheet);activeLayoutId=p.layouts?.some(s=>s.id===activeLayoutId)?activeLayoutId:(p.layouts?.[0]?.id||null);activeLayoutDrawingId=layoutSheet()?.drawings?.[0]?.id||null;renderLayoutList();resize();updateEditActions();
 
-/* Resizable Toolbox / Navigator palettes (Archicad-style splitters). */
+/* Workspace palette manager: resize, move, float, dock, and persist Toolbox/Navigator layout. */
 (()=>{
- const work=document.querySelector('.work');
- const toolbox=document.getElementById('toolbox');
- const navigatorPanel=document.querySelector('.work > .navigator');
- if(!work||!toolbox||!navigatorPanel)return;
- const coarse=()=>window.matchMedia('(pointer: coarse) and (min-width: 601px)').matches;
- const desktop=()=>window.matchMedia('(min-width: 901px) and (pointer: fine)').matches;
+ const work=document.querySelector('.work'),toolbox=document.getElementById('toolbox'),nav=work?.querySelector(':scope > .navigator');
+ if(!work||!toolbox||!nav)return;
+ const coarse=()=>matchMedia('(pointer:coarse) and (min-width:601px)').matches;
+ const desktop=()=>matchMedia('(min-width:901px) and (pointer:fine)').matches;
+ const mobile=()=>matchMedia('(max-width:600px)').matches;
  const read=(key,fallback,min,max)=>{try{const n=Number(localStorage.getItem('arqenvo-'+key));return Number.isFinite(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
- let toolboxWidth=read('toolbox-width',coarse()?48:156,coarse()?48:124,coarse()?180:280);
- let navigatorWidth=read('navigator-width',220,190,360);
- let inspectorWidth=read('inspector-width',238,200,360);
- const apply=()=>{
-   work.style.setProperty('--toolbox-width',toolboxWidth+'px');
-   work.style.setProperty('--navigator-width',navigatorWidth+'px');
-   work.style.setProperty('--inspector-width',inspectorWidth+'px');
-   const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');
-   if(t)t.style.left=(desktop()||coarse()?toolboxWidth:48)+'px';
-   work.classList.toggle('toolbox-expanded',coarse()&&toolboxWidth>72);
-   if(n){
-     if(coarse()){n.style.left=(48+navigatorWidth)+'px';n.style.right='auto'}
-     else {n.style.left='auto';n.style.right=inspectorWidth+'px'}
-   }
+ let toolboxWidth=read('toolbox-width',coarse()?48:156,coarse()?48:124,coarse()?180:280),navigatorWidth=read('navigator-width',220,190,360),inspectorWidth=read('inspector-width',238,200,360);
+ const state={};
+ for(const [key,panel] of [['toolbox',toolbox],['navigator',nav]]){
+   let mode='dock',left=key==='toolbox'?8:Math.max(8,work.clientWidth-300),top=8,width=key==='toolbox'?210:280;
+   try{const saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null');if(saved&&['dock','float'].includes(saved.mode)){mode=saved.mode;left=Number.isFinite(saved.left)?saved.left:left;top=Number.isFinite(saved.top)?saved.top:top;width=Number.isFinite(saved.width)?saved.width:width}}catch{}
+   state[key]={mode,left,top,width};
+ }
+ const persist=key=>{try{localStorage.setItem('arqenvo-palette-'+key,JSON.stringify(state[key]))}catch{}};
+ const setFloating=(key,on,left,top)=>{
+   const panel=key==='toolbox'?toolbox:nav,s=state[key];s.mode=on?'float':'dock';panel.classList.toggle('arq-palette-floating',on);
+   if(on){s.left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,left??s.left));s.top=Math.max(4,Math.min(work.clientHeight-90,top??s.top));panel.style.left=s.left+'px';panel.style.top=s.top+'px';panel.style.setProperty('--arq-float-width',s.width+'px');panel.style.right='auto';panel.style.bottom='auto'}
+   else{panel.style.removeProperty('left');panel.style.removeProperty('top');panel.style.removeProperty('--arq-float-width');panel.style.removeProperty('right');panel.style.removeProperty('bottom')}
+   persist(key);applyGrid();
  };
- const makeHandle=(kind,label)=>{
-   const el=document.createElement('div');
-   el.className='arq-resize-handle '+kind+'-resize';
-   el.setAttribute('role','separator');el.setAttribute('aria-label',label);el.setAttribute('aria-orientation','vertical');el.tabIndex=0;
-   el.addEventListener('pointerdown',e=>{
-     if(e.pointerType==='mouse'&&e.button!==0)return;
-     if(!desktop()&&!coarse())return;
-     e.preventDefault();el.setPointerCapture?.(e.pointerId);
-     const startX=e.clientX, startToolbox=toolboxWidth,startNav=navigatorWidth,startInspector=inspectorWidth;
-     const move=ev=>{
-       if(kind==='toolbox'&&(desktop()||coarse()))toolboxWidth=desktop()?Math.max(124,Math.min(280,startToolbox+ev.clientX-startX)):Math.max(48,Math.min(180,startToolbox+ev.clientX-startX));
-       else if(kind==='navigator'&&coarse())navigatorWidth=Math.max(190,Math.min(360,startNav+ev.clientX-startX));
-       else if(kind==='navigator'&&desktop())inspectorWidth=Math.max(200,Math.min(360,startInspector-(ev.clientX-startX)));
-       apply();
-     };
-     const finish=()=>{el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',finish);el.removeEventListener('pointercancel',finish);try{localStorage.setItem('arqenvo-toolbox-width',String(toolboxWidth));localStorage.setItem('arqenvo-navigator-width',String(navigatorWidth));localStorage.setItem('arqenvo-inspector-width',String(inspectorWidth))}catch{}};
-     el.addEventListener('pointermove',move);el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',finish);
-   });
-   el.addEventListener('keydown',e=>{
-     if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();
-     const delta=e.key==='ArrowRight'?10:-10;
-     if(kind==='toolbox'&&(desktop()||coarse()))toolboxWidth=desktop()?Math.max(124,Math.min(280,toolboxWidth+delta)):Math.max(48,Math.min(180,toolboxWidth+delta));
-     else if(kind==='navigator'&&coarse())navigatorWidth=Math.max(190,Math.min(360,navigatorWidth+delta));
-     else if(kind==='navigator'&&desktop())inspectorWidth=Math.max(200,Math.min(360,inspectorWidth-delta));
-     apply();try{localStorage.setItem('arqenvo-toolbox-width',String(toolboxWidth));localStorage.setItem('arqenvo-navigator-width',String(navigatorWidth));localStorage.setItem('arqenvo-inspector-width',String(inspectorWidth))}catch{}
-   });
+ const applyGrid=()=>{
+   work.style.setProperty('--toolbox-width',toolboxWidth+'px');work.style.setProperty('--navigator-width',navigatorWidth+'px');work.style.setProperty('--inspector-width',inspectorWidth+'px');
+   work.classList.toggle('toolbox-expanded',coarse()&&toolboxWidth>72);work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');
+   const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');if(t)t.style.left=(desktop()||coarse()?toolboxWidth:48)+'px';
+   if(n){if(coarse()){n.style.left=(toolboxWidth+navigatorWidth)+'px';n.style.right='auto'}else{n.style.left='auto';n.style.right=inspectorWidth+'px'}}
+   for(const key of ['toolbox','navigator'])if(state[key].mode==='float'){const p=key==='toolbox'?toolbox:nav,s=state[key];p.style.left=s.left+'px';p.style.top=s.top+'px';p.style.setProperty('--arq-float-width',s.width+'px')}
+ };
+ const makeResizeHandle=(kind,label)=>{
+   const el=document.createElement('div');el.className='arq-resize-handle '+kind+'-resize';el.setAttribute('role','separator');el.setAttribute('aria-label',label);el.setAttribute('aria-orientation','vertical');el.tabIndex=0;
+   el.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;if(!desktop()&&!coarse())return;e.preventDefault();el.setPointerCapture?.(e.pointerId);const x=e.clientX,tw=toolboxWidth,nw=navigatorWidth,iw=inspectorWidth;
+     const move=ev=>{if(kind==='toolbox')toolboxWidth=desktop()?Math.max(124,Math.min(280,tw+ev.clientX-x)):Math.max(48,Math.min(180,tw+ev.clientX-x));else if(coarse())navigatorWidth=Math.max(190,Math.min(360,nw+ev.clientX-x));else inspectorWidth=Math.max(200,Math.min(360,iw-(ev.clientX-x)));applyGrid()};
+     const end=()=>{el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',end);el.removeEventListener('pointercancel',end);try{localStorage.setItem('arqenvo-toolbox-width',toolboxWidth);localStorage.setItem('arqenvo-navigator-width',navigatorWidth);localStorage.setItem('arqenvo-inspector-width',inspectorWidth)}catch{}};
+     el.addEventListener('pointermove',move);el.addEventListener('pointerup',end);el.addEventListener('pointercancel',end)});
+   el.addEventListener('keydown',e=>{if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();const d=e.key==='ArrowRight'?10:-10;if(kind==='toolbox')toolboxWidth=desktop()?Math.max(124,Math.min(280,toolboxWidth+d)):Math.max(48,Math.min(180,toolboxWidth+d));else if(coarse())navigatorWidth=Math.max(190,Math.min(360,navigatorWidth+d));else inspectorWidth=Math.max(200,Math.min(360,inspectorWidth-d));applyGrid()});
    return el;
  };
- work.append(makeHandle('toolbox','Resize Toolbox width'),makeHandle('navigator','Resize Navigator width'));
- apply();
- window.addEventListener('resize',apply);
+ work.append(makeResizeHandle('toolbox','Resize Toolbox width'),makeResizeHandle('navigator','Resize Navigator width'));
+ const addDrag=(key,panel,handle)=>{
+   if(!handle)return;handle.classList.add('arq-palette-drag-handle');handle.setAttribute('title','Drag to move palette · drop near its dock edge to dock');
+   let active=null;
+   handle.addEventListener('pointerdown',e=>{if(mobile()||e.target.closest('button,input,select,a'))return;if(e.pointerType==='mouse'&&e.button!==0)return;const r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();active={id:e.pointerId,startX:e.clientX,startY:e.clientY,offsetX:e.clientX-r.left,offsetY:e.clientY-r.top,originLeft:r.left-wr.left,originTop:r.top-wr.top,moved:false};try{handle.setPointerCapture(e.pointerId)}catch{}e.preventDefault()});
+   handle.addEventListener('pointermove',e=>{if(!active||active.id!==e.pointerId)return;if(!active.moved&&Math.hypot(e.clientX-active.startX,e.clientY-active.startY)<7)return;if(!active.moved){active.moved=true;if(state[key].mode!=='float')setFloating(key,true,active.originLeft,active.originTop)}const wr=work.getBoundingClientRect(),s=state[key];s.left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,e.clientX-wr.left-active.offsetX));s.top=Math.max(4,Math.min(work.clientHeight-90,e.clientY-wr.top-active.offsetY));panel.style.left=s.left+'px';panel.style.top=s.top+'px'});
+   const end=e=>{if(!active||active.id!==e.pointerId)return;const a=active;active=null;if(!a.moved)return;const wr=work.getBoundingClientRect(),x=e.clientX-wr.left,nearHome=key==='toolbox'?x<64:(coarse()?x>toolboxWidth+40&&x<toolboxWidth+navigatorWidth+65:x>work.clientWidth-64);
+     if(nearHome)setFloating(key,false);else{state[key].mode='float';state[key].left=parseFloat(panel.style.left)||4;state[key].top=parseFloat(panel.style.top)||4;state[key].width=Math.max(190,panel.getBoundingClientRect().width);persist(key)}applyGrid()};
+   handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end);
+ };
+ addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));addDrag('navigator',nav,nav.querySelector('.section'));
+ if(!mobile())for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,true,state[key].left,state[key].top);
+ applyGrid();
+ window.addEventListener('resize',()=>{if(mobile())for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,false);else{}else applyGrid()});
 })();
