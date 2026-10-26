@@ -736,6 +736,31 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.dock-navigator-top>.inspector{grid-column:3!important;grid-row:2!important;min-height:0!important}
 }
 
+
+/* Floating Navigator must remain an opaque palette after drag; transparent descendants inherit this solid surface. */
+.work>.navigator.arq-palette-floating{
+ background:#f4f5f6!important;
+ color:#26313b!important;
+ opacity:1!important;
+ isolation:isolate!important;
+ backdrop-filter:none!important;
+ -webkit-backdrop-filter:none!important;
+ box-shadow:0 8px 28px #15233135!important;
+}
+.work>.navigator.arq-palette-floating>.section{
+ background:#eef1f3!important;
+ color:#596671!important;
+ border-bottom:1px solid #c6cbd1!important;
+}
+.work>.navigator.arq-palette-floating>.nav-tabs{
+ background:#f4f5f6!important;
+}
+.work>.navigator.arq-palette-floating>.nav-subtitle,
+.work>.navigator.arq-palette-floating>.tree,
+.work>.navigator.arq-palette-floating>[data-navpanel]{
+ background-color:transparent;
+}
+
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
