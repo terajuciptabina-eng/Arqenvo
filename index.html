@@ -580,15 +580,29 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work.dock-toolbox-bottom.dock-navigator-bottom>#toolbox{grid-row:2}.work.dock-toolbox-bottom.dock-navigator-bottom>.navigator{grid-row:3}
 /* On tablets, keep the side palette widths practical and the canvas as the flexible track. */
 @media(pointer:coarse) and (min-width:601px){
- .work{grid-template-columns:48px minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
- .work>#toolbox{grid-column:1}
- .work>.workspace{grid-column:2}
- .work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) 48px var(--palette-nav-w) var(--palette-inspector-w)}
+ /* Archicad-like tablet order: Toolbox, Navigator, drawing workspace, Inspector. */
+ .work{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr) var(--palette-inspector-w)}
+ .work>#toolbox{grid-column:1;grid-row:1}
+ .work>.navigator{grid-column:2;grid-row:1}
+ .work>.workspace{grid-column:3;grid-row:1}
+ .work>.inspector{grid-column:4;grid-row:1}
+ .work.dock-toolbox-right{grid-template-columns:minmax(180px,1fr) 48px var(--palette-nav-w) var(--palette-inspector-w)}
  .work.dock-toolbox-right>#toolbox{grid-column:2}.work.dock-toolbox-right>.workspace{grid-column:1}
- .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w) minmax(0,1fr) var(--palette-inspector-w)}
+ .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr) var(--palette-inspector-w)}
  .work.dock-navigator-left>.navigator{grid-column:2}.work.dock-navigator-left>.workspace{grid-column:3}
- .work.dock-navigator-right{grid-template-columns:48px minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
+ .work.dock-navigator-right{grid-template-columns:48px minmax(180px,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
  .work.dock-navigator-right>.navigator{grid-column:3}.work.dock-navigator-right>.workspace{grid-column:2}
+ /* A floating panel leaves the grid and its old dock track is reclaimed. */
+ .work.toolbox-floating:not(.navigator-floating){grid-template-columns:var(--palette-nav-w) minmax(180px,1fr) var(--palette-inspector-w)}
+ .work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:1}
+ .work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:2}
+ .work.toolbox-floating:not(.navigator-floating)>.inspector{grid-column:3}
+ .work.navigator-floating:not(.toolbox-floating){grid-template-columns:48px minmax(180px,1fr) var(--palette-inspector-w)}
+ .work.navigator-floating:not(.toolbox-floating)>.workspace{grid-column:2}
+ .work.navigator-floating:not(.toolbox-floating)>.inspector{grid-column:3}
+ .work.toolbox-floating.navigator-floating{grid-template-columns:minmax(180px,1fr) var(--palette-inspector-w)}
+ .work.toolbox-floating.navigator-floating>.workspace{grid-column:1}
+ .work.toolbox-floating.navigator-floating>.inspector{grid-column:2}
 }
 @media(max-width:900px) and (pointer:fine){.work{grid-template-columns:48px minmax(0,1fr)}.work>.inspector{display:none}.work>.navigator{display:none}}
 @media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}.arq-dock-resize{min-width:12px;min-height:12px}}
