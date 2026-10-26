@@ -36,7 +36,7 @@ try{
  const navHeader=tablet.locator(".navigator > .section").first();
  const navHeaderBox=await navHeader.boundingBox();
  await tablet.mouse.move(navHeaderBox.x+Math.min(25,navHeaderBox.width/3),navHeaderBox.y+navHeaderBox.height/2);
- await tablet.mouse.down();await tablet.mouse.move(navHeaderBox.x+150,navHeaderBox.y+90,{steps:8});await tablet.mouse.up();
+ await tablet.mouse.down();await tablet.mouse.move(navHeaderBox.x+450,navHeaderBox.y+90,{steps:8});await tablet.mouse.up();
  await tablet.waitForFunction(()=>document.querySelector(".navigator")?.classList.contains("arq-palette-floating"));
  assert.equal(JSON.parse(await tablet.evaluate(()=>localStorage.getItem("arqenvo-palette-navigator"))).mode,"float","Navigator header should allow moving to a floating position");
  const navFloatingHeader=await navHeader.boundingBox();
