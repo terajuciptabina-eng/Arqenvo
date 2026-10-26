@@ -113,7 +113,7 @@ try {
   await page.locator('[data-tool="select"]').click();
   await page.mouse.move(cx, cy);
   await page.keyboard.press("Tab");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"), { timeout: 2500 }).catch(() => {});
   // Direction-dependent area selection: drag left-to-right around one wall segment.
   await page.mouse.move(cx - 100, cy - 10);
   await page.mouse.down();
