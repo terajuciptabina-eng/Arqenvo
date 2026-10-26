@@ -384,22 +384,28 @@ try {
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Click inside the actual hosted opening span, derived from persisted geometry and the live viewport.
   // The previous hard-coded arc point was not on the generated door arc, so it did not test opening selection.
-  const doorOpeningPoint = await openingPage.evaluate(() => {
+  const doorOpeningPoint = await openingPage.evaluate(({doorLeaf,doorOpenFree,doorArcMid}) => {
     const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),t=window.__arqenvoDebug?.getViewport();
+    const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];
+    const door=model.find(e=>e.type==="door");
+    if(!door) throw new Error("Hosted door missing from saved model");
+    const scale=t?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=t?.origin||{x:0,y:0};
+    const screen=p=>({x:rect.left+canvas.clientWidth/2+origin.x+p.x*scale,y:rect.top+canvas.clientHeight/2+origin.y-p.y*scale});
+    const candidates=[screen(doorLeaf),screen(doorOpenFree),screen(doorArcMid)];
+    return {x:candidates[0].x,y:candidates[0].y,candidates,scale,door:{hingeSide:door.hingeSide,swingDirection:door.swingDirection,offset:door.offset,width:door.width}};
+  }, await openingPage.evaluate(() => {
     const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];
     const door=model.find(e=>e.type==="door"),wall=model.find(e=>e.id===door?.hostWallId&&e.type==="wall");
     if(!door||!wall) throw new Error("Hosted door or host wall missing from saved model");
     const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1;
     const a={x:wall.start.x+dx*(Number(door.offset)||0)/len,y:wall.start.y+dy*(Number(door.offset)||0)/len};
     const b={x:wall.start.x+dx*((Number(door.offset)||0)+(Number(door.width)||0))/len,y:wall.start.y+dy*((Number(door.offset)||0)+(Number(door.width)||0))/len};
-    const g=doorSwingGeometry(a,b,{hingeSide:door.hingeSide,swingDirection:door.swingDirection});
-    const scale=t?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=t?.origin||{x:0,y:0};
-    const screen=p=>({x:rect.left+canvas.clientWidth/2+origin.x+p.x*scale,y:rect.top+canvas.clientHeight/2+origin.y-p.y*scale});
-    const candidates=[screen({x:(g.hinge.x+g.openFree.x)/2,y:(g.hinge.y+g.openFree.y)/2}),screen(g.openFree)];
+    return {a,b,hingeSide:door.hingeSide,swingDirection:door.swingDirection};
+  }).then(({a,b,hingeSide,swingDirection})=>{
+    const g=doorSwingGeometry(a,b,{hingeSide,swingDirection});
     const arcAngle=g.startAngle+g.sweep*.5;
-    candidates.push(screen({x:g.hinge.x+Math.cos(arcAngle)*g.radius,y:g.hinge.y+Math.sin(arcAngle)*g.radius}));
-    return {x:candidates[0].x,y:candidates[0].y,candidates,scale,door:{hingeSide:door.hingeSide,swingDirection:door.swingDirection,offset:door.offset,width:door.width}};
-  });
+    return {doorLeaf:{x:(g.hinge.x+g.openFree.x)/2,y:(g.hinge.y+g.openFree.y)/2},doorOpenFree:g.openFree,doorArcMid:{x:g.hinge.x+Math.cos(arcAngle)*g.radius,y:g.hinge.y+Math.sin(arcAngle)*g.radius}};
+  }));
   // Prefer the visible leaf segment over the wall's centre; the hit-test follows the door symbol geometry.
   let doorSelected=false;
   for(const candidate of doorOpeningPoint.candidates){
