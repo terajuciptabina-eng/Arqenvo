@@ -486,7 +486,12 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-open .navigator .section,.work.navigator-open .navigator .tree,.work.navigator-open .navigator .nav-tabs{color:#252d35!important}
  .work.navigator-open>#navigatorToggle.navigator-toggle{left:auto!important;right:8px!important;top:182px!important}
  .work.navigator-open:after{content:"";position:fixed;inset:182px 0 24px 48px;background:#0003;z-index:1200;pointer-events:none}
-}</style></head>
+}
+/* Context Toolbar SVGs stay line-art; the Select arrow alone is filled. */
+#contextToolIcon{color:#e7edf3;display:inline-flex;align-items:center;justify-content:center;flex:0 0 38px;width:38px;height:38px}
+#contextToolIcon svg{display:block;width:26px;height:26px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#contextToolIcon svg *{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#contextToolIcon svg path[d="M5 3 19 15l-6 1-3 5z"]{fill:currentColor;stroke:currentColor}</style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
 
