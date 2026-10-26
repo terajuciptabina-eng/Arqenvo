@@ -8,14 +8,14 @@
 
 :root{--ui:#e8eaed;--panel:#f7f8f9;--line:#c6cbd1;--ink:#26313b;--muted:#65717d;--accent:#087e8b;--select:#d9f0f2}
 *{box-sizing:border-box}body{margin:0;color:var(--ink);font:13px/1.4 Inter,Arial,sans-serif;background:#d4d8dc}button,select,input{font:inherit;color:inherit}button{background:#f9fafb;border:1px solid #bcc3ca;border-radius:3px;padding:6px 9px;cursor:pointer}button:hover,button.active{border-color:var(--accent);background:var(--select)}button:disabled{opacity:.45;cursor:default}
-.app{height:100dvh;min-height:540px;display:grid}.menu{display:flex;align-items:center;gap:15px;padding:0 12px;background:#f5f6f7;border-bottom:1px solid var(--line);font-size:12px}.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.13em;min-width:0}.brand-logo{display:block;height:62px;width:auto;max-width:38vw;object-fit:contain;flex:0 1 auto}.brandmark{display:none}.brandmark span{display:none}@media(max-width:600px){.app{grid-template-rows:28px 54px 1fr 24px}.brand-logo{height:46px;max-width:34vw}.brand{gap:6px}}.top{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#e0e3e6;border-bottom:1px solid #b9c0c7;overflow:auto}.top .spacer{flex:1}.work{min-height:0}.tools,.inspector{background:var(--panel);border-right:1px solid var(--line);min-height:0;overflow:auto}.tools{padding:7px 5px;display:flex;flex-direction:column;gap:5px}.tool{font-size:10px;padding:8px 2px;min-height:46px}.tool b{display:block;font-size:17px;font-weight:500}.tool b svg{display:block;width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.tool[data-tool="select"] b svg path{fill:currentColor;stroke:currentColor}.inspector{border-right:0;border-left:1px solid var(--line);padding:12px}.section{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:2px 0 10px}.tree{display:block;width:100%;text-align:left;margin:3px 0;background:transparent;border-color:transparent}.tree.active{background:#dcebed}.workspace{min-width:0;min-height:0;background:#fff}.tabs{display:flex;align-items:center;gap:3px;background:#f1f3f5;border-bottom:1px solid var(--line);padding:3px 8px}.tabs button{padding:4px 10px}.canvaswrap{position:relative;min-height:0;overflow:hidden;background:#fff}canvas{display:block;width:100%;height:100%;touch-action:none}.dynamic-tracker{position:absolute;z-index:5;width:218px;padding:6px 9px;background:rgba(48,47,43,.88);color:#f4f4f4;font:12px Arial,sans-serif;box-shadow:0 2px 8px #0002;pointer-events:auto}.dynamic-tracker[hidden]{display:none}.dynamic-tracker label{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:6px;margin:2px 0}.dynamic-tracker label span{white-space:nowrap;color:#e0e0e0}.dynamic-tracker input{width:100%;min-width:0;padding:3px 5px;border:1px solid #74736c;border-radius:2px;background:#33322e;color:#fff;font:600 12px Arial,sans-serif;outline:none;font-variant-numeric:tabular-nums}.dynamic-tracker input:focus{border-color:#7bc5d0;background:#242622}.hint{position:absolute;bottom:10px;left:10px;background:#fffffff0;border:1px solid var(--line);padding:6px 8px;font-size:11px;color:#56616b;pointer-events:none}.field{margin:10px 0}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.field input,.field select{width:100%;padding:7px;border:1px solid var(--line);background:#fff;border-radius:3px}.status{background:#e6e8eb;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 10px;color:#58636d;font-size:11px}.status .right{margin-left:auto}.mobile-nav{display:none}
+.app{height:100dvh;min-height:540px;display:grid}.menu{display:flex;align-items:center;gap:15px;padding:0 12px;background:#f5f6f7;border-bottom:1px solid var(--line);font-size:12px}.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.13em;min-width:0}.brand-logo{display:block;height:62px;width:auto;max-width:38vw;object-fit:contain;flex:0 1 auto}.brandmark{display:none}.brandmark span{display:none}@media(max-width:600px){.app{grid-template-rows:28px 54px 1fr 24px}.brand-logo{height:46px;max-width:34vw}.brand{gap:6px}}.top{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#e0e3e6;border-bottom:1px solid #b9c0c7;overflow:auto}.top .spacer{flex:1}.work{min-height:0}.tools,.inspector{background:var(--panel);border-right:1px solid var(--line);min-height:0;overflow:auto}.tools{padding:7px 5px;display:flex;flex-direction:column;gap:5px}.tool{font-size:10px;padding:8px 2px;min-height:46px}.tool b{display:block;font-size:17px;font-weight:500}.tool b svg{display:block;width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.tool[data-tool="select"] b svg path{fill:currentColor;stroke:currentColor}.inspector{border-right:0;border-left:1px solid var(--line);padding:12px}.section{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:2px 0 10px}.tree{display:block;width:100%;text-align:left;margin:3px 0;background:transparent;border-color:transparent}.tree.active{background:#dcebed}.workspace{min-width:0;min-height:0;background:#fff}.tabs{display:flex;align-items:center;gap:3px;background:#f1f3f5;border-bottom:1px solid var(--line);padding:3px 8px}.tabs button{padding:4px 10px}.canvaswrap{position:relative;min-height:0;overflow:hidden;background:#fff}canvas{display:block;width:100%;height:100%;touch-action:none}.dynamic-tracker{position:absolute;z-index:5;width:218px;padding:6px 9px;background:rgba(48,47,43,.88);color:#f4f4f4;font:12px Arial,sans-serif;box-shadow:0 2px 8px #0002;pointer-events:auto}.dynamic-tracker[hidden]{display:none}.dynamic-tracker label{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:6px;margin:2px 0}.dynamic-tracker label span{white-space:nowrap;color:#e0e0e0}.dynamic-tracker input{width:100%;min-width:0;padding:3px 5px;border:1px solid #c5cbd1;border-radius:2px;background:#fff;color:#26313b;font:600 12px Arial,sans-serif;outline:none;font-variant-numeric:tabular-nums}.dynamic-tracker input:focus{border-color:#087e8b;background:#f4fbfb}.hint{position:absolute;bottom:10px;left:10px;background:#fffffff0;border:1px solid var(--line);padding:6px 8px;font-size:11px;color:#56616b;pointer-events:none}.field{margin:10px 0}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.field input,.field select{width:100%;padding:7px;border:1px solid var(--line);background:#fff;border-radius:3px}.status{background:#e6e8eb;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 10px;color:#58636d;font-size:11px}.status .right{margin-left:auto}.mobile-nav{display:none}
 @media(max-width:900px) and (pointer:fine){.work{grid-template-columns:48px minmax(0,1fr)}.inspector{display:none}.tool{font-size:9px}.brand{letter-spacing:.04em}.top{gap:5px}.top button{white-space:nowrap}}@media(max-width:760px){.mobile-nav{display:inline-block}}
 
 /* ARQENVO professional BIM workspace — coordinated palette, navigator and info box */
 :root{--ui:#e3e6e9;--panel:#f4f5f6;--line:#c5cbd1;--ink:#252d35;--muted:#68737e;--accent:#087e8b;--select:#dceff0}
 body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:12px}
 .app{gap:0}
-.menu{background:#303943;color:#edf1f4;border-bottom:1px solid #222a31;gap:0;padding:0 10px;font-size:12px}
+.menu{background:#f5f6f7;color:#26313b;border-bottom:1px solid #c6cbd1;gap:0;padding:0 10px;font-size:12px}
 .menu span{height:100%;display:flex;align-items:center;padding:0 11px;cursor:default}
 .menu span:first-child{font-weight:600;background:#087e8b;color:#fff}
 .menu span:hover{background:#46515c}
@@ -54,7 +54,7 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 .menu-group{height:100%;display:flex;align-items:center;position:relative}
 .menu-group summary{list-style:none;cursor:pointer;height:100%;display:flex;align-items:center;padding:0 12px;user-select:none}
 .menu-group summary::-webkit-details-marker{display:none}
-.menu-group[open] summary,.menu-group summary:hover{background:#46515c}
+.menu-group[open] summary,.menu-group summary:hover{background:#e3edf0;color:#26313b}
 .menu-pop{position:absolute;left:0;top:100%;min-width:220px;padding:5px;background:#f8f9fa;color:#27313a;border:1px solid #9ca6ae;box-shadow:0 8px 22px #18232d30;display:flex;flex-direction:column;gap:2px;z-index:100}
 .menu-pop button{width:100%;text-align:left;background:transparent;border:0;border-radius:2px;padding:7px 10px;font-size:12px;box-shadow:none}
 .menu-pop button:hover{background:#d9ebed;color:#145f66}
@@ -144,18 +144,18 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .layer-row small{color:#7b858e;font-size:9px;font-variant-numeric:tabular-nums}
 
 /* Docked BIM workspace: left Toolbox, central model canvas, right Navigator + Properties */
-.work{display:grid;grid-template-columns:156px minmax(0,1fr) 238px;grid-template-rows:minmax(0,1fr) minmax(170px,.58fr);min-height:0;background:#25262d}
-#toolbox{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:stretch;gap:1px;min-width:0;overflow:auto;padding:0 0 10px;background:#292a31;color:#f0f0f2;border-right:1px solid #17181c;scrollbar-width:thin}
-.toolbox-title{position:sticky;top:0;z-index:2;text-align:left;padding:9px 12px 8px;background:#24252b;color:#aeb0b8;border-bottom:1px solid #3c3d45;font-size:9px;letter-spacing:.12em}
-.tool-group-label{flex:0 0 auto;text-align:left;padding:7px 11px 5px;background:#202126;color:#bfc0c6;border-top:1px solid #3c3d44;border-bottom:1px solid #18191d;font-size:11px;letter-spacing:.02em;font-weight:700}
+.work{display:grid;grid-template-columns:156px minmax(0,1fr) 238px;grid-template-rows:minmax(0,1fr) minmax(170px,.58fr);min-height:0;background:#e3e6e9}
+#toolbox{grid-column:1;grid-row:1 / span 2;display:flex;flex-direction:column;align-items:stretch;gap:1px;min-width:0;overflow:auto;padding:0 0 10px;background:#f4f5f6;color:#26313b;border-right:1px solid #c5cbd1;scrollbar-width:thin}
+.toolbox-title{position:sticky;top:0;z-index:2;text-align:left;padding:9px 12px 8px;background:#eef1f3;color:#65717d;border-bottom:1px solid #c6cbd1;font-size:9px;letter-spacing:.12em}
+.tool-group-label{flex:0 0 auto;text-align:left;padding:7px 11px 5px;background:#e9edf0;color:#596671;border-top:1px solid #d4d9de;border-bottom:1px solid #c5cbd1;font-size:11px;letter-spacing:.02em;font-weight:700}
 .tool{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;gap:11px;min-height:36px;width:calc(100% - 6px);margin:0 3px;padding:5px 9px;border:1px solid transparent;border-radius:5px;background:transparent;color:#f0f0f2;text-align:left;font-size:12px;white-space:nowrap}
 .tool b{display:grid;place-items:center;flex:0 0 29px;width:29px;font-size:22px;line-height:1.15;color:#d2d0cd;font-weight:400}
-.tool:hover{background:#373840;border-color:#41424a}
+.tool:hover{background:#e4eff0;border-color:#a9cdd0;color:#26313b}
 .tool.active{background:#898a8e;border-color:#999a9e;color:#fff;box-shadow:none}
 .tool.active b{color:#fff}
 .tool-note{padding:7px 11px;color:#9c9ea7;text-align:left;font-size:10px;line-height:1.45}
 .workspace{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-rows:34px minmax(0,1fr) 30px;min-width:0;min-height:0;background:#fff}
-.inspector{display:block;grid-column:3;grid-row:2;min-width:0;min-height:0;overflow:auto;padding:9px;background:#303139;color:#e6e6e9;border-left:1px solid #1d1e23;border-right:0;scrollbar-width:thin}
+.inspector{display:block;grid-column:3;grid-row:2;min-width:0;min-height:0;overflow:auto;padding:9px;background:#f4f5f6;color:#26313b;border-left:1px solid #c5cbd1;border-right:0;scrollbar-width:thin}
 /* Canonical responsive layout.
    Desktop retains the existing 3-column / 2-row grid.
    Touch tablets only use four docked columns; Hide removes only the Navigator column. */
@@ -257,15 +257,15 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .canvaswrap{min-width:0;min-height:0}
 
 /* Contextual edit commit controls for touch devices and precision tablets */
-.edit-actions{position:absolute;z-index:2147483647;top:10px;right:10px;isolation:isolate;display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid #aab6c0;border-radius:8px;background:#272b32f5;color:#f5f7f8;box-shadow:0 5px 18px #0003;touch-action:manipulation;pointer-events:auto;opacity:1;visibility:visible}
+.edit-actions{position:absolute;z-index:2147483647;top:10px;right:10px;isolation:isolate;display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid #c5cbd1;border-radius:8px;background:#fffffffa;color:#26313b;box-shadow:0 5px 18px #0002;touch-action:manipulation;pointer-events:auto;opacity:1;visibility:visible}
 .edit-actions[hidden]{display:none}
 .edit-actions>span{font-size:9px;letter-spacing:.1em;font-weight:700;color:#c3cbd2;padding:0 4px}
-.edit-actions button{min-height:40px;min-width:82px;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 12px;border:1px solid #59636d;border-radius:5px;background:#373d45;color:#fff;font-size:17px;line-height:1}
+.edit-actions button{min-height:40px;min-width:82px;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 12px;border:1px solid #c5cbd1;border-radius:5px;background:#f8fafb;color:#26313b;font-size:17px;line-height:1}
 .edit-actions button b{font-size:12px}
 .edit-actions #editCommit{background:#116a66;border-color:#4ba49c}
 .edit-actions #editCancel{background:#49383a;border-color:#8d5f63}
 .edit-actions button:active{transform:scale(.98)}
-@media(max-width:900px){.canvaswrap{overflow:visible}.edit-actions{position:fixed;top:auto;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 82px);left:auto;z-index:2147483000;isolation:isolate;gap:8px;padding:8px;border-radius:10px;box-shadow:0 5px 22px #0005;background:#272b32f5;pointer-events:auto;touch-action:manipulation}.edit-actions button{min-width:94px;min-height:48px;font-size:18px;pointer-events:auto;touch-action:manipulation}.edit-actions button b{font-size:13px}.edit-actions>span{display:none}}
+@media(max-width:900px){.canvaswrap{overflow:visible}.edit-actions{position:fixed;top:auto;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 82px);left:auto;z-index:2147483000;isolation:isolate;gap:8px;padding:8px;border-radius:10px;box-shadow:0 5px 22px #0002;background:#fffffffa;pointer-events:auto;touch-action:manipulation}.edit-actions button{min-width:94px;min-height:48px;font-size:18px;pointer-events:auto;touch-action:manipulation}.edit-actions button b{font-size:13px}.edit-actions>span{display:none}}
 @media(min-width:901px){.edit-actions{top:10px;right:10px}}
 
 /* Tablet and touch drafting ergonomics */
@@ -383,11 +383,11 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .app>.edit-actions button{min-width:78px;min-height:42px;padding:6px 8px}
 }
 /* Layout Book: native sheet controls and print-friendly Publisher */
-#layoutControls{display:none;align-items:center;gap:5px;min-width:0;overflow-x:auto;padding:4px 7px;background:#303139;border-bottom:1px solid #191a1f;color:#eeeef2}
+#layoutControls{display:none;align-items:center;gap:5px;min-width:0;overflow-x:auto;padding:4px 7px;background:#f4f5f6;border-bottom:1px solid #c5cbd1;color:#26313b}
 #layoutControls.active{display:flex}
 #layoutControls label{display:flex;align-items:center;gap:4px;font-size:10px;white-space:nowrap}
-#layoutControls input,#layoutControls select{max-width:110px;min-width:0;padding:4px 5px;border:1px solid #585a64;border-radius:3px;background:#25262d;color:#f3f3f5;font-size:11px}
-#layoutControls button{padding:5px 7px;font-size:10px;white-space:nowrap;background:#3d3e47;border-color:#5a5c66;color:#f3f3f5}
+#layoutControls input,#layoutControls select{max-width:110px;min-width:0;padding:4px 5px;border:1px solid #c5cbd1;border-radius:3px;background:#fff;color:#26313b;font-size:11px}
+#layoutControls button{padding:5px 7px;font-size:10px;white-space:nowrap;background:#f8fafb;border-color:#c5cbd1;color:#26313b}
 #layoutControls button.primary{background:#087e8b;border-color:#2aa0a9;color:#fff}
 .layout-book-actions{display:flex;gap:4px;flex-wrap:wrap;margin:8px 0}
 .layout-book-actions button{font-size:10px;padding:5px 6px}
@@ -399,7 +399,7 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 #layoutInspector.active{display:block}
 #layoutInspector .field{margin:8px 0}
 #layoutInspector .field label{display:block;margin-bottom:3px;color:#c4c5cc;font-size:9px}
-#layoutInspector input,#layoutInspector select{width:100%;min-width:0;padding:6px;border:1px solid #575963;border-radius:3px;background:#25262d;color:#f1f1f4;font:11px Arial,sans-serif}
+#layoutInspector input,#layoutInspector select{width:100%;min-width:0;padding:6px;border:1px solid #c5cbd1;border-radius:3px;background:#fff;color:#26313b;font:11px Arial,sans-serif}
 #layoutInspector .field-row{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 #layoutInspector .action-row{display:flex;gap:5px;margin-top:10px}
 #layoutInspector .action-row button{flex:1;font-size:10px;padding:6px 4px;background:#41424b;border-color:#60616b;color:#fff}
