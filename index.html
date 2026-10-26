@@ -604,7 +604,27 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.navigator-floating:not(.toolbox-floating)>.inspector{grid-column:3}
  .work.toolbox-floating.navigator-floating{grid-template-columns:minmax(180px,1fr) var(--palette-inspector-w)}
  .work.toolbox-floating.navigator-floating>.workspace{grid-column:1}
- .work.toolbox-floating.navigator-floating>.inspector{grid-column:2}
+.work.toolbox-floating.navigator-floating>.inspector{grid-column:2}
+
+ /* Inspector is hidden on touch/tablet layouts. Remove its grid track too; a hidden grid child must not leave an empty right-hand column. */
+ .work{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr)!important}
+ .work>#toolbox{grid-column:1!important;grid-row:1!important}
+ .work>.navigator{grid-column:2!important;grid-row:1!important}
+ .work>.workspace{grid-column:3!important;grid-row:1!important}
+ .work>.inspector{display:none!important}
+ .work.dock-toolbox-right{grid-template-columns:minmax(180px,1fr) 48px var(--palette-nav-w)!important}
+ .work.dock-toolbox-right>#toolbox{grid-column:2!important}.work.dock-toolbox-right>.workspace{grid-column:1!important}
+ .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w) minmax(180px,1fr)!important}
+ .work.dock-navigator-left>.navigator{grid-column:2!important}.work.dock-navigator-left>.workspace{grid-column:3!important}
+ .work.dock-navigator-right{grid-template-columns:48px minmax(180px,1fr) var(--palette-nav-w)!important}
+ .work.dock-navigator-right>.navigator{grid-column:3!important}.work.dock-navigator-right>.workspace{grid-column:2!important}
+ .work.toolbox-floating:not(.navigator-floating){grid-template-columns:var(--palette-nav-w) minmax(180px,1fr)!important}
+ .work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:1!important}
+ .work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:2!important}
+ .work.navigator-floating:not(.toolbox-floating){grid-template-columns:48px minmax(180px,1fr)!important}
+ .work.navigator-floating:not(.toolbox-floating)>.workspace{grid-column:2!important}
+ .work.toolbox-floating.navigator-floating{grid-template-columns:minmax(180px,1fr)!important}
+ .work.toolbox-floating.navigator-floating>.workspace{grid-column:1!important}
 }
 @media(max-width:900px) and (pointer:fine){.work{grid-template-columns:48px minmax(0,1fr)}.work>.inspector{display:none}.work>.navigator{display:none}}
 @media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}.arq-dock-resize{min-width:12px;min-height:12px}}
