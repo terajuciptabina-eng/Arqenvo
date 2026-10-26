@@ -942,7 +942,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  const setFloating=(key,on,left,top)=>{
    const panel=key==='toolbox'?toolbox:key==='navigator'?nav:inspector,s=state[key];s.mode=on?'float':'dock';panel.classList.toggle('arq-palette-floating',on);
    if(on){s.left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,left??s.left));s.top=Math.max(4,Math.min(work.clientHeight-90,top??s.top));panel.style.left=s.left+'px';panel.style.top=s.top+'px';panel.style.setProperty('--arq-float-width',s.width+'px');if(key==='inspector'){panel.style.width=s.width+'px';panel.style.minWidth='220px';panel.style.maxWidth='min(460px, calc(100% - 16px))'}panel.style.right='auto';panel.style.bottom='auto'}
-   else{panel.style.removeProperty('left');panel.style.removeProperty('top');panel.style.removeProperty('--arq-float-width');panel.style.removeProperty('right');panel.style.removeProperty('bottom')}
+   else{panel.style.removeProperty('left');panel.style.removeProperty('top');panel.style.removeProperty('--arq-float-width');panel.style.removeProperty('right');panel.style.removeProperty('bottom');if(key==='inspector'){panel.style.removeProperty('width');panel.style.removeProperty('min-width');panel.style.removeProperty('max-width')}}
    persist(key);applyGrid();
  };
  const applyGrid=()=>{
@@ -950,7 +950,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    work.classList.toggle('toolbox-expanded',coarse()&&(toolboxWidth>72||state.toolbox.mode==='float'));work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');work.classList.toggle('inspector-floating',state.inspector.mode==='float');
    const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');if(t)t.style.left=(desktop()||coarse()?toolboxWidth:48)+'px';
    if(n){if(coarse()){n.style.left=(toolboxWidth+navigatorWidth)+'px';n.style.right='auto'}else{n.style.left='auto';n.style.right=inspectorWidth+'px'}}
-   for(const key of ['toolbox','navigator','inspector'])if(state[key].mode==='float'){const p=key==='toolbox'?toolbox:key==='navigator'?nav:inspector,s=state[key];p.style.left=s.left+'px';p.style.top=s.top+'px';p.style.setProperty('--arq-float-width',s.width+'px')}
+   for(const key of ['toolbox','navigator','inspector'])if(state[key].mode==='float'){const p=key==='toolbox'?toolbox:key==='navigator'?nav:inspector,s=state[key];p.style.left=s.left+'px';p.style.top=s.top+'px';p.style.setProperty('--arq-float-width',s.width+'px');if(key==='inspector'){p.style.width=s.width+'px';p.style.minWidth='220px';p.style.maxWidth='min(460px, calc(100% - 16px))'}}
  };
  const makeResizeHandle=(kind,label)=>{
    const el=document.createElement('div');el.className='arq-resize-handle '+kind+'-resize';el.setAttribute('role','separator');el.setAttribute('aria-label',label);el.setAttribute('aria-orientation','vertical');el.tabIndex=0;
