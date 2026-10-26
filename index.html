@@ -495,12 +495,94 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media (max-width:900px) and (pointer:fine){.arq-resize-handle{display:none!important}}
 @media (max-width:600px){.work{--toolbox-width:48px!important;--navigator-width:0px!important}}
 
-/* palette move styles */
-.arq-palette-drag-handle{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}.arq-palette-drag-handle:active{cursor:grabbing}.work>.arq-palette-floating{position:absolute!important;display:flex!important;grid-column:auto!important;grid-row:auto!important;right:auto!important;bottom:auto!important;z-index:1800!important;height:auto!important;max-height:calc(100% - 16px)!important;min-height:120px!important;box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:5px!important;overflow:auto!important}.work>#toolbox.arq-palette-floating{width:var(--arq-float-width,210px)!important;min-width:124px!important;max-width:min(360px,calc(100% - 16px))!important}.work>.navigator.arq-palette-floating{width:var(--arq-float-width,280px)!important;min-width:190px!important;max-width:min(420px,calc(100% - 16px))!important}.work>.arq-palette-floating .toolbox-title,.work>.arq-palette-floating>.section{position:sticky;top:0;z-index:3;cursor:grab;touch-action:none}
-@media (min-width:901px) and (pointer:fine){.work.toolbox-floating{grid-template-columns:0 minmax(0,1fr) var(--inspector-width,238px)!important}}
-@media (pointer:coarse) and (min-width:601px){.work.toolbox-floating{grid-template-columns:0 var(--navigator-width,220px) minmax(0,1fr) var(--inspector-width,250px)!important}.work.navigator-floating{grid-template-columns:var(--toolbox-width,48px) 0 minmax(0,1fr) var(--inspector-width,250px)!important}.work.toolbox-floating.navigator-floating,.work.navigator-hidden.toolbox-floating{grid-template-columns:0 0 minmax(0,1fr) var(--inspector-width,250px)!important}}
 
-
+/* Canonical palette docking model: actual left/right/bottom docking slots and bounded floating panels. */
+.work{--palette-toolbox-w:156px;--palette-nav-w:238px;--palette-inspector-w:238px}
+.work>.navigator{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto}
+.work>#toolbox{grid-column:1;grid-row:1 / span 2}
+.work>.workspace{grid-column:2;grid-row:1 / span 2}
+.work>.inspector{grid-column:3;grid-row:2}
+.work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w) var(--palette-nav-w);grid-template-rows:minmax(0,1fr) minmax(170px,.58fr)}
+.work.dock-toolbox-right>#toolbox{grid-column:2;grid-row:1 / span 2}
+.work.dock-toolbox-right>.workspace{grid-column:1;grid-row:1 / span 2}
+.work.dock-toolbox-right>.navigator{grid-column:3;grid-row:1}
+.work.dock-toolbox-right>.inspector{grid-column:3;grid-row:2}
+.work.dock-navigator-left{grid-template-columns:var(--palette-toolbox-w) var(--palette-nav-w) minmax(0,1fr);grid-template-rows:minmax(0,1fr) minmax(170px,.58fr)}
+.work.dock-navigator-left>.navigator{grid-column:2;grid-row:1}
+.work.dock-navigator-left>.workspace{grid-column:3;grid-row:1 / span 2}
+.work.dock-navigator-left>.inspector{grid-column:3;grid-row:2}
+.work.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-nav-w);grid-template-rows:minmax(0,1fr) minmax(170px,.58fr)}
+.work.dock-navigator-right>.navigator{grid-column:3;grid-row:1}
+.work.dock-navigator-right>.workspace{grid-column:2;grid-row:1 / span 2}
+.work.dock-navigator-right>.inspector{grid-column:3;grid-row:2}
+.work.dock-toolbox-bottom{grid-template-columns:minmax(0,1fr) var(--palette-nav-w);grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h,200px)}
+.work.dock-toolbox-bottom>#toolbox{grid-column:1 / span 2;grid-row:2;max-height:var(--palette-toolbox-h,200px);overflow:auto}
+.work.dock-toolbox-bottom>.workspace{grid-column:1;grid-row:1}
+.work.dock-toolbox-bottom>.navigator{grid-column:2;grid-row:1}
+.work.dock-toolbox-bottom>.inspector{grid-column:2;grid-row:1}
+.work.dock-navigator-bottom{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr);grid-template-rows:minmax(0,1fr) var(--palette-nav-h,220px)}
+.work.dock-navigator-bottom>.navigator{grid-column:1 / span 2;grid-row:2;max-height:var(--palette-nav-h,220px);min-height:120px}
+.work.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
+.work.dock-navigator-bottom>.inspector{grid-column:2;grid-row:1}
+.work.navigator-hidden>.navigator{display:none!important}
+.work.navigator-hidden.dock-navigator-left,.work.navigator-hidden.dock-navigator-right{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr)}
+.work.navigator-hidden.dock-navigator-left>.workspace,.work.navigator-hidden.dock-navigator-right>.workspace{grid-column:2;grid-row:1 / span 2}
+.work.navigator-hidden.dock-navigator-bottom{grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
+.work.navigator-hidden.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
+.work>.arq-palette-floating{position:absolute!important;display:flex!important;grid-column:auto!important;grid-row:auto!important;inset:auto!important;left:var(--arq-float-left,4px)!important;top:var(--arq-float-top,4px)!important;right:auto!important;bottom:auto!important;width:var(--arq-float-width,280px)!important;height:var(--arq-float-height,360px)!important;min-width:180px!important;min-height:140px!important;max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;z-index:1800!important;overflow:auto!important;box-sizing:border-box!important;box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:5px!important}
+.work>#toolbox.arq-palette-floating{min-width:124px!important}
+.work>.arq-palette-floating .toolbox-title,.work>.arq-palette-floating>.section{position:sticky;top:0;z-index:3;cursor:grab;touch-action:none}
+.arq-palette-drag-handle{cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none}
+.arq-palette-drag-handle:active{cursor:grabbing}
+.arq-resize-handle{position:absolute;display:flex;z-index:800;align-items:center;justify-content:center;touch-action:none;cursor:col-resize;background:transparent;user-select:none;-webkit-user-select:none}
+.arq-resize-handle::after{content:"";display:block;width:3px;height:54px;border-radius:4px;background:#aab5bd;opacity:.75}
+.arq-resize-handle:hover::after,.arq-resize-handle:active::after{background:#087e8b;width:4px;opacity:1}
+.arq-resize-handle.toolbox-resize{top:0;bottom:0;left:var(--palette-toolbox-w,156px);width:8px;cursor:col-resize}
+.arq-resize-handle.navigator-resize{top:0;bottom:0;left:auto;right:var(--palette-inspector-w,238px);width:8px;cursor:col-resize}
+.arq-panel-edge-resize{position:absolute;z-index:6;background:transparent;touch-action:none;user-select:none}
+.arq-panel-edge-resize.horizontal{left:0;right:0;top:0;height:8px;cursor:ns-resize}
+.arq-panel-edge-resize.vertical{top:0;bottom:0;right:0;width:8px;cursor:ew-resize}
+.arq-floating-resize{position:absolute!important;right:0!important;bottom:0!important;left:auto!important;top:auto!important;width:22px!important;height:22px!important;min-height:22px!important;flex:none!important;cursor:nwse-resize!important;touch-action:none;background:linear-gradient(135deg,transparent 0 40%,#8898a3 41% 47%,transparent 48% 60%,#8898a3 61% 67%,transparent 68%)!important;z-index:9!important}
+.work>.arq-palette-floating>.arq-floating-resize:after{content:"";display:block;width:100%;height:100%;cursor:nwse-resize}
+@media (pointer:coarse) and (min-width:601px){
+ .work{grid-template-columns:48px minmax(190px,240px) minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr);position:relative;overflow:hidden}
+ .work>#toolbox{grid-column:1;grid-row:1;display:flex}
+ .work>.navigator{grid-column:2;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;height:auto;overflow:auto}
+ .work>.workspace{grid-column:3;grid-row:1;display:grid;min-width:0}
+ .work>.inspector{grid-column:4;grid-row:1;display:block;position:relative;inset:auto;width:auto;height:auto;overflow:auto}
+ .work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w,156px) var(--palette-nav-w,220px) 250px;grid-template-rows:minmax(0,1fr)}
+ .work.dock-toolbox-right>#toolbox{grid-column:2;grid-row:1}
+ .work.dock-toolbox-right>.workspace{grid-column:1;grid-row:1}
+ .work.dock-toolbox-right>.navigator{grid-column:3;grid-row:1}
+ .work.dock-toolbox-right>.inspector{grid-column:4;grid-row:1}
+ .work.dock-navigator-left{grid-template-columns:48px var(--palette-nav-w,220px) minmax(0,1fr) 250px}
+ .work.dock-navigator-left>.navigator{grid-column:2;grid-row:1}
+ .work.dock-navigator-left>.workspace{grid-column:3;grid-row:1}
+ .work.dock-navigator-left>.inspector{grid-column:4;grid-row:1}
+ .work.dock-navigator-right{grid-template-columns:48px minmax(0,1fr) var(--palette-nav-w,220px) 250px}
+ .work.dock-navigator-right>.navigator{grid-column:3;grid-row:1}
+ .work.dock-navigator-right>.workspace{grid-column:2;grid-row:1}
+ .work.dock-navigator-right>.inspector{grid-column:4;grid-row:1}
+ .work.dock-toolbox-bottom{grid-template-columns:48px minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr) var(--palette-toolbox-h,200px)}
+ .work.dock-toolbox-bottom>#toolbox{grid-column:1 / span 2;grid-row:2}
+ .work.dock-toolbox-bottom>.workspace{grid-column:2;grid-row:1}
+ .work.dock-toolbox-bottom>.navigator{grid-column:3;grid-row:1}
+ .work.dock-toolbox-bottom>.inspector{grid-column:3;grid-row:1}
+ .work.dock-navigator-bottom{grid-template-columns:48px minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr) var(--palette-nav-h,220px)}
+ .work.dock-navigator-bottom>.navigator{grid-column:1 / span 3;grid-row:2}
+ .work.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
+ .work.dock-navigator-bottom>.inspector{grid-column:3;grid-row:1}
+ .work.navigator-hidden.dock-navigator-left,.work.navigator-hidden.dock-navigator-right{grid-template-columns:48px minmax(0,1fr) 250px}
+ .work.navigator-hidden.dock-navigator-left>.workspace,.work.navigator-hidden.dock-navigator-right>.workspace{grid-column:2;grid-row:1}
+ .work.navigator-hidden.dock-navigator-left>.inspector,.work.navigator-hidden.dock-navigator-right>.inspector{grid-column:3;grid-row:1}
+ .work.navigator-hidden.dock-navigator-bottom{grid-template-columns:48px minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr)}
+ .work.navigator-hidden.dock-navigator-bottom>.workspace{grid-column:2;grid-row:1}
+ .work.navigator-hidden.dock-navigator-bottom>.inspector{grid-column:3;grid-row:1}
+ .arq-resize-handle.toolbox-resize{left:var(--palette-toolbox-w,48px);right:auto}
+ .arq-resize-handle.navigator-resize{left:calc(48px + var(--palette-nav-w,220px));right:auto}
+}
+@media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}.arq-resize-handle{display:none!important}}
+@media(max-width:900px) and (pointer:fine){.arq-resize-handle{display:none!important}}
 /* Info Box: preserve horizontal scrolling while hiding the scrollbar track/thumb, as in a clean CAD ribbon. */
 .context-toolbar{overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important;-webkit-overflow-scrolling:touch;touch-action:pan-x}
 .context-toolbar::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
