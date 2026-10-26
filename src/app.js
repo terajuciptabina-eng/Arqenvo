@@ -480,16 +480,24 @@ function setTool(t){if(spaceMagicWandActive){spaceMagicWandActive=false;spaceMag
 
 function activeEditGesture(){return boundaryPointMoveGesture||gridlinePointMoveGesture||gridlineMoveGesture||wallPointMoveGesture||openingMoveGesture||genericMoveGesture}
 function hasActiveDrawing(){return !!(provisionalDrawingActive||draft.length>0||wallChainHasSegment||pendingOpeningPlacement)}
-function finishElementEditGesture(action="commit"){releasedTouchEditPending=false;releasedTouchEditSnapshot=null;releasedTouchEditKind=null;
+function finishElementEditGesture(action="commit"){
+ releasedTouchEditPending=false;releasedTouchEditSnapshot=null;releasedTouchEditKind=null;
  const gestures=[boundaryPointMoveGesture,gridlinePointMoveGesture,gridlineMoveGesture,wallPointMoveGesture,openingMoveGesture,genericMoveGesture].filter(Boolean);
  if(!gestures.length)return false;
  const gesture=gestures[0];
  if(action==="cancel"){
-  if(gesture===boundaryPointMoveGesture||gesture===gridlinePointMoveGesture){for(const rec of gesture.connectedPoints||[]){const el=els().find(v=>v.id===rec.id);if(!el)continue;const target=rec.key==="boundary"?el.boundary?.[rec.index]:el[rec.key];if(target){target.x=rec.start.x;target.y=rec.start.y}}}
-  else if(gesture===gridlineMoveGesture){if(gesture.groupStarts){for(const original of gesture.groupStarts){const member=els().find(v=>v.id===original.id);if(!member)continue;if(original.start&&original.end){member.start={...original.start};member.end={...original.end}}if(original.position)member.position={...original.position};if(original.boundary)member.boundary=original.boundary.map(pt=>({...pt}));if(original.witnessStart)member.witnessStart={...original.witnessStart};if(original.witnessEnd)member.witnessEnd={...original.witnessEnd}}}else{const el=els().find(v=>v.id===gesture.elementId&&v.type==="gridline");if(el){el.start={...gesture.start.start};el.end={...gesture.start.end}}}}
-  else if(gesture===wallPointMoveGesture){for(const rec of gesture.connectedPoints||[]){const el=els().find(v=>v.id===rec.id);if(!el)continue;const target=rec.key==="boundary"?el.boundary?.[rec.index]:el[rec.key];if(target){target.x=rec.start.x;target.y=rec.start.y}if(el.type==="wall"&&el.gridSystemId)syncGridSystemDimensions(el.gridSystemId)}}
-  else if(gesture===genericMoveGesture){for(const original of gesture.startElements||[]){const el=els().find(v=>v.id===original.id);if(!el)continue;const geo=original.geometry;for(const key of ["start","end","witnessStart","witnessEnd","position","boundary","offset","openings"]){if(geo[key]===null||geo[key]===undefined){delete el[key];continue}el[key]=structuredClone(geo[key])}}}
-  else if(gesture===openingMoveGesture){const el=els().find(v=>v.id===gesture.elementId);if(el){el.offset=gesture.startOffset;const wall=els().find(v=>v.id===gesture.hostWallId&&v.type==="wall"),opening=wall?.openings?.find(o=>o.id===el.id);if(opening)opening.offset=gesture.startOffset}}
+  // Restore the complete pre-gesture model, not only the active element.
+  if(gesture.modelBefore){
+   p=structuredClone(gesture.modelBefore);
+   activeStoryId=p.stories.some(v=>v.id===activeStoryId)?activeStoryId:p.stories[0].id;
+  }else if(gesture===genericMoveGesture){
+   for(const original of gesture.startElements||[]){const el=els().find(v=>v.id===original.id);if(!el)continue;const geo=original.geometry;for(const key of ["start","end","witnessStart","witnessEnd","position","boundary","offset","openings"]){if(geo[key]===null||geo[key]===undefined)delete el[key];else el[key]=structuredClone(geo[key])}}
+  }else if(gesture===gridlineMoveGesture){
+   if(gesture.groupStarts){for(const original of gesture.groupStarts){const member=els().find(v=>v.id===original.id);if(!member)continue;if(original.start&&original.end){member.start={...original.start};member.end={...original.end}}if(original.position)member.position={...original.position};if(original.boundary)member.boundary=original.boundary.map(pt=>({...pt}));if(original.witnessStart)member.witnessStart={...original.witnessStart};if(original.witnessEnd)member.witnessEnd={...original.witnessEnd}}}
+   else{const el=els().find(v=>v.id===gesture.elementId&&v.type==="gridline");if(el){el.start={...gesture.start.start};el.end={...gesture.start.end}}}
+  }else if(gesture===openingMoveGesture){
+   const el=els().find(v=>v.id===gesture.elementId);if(el){el.offset=gesture.startOffset;const wall=els().find(v=>v.id===gesture.hostWallId&&v.type==="wall"),opening=wall?.openings?.find(o=>o.id===el.id);if(opening)opening.offset=gesture.startOffset}
+  }
   $("status").textContent="Element edit cancelled";
  }else{
   if(gesture.didMove)scheduleAutoSave();
@@ -500,7 +508,8 @@ function finishElementEditGesture(action="commit"){releasedTouchEditPending=fals
  genericMoveGesture=null;gridlinePointMoveGesture=null;gridlineMoveGesture=null;wallPointMoveGesture=null;openingMoveGesture=null;boundaryPointMoveGesture=null;
  isPanning=false;panStart=null;
  if(action!=="cancel")selected.clear();
- redraw();renderProperties();updateEditActions();
+ if(action==="cancel")scheduleAutoSave();
+ redraw();renderProperties();updateEditActions();updateHistoryButtons();
  return true
 }function updateEditActions(){const bar=$("editActions");if(!bar)return;const editActive=!!activeEditGesture(),active=editActive||hasActiveDrawing()||releasedTouchEditPending;bar.hidden=!active;bar.setAttribute("aria-hidden",String(!active));const identity=bar.querySelector("span"),commit=bar.querySelector("#editCommit"),cancel=bar.querySelector("#editCancel");if(identity)identity.textContent=editActive?"EDIT ELEMENT":pendingOpeningPlacement?"PLACE OPENING":"DRAW ELEMENT";if(commit){commit.setAttribute("aria-label",editActive?"Finish editing":pendingOpeningPlacement?"Place opening":"Finish drawing");commit.innerHTML="✓ <b>Finish</b>"}if(cancel){cancel.setAttribute("aria-label",editActive?"Cancel editing":pendingOpeningPlacement?"Cancel opening":"Cancel drawing");cancel.innerHTML="✕ <b>Cancel</b>"}bar.dataset.pendingTouchCompletion=String(releasedTouchEditPending)}
 
