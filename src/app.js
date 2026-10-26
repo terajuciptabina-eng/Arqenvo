@@ -986,6 +986,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(!d.moved)return;
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
+   const origin=d.originRect;
+   if(d.originMode==='dock'&&origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24){setMode(key,'dock',d.originSide);return}
    const r=panel.getBoundingClientRect(),s=state[key];
    s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key);saveDims(key);
   };
@@ -994,7 +996,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(e.pointerType==='mouse'&&e.button!==0)return;
    if(e.target.closest('button,input,select,a'))return;
    const r=panel.getBoundingClientRect();
-   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false};
+   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom}};
    active=true;
    document.addEventListener('pointermove',move,true);
    document.addEventListener('pointerup',finish,true);
