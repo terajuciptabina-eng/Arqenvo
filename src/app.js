@@ -941,7 +941,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  const persist=key=>{try{localStorage.setItem('arqenvo-palette-'+key,JSON.stringify(state[key]))}catch{}};
  const setFloating=(key,on,left,top)=>{
    const panel=key==='toolbox'?toolbox:key==='navigator'?nav:inspector,s=state[key];s.mode=on?'float':'dock';panel.classList.toggle('arq-palette-floating',on);
-   if(on){s.left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,left??s.left));s.top=Math.max(4,Math.min(work.clientHeight-90,top??s.top));panel.style.left=s.left+'px';panel.style.top=s.top+'px';panel.style.setProperty('--arq-float-width',s.width+'px');panel.style.right='auto';panel.style.bottom='auto'}
+   if(on){s.left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,left??s.left));s.top=Math.max(4,Math.min(work.clientHeight-90,top??s.top));panel.style.left=s.left+'px';panel.style.top=s.top+'px';panel.style.setProperty('--arq-float-width',s.width+'px');if(key==='inspector'){panel.style.width=s.width+'px';panel.style.minWidth='220px';panel.style.maxWidth='min(460px, calc(100% - 16px))'}panel.style.right='auto';panel.style.bottom='auto'}
    else{panel.style.removeProperty('left');panel.style.removeProperty('top');panel.style.removeProperty('--arq-float-width');panel.style.removeProperty('right');panel.style.removeProperty('bottom')}
    persist(key);applyGrid();
  };
