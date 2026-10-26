@@ -583,7 +583,7 @@ document.addEventListener("keydown",event=>{
   }
   toggle.addEventListener('click',function(){
    if(isMobile())work.classList.toggle('navigator-open');
-   else if(isTouchTablet())work.classList.toggle('navigator-hidden');
+   else work.classList.toggle('navigator-hidden');
    sync();window.dispatchEvent(new Event('resize'));
    /* A docked tablet panel changes the available drawing viewport; refit the model after that geometry settles. */
    if(isTouchTablet()&&!document.getElementById('layoutControls')?.classList.contains('active'))requestAnimationFrame(function(){document.getElementById('zoomFit')?.click()});
