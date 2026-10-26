@@ -625,7 +625,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 #contextToolbar .context-properties{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
 #contextToolbar .context-properties>.field,#contextToolbar .context-properties>.field-row{flex:0 0 auto!important;min-width:max-content!important}
 
-/* Palette manager geometry: bounded floating panels plus real dock and float resize grips. */
+/* Palette manager geometry: keep normal docking rules intact and bound floating panels. */
 .work>.arq-palette-floating{position:absolute!important;display:flex!important;grid-column:auto!important;grid-row:auto!important;inset:auto!important;left:var(--arq-float-left,4px)!important;top:var(--arq-float-top,4px)!important;right:auto!important;bottom:auto!important;width:var(--arq-float-width,280px)!important;height:var(--arq-float-height,360px)!important;min-width:0!important;min-height:0!important;max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;z-index:1800!important;overflow:auto!important;box-sizing:border-box!important;box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:5px!important}
 .work>#toolbox.arq-palette-floating{min-width:0!important}
 .work>.arq-palette-floating>.toolbox-title,.work>.arq-palette-floating>.section{position:sticky;top:0;z-index:3;cursor:grab;touch-action:none}
@@ -633,14 +633,12 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .arq-palette-drag-handle:active{cursor:grabbing}
 .arq-floating-resize{position:sticky!important;right:0!important;bottom:0!important;top:auto!important;left:auto!important;width:22px!important;height:22px!important;min-height:22px!important;flex:0 0 22px!important;align-self:flex-end!important;margin-top:auto!important;cursor:nwse-resize!important;touch-action:none!important;background:linear-gradient(135deg,transparent 0 40%,#8898a3 41% 47%,transparent 48% 60%,#8898a3 61% 67%,transparent 68%)!important;z-index:9!important}
 .arq-dock-resize{position:absolute;z-index:1801;display:block;background:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
-.arq-dock-resize.toolbox{top:0;bottom:0;left:auto;right:-4px;width:8px;cursor:ew-resize}
-.arq-dock-resize.navigator{top:0;bottom:0;left:auto;right:-4px;width:8px;cursor:ew-resize}
-.work.dock-toolbox-bottom>.arq-dock-resize.toolbox{top:0;left:0;right:0;bottom:auto;width:auto;height:8px;cursor:ns-resize}
-.work.dock-navigator-bottom>.arq-dock-resize.navigator{top:0;left:0;right:0;bottom:auto;width:auto;height:8px;cursor:ns-resize}
+.arq-dock-resize.toolbox,.arq-dock-resize.navigator{top:0;bottom:0;left:auto;right:-4px;width:8px;cursor:ew-resize}
+.work.dock-toolbox-bottom>.arq-dock-resize.toolbox,.work.dock-navigator-bottom>.arq-dock-resize.navigator{top:0;left:0;right:0;bottom:auto;width:auto;height:8px;cursor:ns-resize}
 @media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}.arq-resize-handle{display:none!important}}
 @media(pointer:coarse) and (min-width:601px){
  .work>.arq-palette-floating{max-width:calc(100% - 8px)!important}
- #toolbox .toolbox-title,.work>.navigator>.section{min-height:28px!important;display:block!important;visibility:visible!important;touch-action:none!important;user-select:none;-webkit-user-select:none;white-space:nowrap}
+ #toolbox .toolbox-title,.work>.navigator>.section{min-height:28px!important;display:block!important;visibility:visible!important;touch-action:none!important;user-select:none!important;-webkit-user-select:none!important;white-space:nowrap}
  .arq-dock-resize{min-width:12px;min-height:12px}
 }
 </style></head>
