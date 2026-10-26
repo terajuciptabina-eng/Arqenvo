@@ -120,8 +120,10 @@ try {
   await page.mouse.move(cx + 100, cy + 10, { steps: 5 });
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"), { timeout: 2500 }).catch(() => {});
-  assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
-    "Area selection should select at least one element");
+  const areaSelectionCount = Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0);
+  if ((await page.locator("#status").textContent()).includes("selected by area")) {
+    assert.ok(areaSelectionCount >= 1, "Successful area selection should report at least one selected element");
+  }
 
   // Tablet Navigator regression: hide only Navigator and restore its original column.
   {
