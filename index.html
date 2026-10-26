@@ -531,10 +531,9 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .arq-palette-drag-handle:active{cursor:grabbing}
 /* Docked splitters belong to their panel boundary; floating resize grips stay on all eight edges. */
 .arq-dock-resize{position:absolute;z-index:20;display:block;background:transparent;touch-action:none;user-select:none;-webkit-user-select:none}
-.arq-dock-resize.toolbox,.arq-dock-resize.navigator{top:0;bottom:auto;left:auto;right:auto;width:12px;height:100%;cursor:ew-resize;z-index:2000!important;pointer-events:auto!important}
+.arq-dock-resize.toolbox,.arq-dock-resize.navigator{top:0;bottom:0;left:auto;right:-4px;width:8px;cursor:ew-resize}
 .work.dock-toolbox-bottom>.arq-dock-resize.toolbox,.work.dock-navigator-bottom>.arq-dock-resize.navigator,
-.work.dock-toolbox-top>.arq-dock-resize.toolbox,.work.dock-navigator-top>.arq-dock-resize.navigator{left:0;right:auto;top:auto;bottom:auto;width:100%;height:12px;cursor:ns-resize;z-index:2000!important;pointer-events:auto!important}
-.arq-dock-resize[aria-label="Resize docked Navigator"]{z-index:2000!important;pointer-events:auto!important}
+.work.dock-toolbox-top>.arq-dock-resize.toolbox,.work.dock-navigator-top>.arq-dock-resize.navigator{left:0;right:0;top:auto;bottom:-4px;width:auto;height:8px;cursor:ns-resize}
 /* Splitter coordinates are set from live panel geometry by the palette manager. */
 .arq-palette-floating .arq-dock-resize{display:none!important}
 .work>.arq-palette-floating>.arq-floating-resize{position:absolute!important;display:block!important;z-index:12!important;margin:0!important;padding:0!important;background:transparent!important;touch-action:none!important;flex:none!important}
