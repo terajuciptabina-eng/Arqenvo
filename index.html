@@ -189,19 +189,14 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .top .ribbon-group>small,.top .ribbon-buttons button span{display:none}
  .top .ribbon-buttons{height:40px;min-height:40px;align-items:center}
  .top .ribbon-buttons button{width:36px;min-width:36px;height:36px;min-height:36px;padding:0;font-size:20px}
- .top .ribbon-buttons button svg{width:24px;height:24px;stroke-width:1.9}
+ .top .ribbon-buttons button svg{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
  .context-toolbar{height:42px;min-height:42px;max-height:42px;overflow-x:auto;overflow-y:hidden}
  #toolbox{width:48px;min-width:48px;max-width:48px;padding:4px 2px;overflow-x:hidden}
  #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none;visibility:hidden}
  #toolbox .tool{display:flex;align-items:center;justify-content:center;width:42px;min-width:42px;max-width:42px;min-height:42px;margin:2px auto;padding:4px;gap:0;font-size:0;line-height:1;white-space:nowrap}
  #toolbox .tool b{display:block;flex:0 0 auto;width:auto;margin:0;font-size:22px;line-height:1;visibility:visible}
- /* iPad Safari: force SVG geometry to render as light line icons; neutralize inherited SVG fills. */
- #toolbox .tool b svg{display:block!important;width:25px!important;height:25px!important;fill:none!important;stroke:#d2d0cd!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
- #toolbox .tool b svg *{fill:none!important;stroke:#d2d0cd!important;stroke-width:1.8!important;stroke-linecap:round!important;stroke-linejoin:round!important}
- #toolbox .tool b{color:#d2d0cd!important}
- #toolbox .tool[data-tool="select"] b svg path{fill:#d2d0cd!important;stroke:#d2d0cd!important}
- #toolbox .tool.active b svg,#toolbox .tool.active b svg *{stroke:#fff!important}
- #toolbox .tool.active[data-tool="select"] b svg path{fill:#fff!important;stroke:#fff!important}
+  #toolbox .tool b svg{display:block;width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  #toolbox .tool[data-tool="select"] b svg path{fill:currentColor;stroke:currentColor}
  #contextToolIcon{color:#263d47}
 }
 /* Desktop must not display Hide/Show Navigator. */
