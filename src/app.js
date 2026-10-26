@@ -922,3 +922,59 @@ $("editCommit")?.addEventListener("click",()=>{
 $("editBackspace")?.addEventListener("click",()=>{document.dispatchEvent(new KeyboardEvent("keydown",{key:"Backspace",keyCode:8,which:8,bubbles:true,cancelable:true}));});
 $("editCancel")?.addEventListener("click",()=>{lastMarqueeRect=null;selectionBoxGesture=null;selected.clear();if(releasedTouchEditPending){releasedTouchEditPending=false;if(releasedTouchEditSnapshot){try{const snapshot=JSON.parse(releasedTouchEditSnapshot);const current=els();current.splice(0,current.length,...snapshot)}catch(error){console.error("Could not restore touch edit snapshot",error)}}releasedTouchEditSnapshot=null;updateEditActions();scheduleAutoSave();renderProperties();redraw();$("status").textContent="Element edit cancelled";return}if(finishElementEditGesture("cancel")){releasedTouchEditPending=false;updateEditActions();return}if(pendingOpeningPlacement){openingPlacement.cancel();pendingOpeningPlacement=null;releasedTouchEditPending=false;updateEditActions();redraw();$("status").textContent="Opening placement cancelled";return}if(cancelProvisionalDrawing()){$("status").textContent="Drawing cancelled · provisional elements removed";releasedTouchEditPending=false;updateEditActions();return}draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;trackerDistanceOverride=null;trackerAngleOverride=null;releasedTouchEditPending=false;updateEditActions();redraw();$("status").textContent="Command cancelled"});
 window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAngleLock=null;if(draft.length&&view==="floor")redraw()}if(e.code==="Space"){spaceHeld=false;if(spaceMagicWandActive){spaceMagicWandActive=false;tool=spaceMagicWandReturnTool||"select";spaceMagicWandReturnTool=null;document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));$("toolName").value=tool;updateContextUI();redraw();}}});window.addEventListener("blur",()=>{spaceHeld=false;if(spaceMagicWandActive){spaceMagicWandActive=false;tool=spaceMagicWandReturnTool||"select";spaceMagicWandReturnTool=null;document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));$("toolName").value=tool;updateContextUI();redraw();}isPanning=false;panStart=null;orbiting=false;lastCameraPointer=null;c.style.cursor=""});window.addEventListener("resize",resize);setTool("select");refreshStories();renderProperties();for(const sheet of p.layouts||[])ensureLayoutDefaults(sheet);activeLayoutId=p.layouts?.some(s=>s.id===activeLayoutId)?activeLayoutId:(p.layouts?.[0]?.id||null);activeLayoutDrawingId=layoutSheet()?.drawings?.[0]?.id||null;renderLayoutList();resize();updateEditActions();
+
+/* Resizable Toolbox / Navigator palettes (Archicad-style splitters). */
+(()=>{
+ const work=document.querySelector('.work');
+ const toolbox=document.getElementById('toolbox');
+ const navigatorPanel=document.querySelector('.work > .navigator');
+ if(!work||!toolbox||!navigatorPanel)return;
+ const coarse=()=>window.matchMedia('(pointer: coarse) and (min-width: 601px)').matches;
+ const desktop=()=>window.matchMedia('(min-width: 901px) and (pointer: fine)').matches;
+ const read=(key,fallback,min,max)=>{try{const n=Number(localStorage.getItem('arqenvo-'+key));return Number.isFinite(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
+ let toolboxWidth=read('toolbox-width',156,124,280);
+ let navigatorWidth=read('navigator-width',220,190,360);
+ let inspectorWidth=read('inspector-width',238,200,360);
+ const apply=()=>{
+   work.style.setProperty('--toolbox-width',toolboxWidth+'px');
+   work.style.setProperty('--navigator-width',navigatorWidth+'px');
+   work.style.setProperty('--inspector-width',inspectorWidth+'px');
+   const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');
+   if(t)t.style.left=(desktop()?toolboxWidth:48)+'px';
+   if(n){
+     if(coarse()){n.style.left=(48+navigatorWidth)+'px';n.style.right='auto'}
+     else {n.style.left='auto';n.style.right=inspectorWidth+'px'}
+   }
+ };
+ const makeHandle=(kind,label)=>{
+   const el=document.createElement('div');
+   el.className='arq-resize-handle '+kind+'-resize';
+   el.setAttribute('role','separator');el.setAttribute('aria-label',label);el.setAttribute('aria-orientation','vertical');el.tabIndex=0;
+   el.addEventListener('pointerdown',e=>{
+     if(e.pointerType==='mouse'&&e.button!==0)return;
+     if(!desktop()&&!coarse())return;
+     e.preventDefault();el.setPointerCapture?.(e.pointerId);
+     const startX=e.clientX, startToolbox=toolboxWidth,startNav=navigatorWidth,startInspector=inspectorWidth;
+     const move=ev=>{
+       if(kind==='toolbox'&&desktop())toolboxWidth=Math.max(124,Math.min(280,startToolbox+ev.clientX-startX));
+       else if(kind==='navigator'&&coarse())navigatorWidth=Math.max(190,Math.min(360,startNav+ev.clientX-startX));
+       else if(kind==='navigator'&&desktop())inspectorWidth=Math.max(200,Math.min(360,startInspector-(ev.clientX-startX)));
+       apply();
+     };
+     const finish=()=>{el.removeEventListener('pointermove',move);el.removeEventListener('pointerup',finish);el.removeEventListener('pointercancel',finish);try{localStorage.setItem('arqenvo-toolbox-width',String(toolboxWidth));localStorage.setItem('arqenvo-navigator-width',String(navigatorWidth));localStorage.setItem('arqenvo-inspector-width',String(inspectorWidth))}catch{}};
+     el.addEventListener('pointermove',move);el.addEventListener('pointerup',finish);el.addEventListener('pointercancel',finish);
+   });
+   el.addEventListener('keydown',e=>{
+     if(!['ArrowLeft','ArrowRight'].includes(e.key))return;e.preventDefault();
+     const delta=e.key==='ArrowRight'?10:-10;
+     if(kind==='toolbox'&&desktop())toolboxWidth=Math.max(124,Math.min(280,toolboxWidth+delta));
+     else if(kind==='navigator'&&coarse())navigatorWidth=Math.max(190,Math.min(360,navigatorWidth+delta));
+     else if(kind==='navigator'&&desktop())inspectorWidth=Math.max(200,Math.min(360,inspectorWidth-delta));
+     apply();try{localStorage.setItem('arqenvo-toolbox-width',String(toolboxWidth));localStorage.setItem('arqenvo-navigator-width',String(navigatorWidth));localStorage.setItem('arqenvo-inspector-width',String(inspectorWidth))}catch{}
+   });
+   return el;
+ };
+ work.append(makeHandle('toolbox','Resize Toolbox width'),makeHandle('navigator','Resize Navigator width'));
+ apply();
+ window.addEventListener('resize',apply);
+})();
