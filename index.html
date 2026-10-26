@@ -658,6 +658,13 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 /* Navigator keeps its native stacked section/tree/tab layout when floating; only Toolbox is a vertical flex palette. */
 .work>.navigator.arq-palette-floating{display:block!important;flex-direction:initial!important;}
 .work>#toolbox.arq-palette-floating{display:flex!important;flex-direction:column!important;}
+
+/* The tablet toggle lives inside the Navigator heading; it must not stretch across the entire drag handle. */
+#navigator-panel>.section>#navigatorToggle.navigator-toggle{width:auto!important;max-width:none!important;min-width:76px!important;flex:0 0 auto!important;position:static!important;align-self:center!important;margin:0 0 0 auto!important;white-space:nowrap!important}
+@media(pointer:coarse) and (min-width:601px){
+ #navigator-panel>.section{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:34px!important;gap:8px!important}
+ #navigator-panel>.section>#navigatorToggle.navigator-toggle{width:auto!important;max-width:none!important;flex:0 0 auto!important}
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
