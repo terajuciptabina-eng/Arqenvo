@@ -953,14 +953,47 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  function setMode(key,mode,side,x,y){const s=state[key],p=panels[key];if(mode==='dock'&&s.mode==='float'){const r=p.getBoundingClientRect();if(r.width>0&&r.height>0){s.w=r.width;s.h=r.height;dims[key].w=r.width;dims[key].h=r.height;saveDims(key)}}s.mode=mode;if(side)s.side=side;if(Number.isFinite(x))s.x=x;if(Number.isFinite(y))s.y=y;if(mode==='float')bounds(key);else{dims[key].w=s.w;dims[key].h=s.h}applyGrid();save(key);saveDims(key)}
  function dockSideAt(clientX,clientY,key){const r=work.getBoundingClientRect(),x=clientX-r.left,y=clientY-r.top,edge=Math.max(28,Math.min(48,Math.round(Math.min(r.width,r.height)*.045)));if(y>=r.height-edge)return'bottom';if(key==='navigator'&&x<Math.max(90,r.width*.38))return'left';if(x<=edge)return'left';if(x>=r.width-edge)return'right';return null}
  function addDrag(key,panel,handle){
-  if(!handle)return;handle.classList.add('arq-palette-drag-handle');handle.title='Drag to move. Drop near the left, right or bottom edge to dock';
-  let drag=null;const remove=()=>{document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',finish,true);document.removeEventListener('pointercancel',cancel,true)};
-  const move=e=>{if(!drag||drag.id!==e.pointerId)return;if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<5)return;if(!drag.moved){drag.moved=true;const s=state[key],r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;s.w=r.width;s.h=r.height;applyGrid()}const wr=work.getBoundingClientRect(),s=state[key];s.x=e.clientX-wr.left-drag.ox;s.y=e.clientY-wr.top-drag.oy;applyFloatBounds(key)};
-  const finish=e=>{if(!drag||drag.id!==e.pointerId)return;const d=drag;drag=null;remove();if(!d.moved)return;const side=dockSideAt(e.clientX,e.clientY,key);if(side){setMode(key,'dock',side);return}const r=panel.getBoundingClientRect(),s=state[key];s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key)};
+  if(!handle)return;
+  handle.classList.add('arq-palette-drag-handle');
+  handle.setAttribute('data-arq-drag-handle',key);
+  handle.title='Drag to move. Drop near left, right or bottom edge to dock';
+  let drag=null,active=false;
+  const remove=()=>{if(!active)return;active=false;document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',finish,true);document.removeEventListener('pointercancel',cancel,true)};
+  const move=e=>{
+   if(!drag||drag.id!==e.pointerId)return;
+   if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<5)return;
+   if(!drag.moved){
+    drag.moved=true;
+    const s=state[key],r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
+    s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;s.w=r.width;s.h=r.height;
+    applyGrid();
+   }
+   const wr=work.getBoundingClientRect(),s=state[key];
+   s.x=e.clientX-wr.left-drag.ox;s.y=e.clientY-wr.top-drag.oy;
+   applyFloatBounds(key);
+  };
+  const finish=e=>{
+   if(!drag||drag.id!==e.pointerId)return;
+   const d=drag;drag=null;remove();
+   if(!d.moved)return;
+   const side=dockSideAt(e.clientX,e.clientY,key);
+   if(side){setMode(key,'dock',side);return}
+   const r=panel.getBoundingClientRect(),s=state[key];
+   s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key);saveDims(key);
+  };
   const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid();save(key)};
-  handle.addEventListener('pointerdown',e=>{if(e.target.closest('button,input,select,a')&&!(key==='navigator'&&e.target.closest('#navigatorToggle')))return;if(e.pointerType==='mouse'&&e.button!==0)return;const r=panel.getBoundingClientRect();drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false};try{handle.setPointerCapture(e.pointerId)}catch{}document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',finish,true);document.addEventListener('pointercancel',cancel,true);e.preventDefault()});
- }
- function addFloatingResize(key,panel){
+  handle.addEventListener('pointerdown',e=>{
+   if(e.pointerType==='mouse'&&e.button!==0)return;
+   if(e.target.closest('button,input,select,a')&&!(key==='navigator'&&e.target.closest('#navigatorToggle')))return;
+   const r=panel.getBoundingClientRect();
+   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false};
+   active=true;
+   document.addEventListener('pointermove',move,true);
+   document.addEventListener('pointerup',finish,true);
+   document.addEventListener('pointercancel',cancel,true);
+   e.preventDefault();
+  });
+ } function addFloatingResize(key,panel){
   const grip=document.createElement('div');grip.className='arq-floating-resize';grip.setAttribute('role','separator');grip.setAttribute('aria-orientation','both');grip.setAttribute('aria-label','Resize '+key+' width and height');grip.title='Drag to resize width and height';panel.append(grip);
   let drag=null;grip.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;const r=panel.getBoundingClientRect();drag={id:e.pointerId,x:e.clientX,y:e.clientY,w:r.width,h:r.height};try{grip.setPointerCapture(e.pointerId)}catch{}e.preventDefault();e.stopPropagation()});
   grip.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const s=state[key];s.w=drag.w+e.clientX-drag.x;s.h=drag.h+e.clientY-drag.y;applyFloatBounds(key)});
