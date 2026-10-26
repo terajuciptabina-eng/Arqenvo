@@ -933,9 +933,13 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  const clamp=(n,min,max)=>Math.max(min,Math.min(Math.max(min,max),Number.isFinite(n)?n:min));
  const read=(key,fallback,min,max)=>{try{const n=Number(localStorage.getItem('arqenvo-'+key));return Number.isFinite(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
  const dims={toolbox:{w:read('toolbox-width',coarse()?48:156,48,420),h:read('toolbox-height',220,140,1200)},navigator:{w:read('navigator-width',coarse()?220:238,180,520),h:read('navigator-height',240,140,1000)},inspector:{w:read('inspector-width',238,200,420),h:read('inspector-height',240,140,1000)}};
- const defaults={toolbox:{mode:'dock',side:'left'},navigator:{mode:'dock',side:'right'}},state={};
- for(const key of Object.keys(panels)){let saved=null;try{saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null')}catch{}const d=defaults[key],sz=dims[key];state[key]={mode:saved?.mode==='float'?'float':'dock',side:['left','right','top','bottom'].includes(saved?.side)?saved.side:d.side,x:Number.isFinite(saved?.x)?saved.x:(key==='toolbox'?4:Math.max(4,work.clientWidth-sz.w-4)),y:Number.isFinite(saved?.y)?saved.y:4,w:Number.isFinite(saved?.w)?saved.w:sz.w,h:Number.isFinite(saved?.h)?saved.h:sz.h}}
- const save=key=>{try{localStorage.setItem('arqenvo-palette-'+key,JSON.stringify(state[key]))}catch{}};
+ const defaults={toolbox:{mode:'dock',side:'left'},navigator:{mode:'dock',side:'right'}},state={},layoutVersion=2;
+ for(const key of Object.keys(panels)){
+  let saved=null;try{saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null')}catch{}
+  const d=defaults[key],sz=dims[key],valid=saved?.version===layoutVersion;
+  state[key]={version:layoutVersion,mode:valid&&saved?.mode==='float'?'float':'dock',side:valid&&['left','right','top','bottom'].includes(saved?.side)?saved.side:d.side,x:valid&&Number.isFinite(saved?.x)?saved.x:(key==='toolbox'?4:Math.max(4,work.clientWidth-sz.w-4)),y:valid&&Number.isFinite(saved?.y)?saved.y:4,w:valid&&Number.isFinite(saved?.w)?saved.w:sz.w,h:valid&&Number.isFinite(saved?.h)?saved.h:sz.h};
+ }
+ const save=key=>{try{localStorage.setItem('arqenvo-palette-'+key,JSON.stringify({...state[key],version:layoutVersion}))}catch{}};
  const saveDims=key=>{try{localStorage.setItem('arqenvo-'+key+'-width',String(dims[key].w));localStorage.setItem('arqenvo-'+key+'-height',String(dims[key].h))}catch{}};
  function bounds(key){const s=state[key],minW=key==='toolbox'?124:180;s.w=clamp(s.w,minW,Math.max(minW,work.clientWidth-8));s.h=clamp(s.h,140,Math.max(140,work.clientHeight-8));s.x=clamp(s.x,4,Math.max(4,work.clientWidth-s.w-4));s.y=clamp(s.y,4,Math.max(4,work.clientHeight-s.h-4))}
  function applyFloatBounds(key){const s=state[key],p=panels[key];bounds(key);p.style.setProperty('--arq-float-left',s.x+'px');p.style.setProperty('--arq-float-top',s.y+'px');p.style.setProperty('--arq-float-width',s.w+'px');p.style.setProperty('--arq-float-height',s.h+'px')}
@@ -965,7 +969,11 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(!drag.moved){
     drag.moved=true;
     const s=state[key],r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
-    s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;s.w=r.width;s.h=r.height;
+    /* Docked panels fill the workspace height; do not carry that dock geometry into a floating window. */
+    const minW=key==='toolbox'?220:280,preferredW=key==='toolbox'?280:320,preferredH=key==='toolbox'?480:560;
+    s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;
+    s.w=clamp(Math.max(minW,preferredW),minW,Math.max(minW,work.clientWidth-8));
+    s.h=clamp(preferredH,220,Math.max(220,work.clientHeight-8));
     applyGrid();
    }
    const wr=work.getBoundingClientRect(),s=state[key];
