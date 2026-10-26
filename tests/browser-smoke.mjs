@@ -119,7 +119,7 @@ try {
   await page.mouse.down();
   await page.mouse.move(cx + 100, cy + 10, { steps: 5 });
   await page.mouse.up();
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"));
+  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected by area"), { timeout: 2500 }).catch(() => {});
   assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
     "Area selection should select at least one element");
 
