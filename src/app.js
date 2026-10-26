@@ -936,15 +936,15 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  let toolboxWidth=read('toolbox-width',coarse()?48:156,coarse()?48:124,coarse()?180:280),navigatorWidth=read('navigator-width',220,190,360),inspectorWidth=read('inspector-width',238,200,360);
  const state={};
  for(const [key,panel] of [['toolbox',toolbox],['navigator',nav]]){
-   let mode='dock',left=key==='toolbox'?8:Math.max(8,work.clientWidth-300),top=8,width=key==='toolbox'?210:280;
-   try{const saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null');if(saved&&['dock','float'].includes(saved.mode)){mode=saved.mode;left=Number.isFinite(saved.left)?saved.left:left;top=Number.isFinite(saved.top)?saved.top:top;width=Number.isFinite(saved.width)?saved.width:width}}catch{}
-   state[key]={mode,left,top,width};
+   let mode='dock',left=key==='toolbox'?8:Math.max(8,work.clientWidth-300),top=8,width=key==='toolbox'?210:280,height=key==='toolbox'?420:360,dockSide=key==='toolbox'?'left':'right';
+   try{const saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null');if(saved&&['dock','float'].includes(saved.mode)){mode=saved.mode;left=Number.isFinite(saved.left)?saved.left:left;top=Number.isFinite(saved.top)?saved.top:top;width=Number.isFinite(saved.width)?saved.width:width;height=Number.isFinite(saved.height)?saved.height:height;dockSide=['left','right'].includes(saved.dockSide)?saved.dockSide:dockSide}}catch{}
+   state[key]={mode,left,top,width,height,dockSide};
  }
  const persist=key=>{try{localStorage.setItem('arqenvo-palette-'+key,JSON.stringify(state[key]))}catch{}};
  const setFloating=(key,on,left,top)=>{
    const panel=key==='toolbox'?toolbox:nav,s=state[key];s.mode=on?'float':'dock';panel.classList.toggle('arq-palette-floating',on);
-   if(on){s.left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,left??s.left));s.top=Math.max(4,Math.min(work.clientHeight-90,top??s.top));panel.style.left=s.left+'px';panel.style.top=s.top+'px';panel.style.setProperty('--arq-float-width',s.width+'px');panel.style.right='auto';panel.style.bottom='auto'}
-   else{panel.style.removeProperty('left');panel.style.removeProperty('top');panel.style.removeProperty('--arq-float-width');panel.style.removeProperty('right');panel.style.removeProperty('bottom');}
+   if(on){s.left=Math.max(4,Math.min(Math.max(4,work.clientWidth-s.width-4),left??s.left));s.top=Math.max(4,Math.min(Math.max(4,work.clientHeight-Math.min(s.height,work.clientHeight-8)-4),top??s.top));panel.style.left=s.left+'px';panel.style.top=s.top+'px';panel.style.setProperty('--arq-float-width',s.width+'px');panel.style.setProperty('--arq-float-height',s.height+'px');panel.style.right='auto';panel.style.bottom='auto';panel.style.maxHeight='calc(100% - 8px)'}
+   else{panel.style.removeProperty('left');panel.style.removeProperty('top');panel.style.removeProperty('--arq-float-width');panel.style.removeProperty('--arq-float-height');panel.style.removeProperty('right');panel.style.removeProperty('bottom');panel.style.removeProperty('max-height');}
    persist(key);applyGrid();
  };
  const applyGrid=()=>{
@@ -952,7 +952,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    work.classList.toggle('toolbox-expanded',coarse()&&(toolboxWidth>72||state.toolbox.mode==='float'));work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');
    const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');if(t)t.style.left=(desktop()||coarse()?toolboxWidth:48)+'px';
    if(n){if(coarse()){n.style.left=(toolboxWidth+navigatorWidth)+'px';n.style.right='auto'}else{n.style.left='auto';n.style.right=inspectorWidth+'px'}}
-   for(const key of ['toolbox','navigator'])if(state[key].mode==='float'){const p=key==='toolbox'?toolbox:nav,s=state[key];p.style.left=s.left+'px';p.style.top=s.top+'px';p.style.setProperty('--arq-float-width',s.width+'px');}
+   for(const key of ['toolbox','navigator'])if(state[key].mode==='float'){const p=key==='toolbox'?toolbox:nav,s=state[key];p.style.left=s.left+'px';p.style.top=s.top+'px';p.style.setProperty('--arq-float-width',s.width+'px');p.style.setProperty('--arq-float-height',s.height+'px');}
  };
  const makeResizeHandle=(kind,label)=>{
    const el=document.createElement('div');el.className='arq-resize-handle '+kind+'-resize';el.setAttribute('role','separator');el.setAttribute('aria-label',label);el.setAttribute('aria-orientation','vertical');el.tabIndex=0;
@@ -970,10 +970,10 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    handle.addEventListener('pointerdown',e=>{if(mobile()||e.target.closest('button,input,select,a'))return;if(e.pointerType==='mouse'&&e.button!==0)return;const r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();active={id:e.pointerId,startX:e.clientX,startY:e.clientY,offsetX:e.clientX-r.left,offsetY:e.clientY-r.top,originLeft:r.left-wr.left,originTop:r.top-wr.top,moved:false};try{handle.setPointerCapture(e.pointerId)}catch{}e.preventDefault()});
    handle.addEventListener('pointermove',e=>{if(!active||active.id!==e.pointerId)return;if(!active.moved&&Math.hypot(e.clientX-active.startX,e.clientY-active.startY)<7)return;if(!active.moved){active.moved=true;if(state[key].mode!=='float')setFloating(key,true,active.originLeft,active.originTop)}const wr=work.getBoundingClientRect(),s=state[key];s.left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,e.clientX-wr.left-active.offsetX));s.top=Math.max(4,Math.min(work.clientHeight-90,e.clientY-wr.top-active.offsetY));panel.style.left=s.left+'px';panel.style.top=s.top+'px'});
    const end=e=>{if(!active||active.id!==e.pointerId)return;const a=active;active=null;if(!a.moved)return;const wr=work.getBoundingClientRect(),x=e.clientX-wr.left,nearHome=key==='toolbox'?x<64:(coarse()?x>toolboxWidth+40&&x<toolboxWidth+navigatorWidth+65:x>work.clientWidth-64);
-     if(nearHome)setFloating(key,false);else{state[key].mode='float';state[key].left=parseFloat(panel.style.left)||4;state[key].top=parseFloat(panel.style.top)||4;state[key].width=Math.max(190,panel.getBoundingClientRect().width);persist(key)}applyGrid()};
+     if(nearHome){setFloating(key,false)}else{const edge=key==='toolbox'?x>work.clientWidth-72:x<72;state[key].dockSide=edge?'right':'left';state[key].mode='float';state[key].left=Math.max(4,Math.min(work.clientWidth-panel.offsetWidth-4,parseFloat(panel.style.left)||4));state[key].top=Math.max(4,Math.min(work.clientHeight-panel.offsetHeight-4,parseFloat(panel.style.top)||4));state[key].width=Math.max(190,panel.getBoundingClientRect().width);state[key].height=Math.max(180,panel.getBoundingClientRect().height);persist(key)}applyGrid()};
    handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end);
  };
- addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));addDrag('navigator',nav,nav.querySelector('.section'));
+ const addFloatingResize=(key,panel)=>{const handle=document.createElement('div');handle.className='arq-floating-resize';handle.setAttribute('aria-label','Resize palette width and height');handle.title='Drag to resize width and height';panel.append(handle);let drag=null;handle.addEventListener('pointerdown',e=>{if(e.button!==0&&e.pointerType==='mouse')return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,w:panel.getBoundingClientRect().width,h:panel.getBoundingClientRect().height};try{handle.setPointerCapture(e.pointerId)}catch{}e.preventDefault();e.stopPropagation()});handle.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const s=state[key];s.width=Math.max(key==='toolbox'?124:190,Math.min(work.clientWidth-8,drag.w+e.clientX-drag.x));s.height=Math.max(180,Math.min(work.clientHeight-8,drag.h+e.clientY-drag.y));panel.style.setProperty('--arq-float-width',s.width+'px');panel.style.setProperty('--arq-float-height',s.height+'px');panel.style.height=s.height+'px';applyGrid()});const end=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;state[key].width=panel.getBoundingClientRect().width;state[key].height=panel.getBoundingClientRect().height;persist(key)};handle.addEventListener('pointerup',end);handle.addEventListener('pointercancel',end)}; addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));addDrag('navigator',nav,nav.querySelector('.section')); addFloatingResize('toolbox',toolbox);addFloatingResize('navigator',nav);
  if(!mobile())for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,true,state[key].left,state[key].top);
  applyGrid();
  window.addEventListener('resize',()=>{if(mobile()){for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,false)}else applyGrid()});
@@ -1002,3 +1002,6 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    else if(e.key==='End'&&e.altKey){bar.scrollLeft=bar.scrollWidth;e.preventDefault()}
  });
 })();
+
+/* Keep floating palettes entirely inside the workspace after resize/orientation changes. */
+window.addEventListener('resize',()=>{for(const key of ['toolbox','navigator'])if(state[key].mode==='float'){const panel=key==='toolbox'?toolbox:nav,s=state[key];s.width=Math.min(s.width,Math.max(190,work.clientWidth-8));s.height=Math.min(s.height,Math.max(180,work.clientHeight-8));s.left=Math.max(4,Math.min(work.clientWidth-s.width-4,s.left));s.top=Math.max(4,Math.min(work.clientHeight-s.height-4,s.top));panel.style.left=s.left+'px';panel.style.top=s.top+'px';panel.style.setProperty('--arq-float-width',s.width+'px');panel.style.setProperty('--arq-float-height',s.height+'px');}});
