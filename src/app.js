@@ -925,20 +925,64 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
 (()=>{const ribbon=$("contextToolbar"),info=$("selectionInfo"),props=$("elementProperties");if(!ribbon||!info||!props)return;const group=document.createElement("div");group.className="context-selection-settings";group.id="contextSelectionSettings";const count=document.createElement("div");count.className="context-selection-count";count.id="contextSelectionCountLive";group.append(count,info,props);const fill=ribbon.querySelector(".context-fill");ribbon.insertBefore(group,fill||null);info.classList.add("context-selection-count-source");props.classList.add("context-properties");const sync=()=>{count.textContent=info.textContent||"No selection";count.hidden=!info.textContent;};new MutationObserver(sync).observe(info,{childList:true,characterData:true,subtree:true});sync()})();
 setTool("select");refreshStories();renderProperties();for(const sheet of p.layouts||[])ensureLayoutDefaults(sheet);activeLayoutId=p.layouts?.some(s=>s.id===activeLayoutId)?activeLayoutId:(p.layouts?.[0]?.id||null);activeLayoutDrawingId=layoutSheet()?.drawings?.[0]?.id||null;renderLayoutList();resize();updateEditActions();
 
-/* Canonical palette manager: drag, dock on each edge, resize both axes, and persist panel state. */
+/* Canonical palette manager — one bounded state model for docked and floating panels. */
 (()=>{
- const work=document.querySelector('.work'),toolbox=document.getElementById('toolbox'),nav=work?.querySelector(':scope > .navigator');
+ const work=document.querySelector('.work');
+ const toolbox=document.getElementById('toolbox');
+ const nav=work?.querySelector(':scope > .navigator');
  if(!work||!toolbox||!nav)return;
- const panels={toolbox,navigator:nav},coarse=()=>matchMedia('(pointer:coarse) and (min-width:601px)').matches,mobile=()=>matchMedia('(max-width:600px)').matches,desktop=()=>matchMedia('(min-width:901px) and (pointer:fine)').matches;
- const clamp=(n,min,max)=>Math.max(min,Math.min(Math.max(min,max),n)),read=(key,fallback,min,max)=>{try{const n=Number(localStorage.getItem('arqenvo-'+key));return Number.isFinite(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}};
- const dims={toolbox:{w:read('toolbox-width',coarse()?48:156,48,320),h:read('toolbox-height',220,140,1200)},navigator:{w:read('navigator-width',coarse()?220:238,180,420),h:read('navigator-height',220,140,900)},inspector:{w:read('inspector-width',238,200,380),h:read('inspector-height',240,140,1000)}};
- const defaults={toolbox:{mode:'dock',side:'left'},navigator:{mode:'dock',side:'right'}},state={};
- for(const key of Object.keys(panels)){let saved=null;try{saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null')}catch{}const d=defaults[key],sz=dims[key];state[key]={mode:saved?.mode==='float'?'float':'dock',side:['left','right','bottom'].includes(saved?.side)?saved.side:d.side,x:Number.isFinite(saved?.x)?saved.x:(key==='toolbox'?4:Math.max(4,work.clientWidth-sz.w-4)),y:Number.isFinite(saved?.y)?saved.y:4,w:Number.isFinite(saved?.w)?saved.w:sz.w,h:Number.isFinite(saved?.h)?saved.h:sz.h}}
+
+ const panels={toolbox,navigator:nav};
+ const coarse=()=>matchMedia('(pointer:coarse)').matches;
+ const desktop=()=>matchMedia('(min-width:901px) and (pointer:fine)').matches;
+ const clamp=(n,min,max)=>Math.max(min,Math.min(Math.max(min,max),Number.isFinite(n)?n:min));
+ const read=(key,fallback,min,max)=>{
+  try{const n=Number(localStorage.getItem('arqenvo-'+key));return Number.isFinite(n)&&n>=min&&n<=max?n:fallback}catch{return fallback}
+ };
+ const dims={
+  toolbox:{w:read('toolbox-width',coarse()?48:156,48,420),h:read('toolbox-height',220,140,1200)},
+  navigator:{w:read('navigator-width',coarse()?220:238,180,520),h:read('navigator-height',240,140,1000)},
+  inspector:{w:read('inspector-width',238,200,420),h:read('inspector-height',240,140,1000)}
+ };
+ const defaults={toolbox:{mode:'dock',side:'left'},navigator:{mode:'dock',side:'right'}};
+ const state={};
+ for(const key of Object.keys(panels)){
+  let saved=null;
+  try{saved=JSON.parse(localStorage.getItem('arqenvo-palette-'+key)||'null')}catch{}
+  const d=defaults[key],sz=dims[key];
+  state[key]={
+   mode:saved?.mode==='float'?'float':'dock',
+   side:['left','right','bottom'].includes(saved?.side)?saved.side:d.side,
+   x:Number.isFinite(saved?.x)?saved.x:(key==='toolbox'?4:Math.max(4,work.clientWidth-sz.w-4)),
+   y:Number.isFinite(saved?.y)?saved.y:4,
+   w:Number.isFinite(saved?.w)?saved.w:sz.w,
+   h:Number.isFinite(saved?.h)?saved.h:sz.h
+  };
+ }
  const save=key=>{try{localStorage.setItem('arqenvo-palette-'+key,JSON.stringify(state[key]))}catch{}};
- function boundFloat(key){const s=state[key],p=panels[key],w=work.clientWidth,h=work.clientHeight,minW=key==='toolbox'?124:180;s.w=clamp(s.w,minW,Math.max(minW,w-8));s.h=clamp(s.h,140,Math.max(140,h-8));s.x=clamp(s.x,4,Math.max(4,w-s.w-4));s.y=clamp(s.y,4,Math.max(4,h-s.h-4));p.style.setProperty('--arq-float-left',s.x+'px');p.style.setProperty('--arq-float-top',s.y+'px');p.style.setProperty('--arq-float-width',s.w+'px');p.style.setProperty('--arq-float-height',s.h+'px')}
- function cleanupFloating(key){const p=panels[key];p.classList.remove('arq-palette-floating');['left','top','right','bottom','width','height','max-height','max-width','min-width','min-height'].forEach(x=>p.style.removeProperty(x));['--arq-float-left','--arq-float-top','--arq-float-width','--arq-float-height'].forEach(x=>p.style.removeProperty(x))}
+ const saveDims=key=>{try{localStorage.setItem('arqenvo-'+key+'-width',String(dims[key].w));localStorage.setItem('arqenvo-'+key+'-height',String(dims[key].h))}catch{}};
+
+ function bounds(key){
+  const s=state[key],minW=key==='toolbox'?124:180;
+  s.w=clamp(s.w,minW,Math.max(minW,work.clientWidth-8));
+  s.h=clamp(s.h,140,Math.max(140,work.clientHeight-8));
+  s.x=clamp(s.x,4,Math.max(4,work.clientWidth-s.w-4));
+  s.y=clamp(s.y,4,Math.max(4,work.clientHeight-s.h-4));
+ }
+ function applyFloatBounds(key){
+  const s=state[key],p=panels[key];bounds(key);
+  p.style.setProperty('--arq-float-left',s.x+'px');
+  p.style.setProperty('--arq-float-top',s.y+'px');
+  p.style.setProperty('--arq-float-width',s.w+'px');
+  p.style.setProperty('--arq-float-height',s.h+'px');
+ }
+ function clearFloatStyles(p){
+  p.classList.remove('arq-palette-floating');
+  ['left','top','right','bottom','width','height','max-height','max-width','min-width','min-height'].forEach(x=>p.style.removeProperty(x));
+  ['--arq-float-left','--arq-float-top','--arq-float-width','--arq-float-height'].forEach(x=>p.style.removeProperty(x));
+ }
  function applyGrid(){
-  for(const c of [...work.classList]) if(/^dock-(toolbox|navigator)-(left|right|bottom)$/.test(c)) work.classList.remove(c);
+  for(const c of [...work.classList])if(/^dock-(toolbox|navigator)-(left|right|bottom)$/.test(c))work.classList.remove(c);
   work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');
   work.classList.toggle('navigator-floating',state.navigator.mode==='float');
   work.style.setProperty('--toolbox-width',dims.toolbox.w+'px');
@@ -951,61 +995,145 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   work.style.setProperty('--palette-nav-h',dims.navigator.h+'px');
   for(const key of Object.keys(panels)){
    const s=state[key],p=panels[key];
-   if(s.mode==='float'){p.classList.add('arq-palette-floating');boundFloat(key)}
-   else {cleanupFloating(key);work.classList.add('dock-'+key+'-'+s.side)}
+   if(s.mode==='float'){p.classList.add('arq-palette-floating');applyFloatBounds(key)}
+   else{clearFloatStyles(p);if(s.side!==(key==='toolbox'?'left':'right'))work.classList.add('dock-'+key+'-'+s.side)}
   }
   work.classList.toggle('toolbox-expanded',coarse()&&(dims.toolbox.w>72||state.toolbox.mode==='float'));
   const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');
-  if(t){t.style.left=(coarse()?48:dims.toolbox.w)+'px';t.style.right='auto'}
-  if(n){n.style.left='auto';n.style.right=desktop()?dims.inspector.w+'px':'auto'}
+  if(t){t.style.left=dims.toolbox.w+'px';t.style.right='auto'}
+  if(n){n.style.left=coarse()?'calc(var(--palette-toolbox-w,48px) + var(--palette-nav-w,220px))':'auto';n.style.right=desktop()?'var(--palette-inspector-w,238px)':'auto'}
  }
- function setMode(key,mode,side,x,y){const s=state[key];s.mode=mode;if(side)s.side=side;if(Number.isFinite(x))s.x=x;if(Number.isFinite(y))s.y=y;applyGrid();save(key)}
+ function setMode(key,mode,side,x,y){
+  const s=state[key];s.mode=mode;if(side)s.side=side;
+  if(Number.isFinite(x))s.x=x;if(Number.isFinite(y))s.y=y;
+  if(mode==='float')bounds(key);
+  applyGrid();save(key);
+ }
+ function dockSideAt(clientX,clientY){
+  const r=work.getBoundingClientRect(),x=clientX-r.left,y=clientY-r.top;
+  const edge=Math.max(28,Math.min(48,Math.round(Math.min(r.width,r.height)*.045)));
+  if(y>=r.height-edge)return 'bottom';
+  if(x<=edge)return 'left';
+  if(x>=r.width-edge)return 'right';
+  return null;
+ }
  function addDrag(key,panel,handle){
   if(!handle)return;
   handle.classList.add('arq-palette-drag-handle');
-  handle.title='Drag to move. Drop near left, right, or bottom edge to dock.';
-  let drag=null,active=false;
+  handle.title='Drag to move. Drop near the left, right or bottom edge to dock.';
+  let drag=null;
+  const remove=()=>{
+   document.removeEventListener('pointermove',move,true);
+   document.removeEventListener('pointerup',finish,true);
+   document.removeEventListener('pointercancel',cancel,true);
+  };
   const move=e=>{
    if(!drag||drag.id!==e.pointerId)return;
-   if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<6)return;
+   if(!drag.moved&&Math.hypot(e.clientX-drag.sx,e.clientY-drag.sy)<5)return;
    if(!drag.moved){
     drag.moved=true;
     const s=state[key],r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
-    s.mode='float';s.side=s.side||defaults[key].side;s.x=r.left-wr.left;s.y=r.top-wr.top;s.w=r.width;s.h=r.height;
-    applyGrid();save(key);
+    s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;s.w=r.width;s.h=r.height;
+    applyGrid();
    }
    const wr=work.getBoundingClientRect(),s=state[key];
-   s.x=clamp(e.clientX-wr.left-drag.ox,4,Math.max(4,work.clientWidth-s.w-4));
-   s.y=clamp(e.clientY-wr.top-drag.oy,4,Math.max(4,work.clientHeight-s.h-4));
-   boundFloat(key);
+   s.x=e.clientX-wr.left-drag.ox;s.y=e.clientY-wr.top-drag.oy;
+   applyFloatBounds(key);
   };
-  const removeCapture=()=>{if(!active)return;active=false;document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',finish,true);document.removeEventListener('pointercancel',cancel,true)};
   const finish=e=>{
    if(!drag||drag.id!==e.pointerId)return;
-   const a=drag;drag=null;removeCapture();if(!a.moved)return;
-   const wr=work.getBoundingClientRect(),x=e.clientX-wr.left,y=e.clientY-wr.top,h=work.clientHeight,edge=32;
-   let side=null;
-   if(y>=h-edge)side='bottom';
-   else if(x<=edge)side='left';
-   else if(x>=work.clientWidth-edge)side='right';
+   const d=drag;drag=null;remove();
+   if(!d.moved)return;
+   const side=dockSideAt(e.clientX,e.clientY);
    if(side){setMode(key,'dock',side);return}
-   const r=panel.getBoundingClientRect(),s=state[key];s.w=r.width;s.h=r.height;applyGrid();save(key);
+   const r=panel.getBoundingClientRect(),s=state[key];
+   s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key);
   };
-  const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;removeCapture();applyGrid();save(key)};
-  const down=e=>{
-   if(mobile()||e.target.closest('button,input,select,a'))return;
+  const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid();save(key)};
+  handle.addEventListener('pointerdown',e=>{
+   if(e.target.closest('button,input,select,a'))return;
    if(e.pointerType==='mouse'&&e.button!==0)return;
    const r=panel.getBoundingClientRect();
    drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false};
-   active=true;
+   try{handle.setPointerCapture(e.pointerId)}catch{}
    document.addEventListener('pointermove',move,true);
    document.addEventListener('pointerup',finish,true);
    document.addEventListener('pointercancel',cancel,true);
    e.preventDefault();
-  };
-  handle.addEventListener('pointerdown',down);
+  });
  }
- function addFloatingResize(key,panel){const grip=document.createElement('div');grip.className='arq-floating-resize';grip.setAttribute('role','separator');grip.setAttribute('aria-label','Resize '+key+' width and height');grip.title='Drag to resize width and height';panel.append(grip);let drag=null;grip.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,w:panel.getBoundingClientRect().width,h:panel.getBoundingClientRect().height};try{grip.setPointerCapture(e.pointerId)}catch{}e.preventDefault();e.stopPropagation()});grip.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const s=state[key],minW=key==='toolbox'?124:180;s.w=clamp(drag.w+e.clientX-drag.x,minW,Math.max(minW,work.clientWidth-8));s.h=clamp(drag.h+e.clientY-drag.y,140,Math.max(140,work.clientHeight-8));boundFloat(key)});const done=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;save(key)};grip.addEventListener('pointerup',done);grip.addEventListener('pointercancel',done)}
- function addDockResize(key,panel){panel.addEventListener('pointerdown',e=>{const target=e.target.closest('.arq-panel-edge-resize');if(!target||target.dataset.palette!==key||state[key].mode!=='dock')return;if(e.pointerType==='mouse'&&e.button!==0)return;const horizontal=target.classList.contains('horizontal'),r=panel.getBoundingClientRect(),start=horizontal?e.clientY:e.clientX,base=horizontal?r.height:r.width;let size=base;const move=ev=>{const d=(horizontal?ev.clientY:ev.clientX)-start;size=clamp(base+(horizontal?-d:d),horizontal?140:(key==='toolbox'?124:180),horizontal?Math.max(140,work.clientHeight-100):Math.max(180,work.clientWidth-250));if(horizontal){if(key==='toolbox')dims.toolbox.h=size;else dims.navigator.h=size;work.style.setProperty(key==='toolbox'?'--palette-toolbox-h':'--palette-nav-h',size+'px')}else{if(key==='toolbox')dims.toolbox.w=size;else dims.navigator.w=size;work.style.setProperty(key==='toolbox'?'--palette-toolbox-w':'--palette-nav-w',size+'px');work.style.setProperty(key==='toolbox'?'--toolbox-width':'--navigator-width',size+'px')}};const done=()=>{panel.removeEventListener('pointermove',move);panel.removeEventListener('pointerup',done);panel.removeEventListener('pointercancel',done);if(horizontal){if(key==='toolbox')dims.toolbox.h=size;else dims.navigator.h=size}else{if(key==='toolbox')dims.toolbox.w=size;else dims.navigator.w=size}try{localStorage.setItem('arqenvo-'+key+'-width',dims[key].w);localStorage.setItem('arqenvo-'+key+'-height',dims[key].h)}catch{}applyGrid()};e.preventDefault();panel.setPointerCapture?.(e.pointerId);panel.addEventListener('pointermove',move);panel.addEventListener('pointerup',done);panel.addEventListener('pointercancel',done)})}
- work.append(Object.assign(document.createElement('div'),{className:'arq-resize-handle toolbox-resize',title:'Resize Toolbox'}),Object.assign(document.createElement('div'),{className:'arq-resize-handle navigator-resize',title:'Resize Navigator'}));addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));addDrag('navigator',nav,nav.querySelector('.section'));addFloatingResize('toolbox',toolbox);addFloatingResize('navigator',nav);addDockResize('toolbox',toolbox);addDockResize('navigator',nav);applyGrid();window.addEventListener('resize',()=>{for(const key of Object.keys(panels))if(state[key].mode==='float')boundFloat(key);applyGrid()})
+ function addFloatingResize(key,panel){
+  const grip=document.createElement('div');
+  grip.className='arq-floating-resize';
+  grip.setAttribute('role','separator');grip.setAttribute('aria-orientation','both');
+  grip.setAttribute('aria-label','Resize '+key+' width and height');
+  grip.title='Drag to resize width and height';panel.append(grip);
+  let drag=null;
+  grip.addEventListener('pointerdown',e=>{
+   if(e.pointerType==='mouse'&&e.button!==0)return;
+   const r=panel.getBoundingClientRect();
+   drag={id:e.pointerId,x:e.clientX,y:e.clientY,w:r.width,h:r.height};
+   try{grip.setPointerCapture(e.pointerId)}catch{}
+   e.preventDefault();e.stopPropagation();
+  });
+  grip.addEventListener('pointermove',e=>{
+   if(!drag||drag.id!==e.pointerId)return;
+   const s=state[key];s.w=drag.w+e.clientX-drag.x;s.h=drag.h+e.clientY-drag.y;
+   applyFloatBounds(key);
+  });
+  const done=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;save(key);saveDims(key)};
+  grip.addEventListener('pointerup',done);grip.addEventListener('pointercancel',done);
+ }
+ function addDockResize(key,panel){
+  const grip=document.createElement('div');
+  grip.className='arq-dock-resize '+key;grip.dataset.palette=key;
+  grip.setAttribute('role','separator');grip.setAttribute('aria-label','Resize docked '+key);
+  grip.title='Drag to resize docked panel width or height';panel.append(grip);
+  let drag=null;
+  const remove=()=>{
+   document.removeEventListener('pointermove',move,true);
+   document.removeEventListener('pointerup',done,true);
+   document.removeEventListener('pointercancel',cancel,true);
+  };
+  const move=e=>{
+   if(!drag||drag.id!==e.pointerId)return;
+   const s=state[key],dx=e.clientX-drag.x,dy=e.clientY-drag.y;
+   if(drag.axis==='x'){
+    const sign=key==='toolbox'&&s.side==='right'?-1:1;
+    const minW=key==='toolbox'?124:180;
+    dims[key].w=clamp(drag.w+dx*sign,minW,Math.max(minW,work.clientWidth-250));
+    s.w=dims[key].w;
+   }else{
+    const sign=s.side==='bottom'?-1:1;
+    dims[key].h=clamp(drag.h+dy*sign,140,Math.max(140,work.clientHeight-100));
+    s.h=dims[key].h;
+   }
+   applyGrid();
+  };
+  const done=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();save(key);saveDims(key);applyGrid()};
+  const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid()};
+  grip.addEventListener('pointerdown',e=>{
+   if(state[key].mode!=='dock'||(e.pointerType==='mouse'&&e.button!==0))return;
+   const r=panel.getBoundingClientRect();
+   const horizontal=e.target.classList.contains('horizontal')||state[key].side==='bottom';
+   drag={id:e.pointerId,x:e.clientX,y:e.clientY,axis:horizontal?'y':'x',w:r.width,h:r.height};
+   try{grip.setPointerCapture(e.pointerId)}catch{}
+   document.addEventListener('pointermove',move,true);
+   document.addEventListener('pointerup',done,true);
+   document.addEventListener('pointercancel',cancel,true);
+   e.preventDefault();e.stopPropagation();
+  });
+ }
+ work.append(
+  Object.assign(document.createElement('div'),{className:'arq-resize-handle toolbox-resize',title:'Resize Toolbox'}),
+  Object.assign(document.createElement('div'),{className:'arq-resize-handle navigator-resize',title:'Resize Navigator'})
+ );
+ addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));
+ addDrag('navigator',nav,nav.querySelector('.section'));
+ for(const key of Object.keys(panels)){addFloatingResize(key,panels[key]);addDockResize(key,panels[key])}
+ applyGrid();
+ window.addEventListener('resize',()=>{
+  for(const key of Object.keys(panels))if(state[key].mode==='float')applyFloatBounds(key);
+  applyGrid();
+ });
 })();
