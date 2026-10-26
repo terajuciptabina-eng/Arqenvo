@@ -71,6 +71,25 @@ try{
  const desktop=await browser.newPage({viewport:{width:1440,height:1000}});desktop.on("pageerror",e=>errors.push(e.message));await desktop.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});await desktop.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100&&document.querySelector("#navigatorToggle"));
  const state=await desktop.evaluate(()=>({toggleHidden:document.querySelector("#navigatorToggle").hidden,toolbox:document.querySelector("#toolbox").getBoundingClientRect().width,workspace:document.querySelector(".workspace").getBoundingClientRect().width,nav:getComputedStyle(document.querySelector(".navigator")).display,inspector:getComputedStyle(document.querySelector(".inspector")).display}));
  assert.equal(state.toggleHidden,true,"Desktop must not expose the Hide/Show Navigator control");assert.ok(state.workspace>100&&state.toolbox>0&&state.nav==="block"&&state.inspector==="block");
+ // Desktop regression: moving a palette must float it, preserve the workspace, and allow docking at its original edge.
+ const desktopToolboxHeader=desktop.locator("#toolbox .toolbox-title"),desktopToolboxBox=await desktopToolboxHeader.boundingBox();
+ await desktop.mouse.move(desktopToolboxBox.x+desktopToolboxBox.width/2,desktopToolboxBox.y+desktopToolboxBox.height/2);await desktop.mouse.down();
+ await desktop.mouse.move(desktopToolboxBox.x+desktopToolboxBox.width/2+180,desktopToolboxBox.y+desktopToolboxBox.height/2+90,{steps:8});await desktop.mouse.up();
+ await desktop.waitForFunction(()=>document.querySelector("#toolbox")?.classList.contains("arq-palette-floating"));
+ assert.equal(JSON.parse(await desktop.evaluate(()=>localStorage.getItem("arqenvo-palette-toolbox"))).mode,"float");
+ const desktopFloatToolbox=await desktopToolboxHeader.boundingBox();
+ await desktop.mouse.move(desktopFloatToolbox.x+10,desktopFloatToolbox.y+desktopFloatToolbox.height/2);await desktop.mouse.down();await desktop.mouse.move(20,Math.max(35,desktopFloatToolbox.y+desktopFloatToolbox.height/2),{steps:8});await desktop.mouse.up();
+ await desktop.waitForFunction(()=>!document.querySelector("#toolbox")?.classList.contains("arq-palette-floating"));
+ const desktopNavHeader=desktop.locator(".navigator > .section").first(),desktopNavBox=await desktopNavHeader.boundingBox();
+ await desktop.mouse.move(desktopNavBox.x+Math.min(25,desktopNavBox.width/3),desktopNavBox.y+desktopNavBox.height/2);await desktop.mouse.down();
+ await desktop.mouse.move(800,desktopNavBox.y+90,{steps:8});await desktop.mouse.up();
+ await desktop.waitForFunction(()=>document.querySelector(".navigator")?.classList.contains("arq-palette-floating"));
+ assert.equal(JSON.parse(await desktop.evaluate(()=>localStorage.getItem("arqenvo-palette-navigator"))).mode,"float");
+ const desktopFloatNav=await desktopNavHeader.boundingBox();
+ await desktop.mouse.move(desktopFloatNav.x+15,desktopFloatNav.y+desktopFloatNav.height/2);await desktop.mouse.down();await desktop.mouse.move(1420,Math.max(35,desktopFloatNav.y+desktopFloatNav.height/2),{steps:8});await desktop.mouse.up();
+ await desktop.waitForFunction(()=>!document.querySelector(".navigator")?.classList.contains("arq-palette-floating"));
+ assert.equal(JSON.parse(await desktop.evaluate(()=>localStorage.getItem("arqenvo-palette-navigator"))).mode,"dock");
+ assert.deepEqual(errors,[],"Palette movement must not introduce browser errors");
  const svgAudit=await desktop.evaluate(()=>{const host=document.querySelector("#contextToolIcon"),svg=host?.querySelector("svg"),path=svg?.querySelector("path"),s=path?getComputedStyle(path):null;return{exists:!!svg,color:host?getComputedStyle(host).color:null,fill:s?.fill,stroke:s?.stroke}});
  assert.equal(svgAudit.exists,true);assert.equal(svgAudit.color,"rgb(38, 61, 71)","Context Toolbar icon must use the canonical dark icon color on its light background");assert.notEqual(svgAudit.fill,"none");assert.notEqual(svgAudit.stroke,"none");assert.deepEqual(errors,[]);await desktop.close();console.log("Tablet layout smoke passed.");
 }finally{await browser.close();await new Promise(resolve=>server.close(resolve))}
