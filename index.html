@@ -535,6 +535,13 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .context-identity .info-box-label{display:block!important;visibility:visible!important;font-size:9px;line-height:1.2;letter-spacing:.08em;font-weight:800;color:#334b59;padding-bottom:2px}
 @media (pointer:coarse){.context-identity .info-box-label{display:block!important;visibility:visible!important;font-size:8px;letter-spacing:.04em}}
 @media (max-width:760px){.context-identity .info-box-label{display:block!important;visibility:visible!important;font-size:8px;letter-spacing:.03em}}
+/* Final Info Box behavior: no title button; ribbon remains horizontally scrollable without a visible scrollbar. */
+.info-box-heading{display:none!important}
+#contextToolbar{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-x:contain}
+#contextToolbar::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;background:transparent!important}
+#contextToolbar>.context-selection-settings{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
+#contextToolbar .context-properties{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
+#contextToolbar .context-properties>.field,#contextToolbar .context-properties>.field-row{flex:0 0 auto!important;min-width:max-content!important}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -653,11 +660,3 @@ document.addEventListener("keydown",event=>{
 </script>
 
 </body></html>
-
-/* Final Info Box behavior: no title button; ribbon remains horizontally scrollable without a visible scrollbar. */
-.info-box-heading{display:none!important}
-#contextToolbar{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important;-webkit-overflow-scrolling:touch;touch-action:pan-x;overscroll-behavior-x:contain}
-#contextToolbar::-webkit-scrollbar{display:none!important;width:0!important;height:0!important;background:transparent!important}
-#contextToolbar>.context-selection-settings{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
-#contextToolbar .context-properties{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
-#contextToolbar .context-properties>.field,#contextToolbar .context-properties>.field-row{flex:0 0 auto!important;min-width:max-content!important}
