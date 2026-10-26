@@ -992,7 +992,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    document.addEventListener('pointerup',finish,true);
    document.addEventListener('pointercancel',cancel,true);
    e.preventDefault();
-  });
+  },true);
  } function addFloatingResize(key,panel){
   const edges=['n','e','s','w','ne','nw','se','sw'];
   for(const edge of edges){
