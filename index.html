@@ -500,6 +500,22 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media (min-width:901px) and (pointer:fine){.work.toolbox-floating{grid-template-columns:0 minmax(0,1fr) var(--inspector-width,238px)!important}}
 @media (pointer:coarse) and (min-width:601px){.work.toolbox-floating{grid-template-columns:0 var(--navigator-width,220px) minmax(0,1fr) var(--inspector-width,250px)!important}.work.navigator-floating{grid-template-columns:var(--toolbox-width,48px) 0 minmax(0,1fr) var(--inspector-width,250px)!important}.work.toolbox-floating.navigator-floating,.work.navigator-hidden.toolbox-floating{grid-template-columns:0 0 minmax(0,1fr) var(--inspector-width,250px)!important}}
 
+/* Archicad-style horizontal Info Box: selected-element properties live in the top contextual strip. */
+.context-selection-settings{display:flex;align-items:center;gap:7px;flex:0 0 auto;min-width:0;max-width:100%;overflow:visible}
+.context-selection-count{display:flex;align-items:center;min-height:26px;padding:0 7px;border:1px solid #c4cdd3;border-radius:3px;background:#f8fafb;color:#40515d;font-size:10px;font-weight:700;white-space:nowrap}
+.context-properties{display:flex;align-items:center;gap:7px;min-width:0;max-width:100%;overflow:visible}
+.context-properties>.field,.context-properties>.field-row{display:flex;flex-direction:row;align-items:center;gap:5px;margin:0!important;min-width:max-content}
+.context-properties .field label{display:inline-block;white-space:nowrap;margin:0;color:#596975;font-size:9px;font-weight:700}
+.context-properties .field input,.context-properties .field select{width:92px;max-width:110px;min-height:27px;padding:4px 6px;font-size:11px}
+.context-properties .field-row{display:flex;align-items:center;gap:7px}
+.context-properties .field-row>.field{display:flex;flex-direction:row;align-items:center;gap:5px;margin:0!important}
+.context-properties>p{margin:0;white-space:nowrap;font-size:10px!important;color:#53616b!important}
+.context-properties>button{min-height:27px;padding:4px 8px;white-space:nowrap;font-size:10px}
+.context-properties>hr{display:none}
+.context-properties .field input[type=number]{width:74px}
+.context-toolbar .context-selection-settings[hidden]{display:none}
+@media(max-width:900px){.context-selection-settings{gap:5px}.context-properties{gap:5px}.context-properties .field input,.context-properties .field select{width:76px;max-width:90px}.context-properties .field label{font-size:8px}}
+@media(max-width:760px){.context-selection-settings{gap:4px}.context-selection-count{font-size:9px;padding:0 5px}.context-properties .field input,.context-properties .field select{width:68px;max-width:78px;min-height:26px;padding:3px 4px}.context-properties .field label{font-size:8px}}
 /* Dedicated, always-visible Info Box heading in the Ribbon. */
 .info-box-heading{display:flex!important;visibility:visible!important;align-items:center;justify-content:center;flex:0 0 auto;align-self:stretch;padding:0 10px;background:#dce8ed;border:1px solid #a9bdc6;border-radius:4px;color:#203e4b;font-size:10px;font-weight:800;letter-spacing:.06em;white-space:nowrap;line-height:1}
 @media (pointer:coarse){.info-box-heading{padding:0 7px;font-size:9px;letter-spacing:.02em}}
