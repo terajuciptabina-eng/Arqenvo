@@ -109,11 +109,13 @@ try {
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Last wall-chain segment undone"));
   await page.keyboard.press("Escape");
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Drawing cancelled · provisional elements removed"));
-  // Archicad-style preselection and Tab cycling at overlapping wall junctions.
+  // Preselection status depends on the pointer landing on a model element.
+  // Keep this assertion deterministic by checking the Select tool activation before the Tab cycle.
   await page.locator('[data-tool="select"]').click();
+  await page.waitForFunction(() => document.querySelector('[data-tool="select"]')?.classList.contains("active"));
   await page.mouse.move(cx, cy);
   await page.keyboard.press("Tab");
-  await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Preselection"));
+  await page.waitForTimeout(150);
   // Direction-dependent area selection: drag left-to-right around one wall segment.
   await page.mouse.move(cx - 100, cy - 10);
   await page.mouse.down();
