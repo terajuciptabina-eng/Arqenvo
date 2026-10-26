@@ -974,5 +974,5 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));addDrag('navigator',nav,nav.querySelector('.section'));
  if(!mobile())for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,true,state[key].left,state[key].top);
  applyGrid();
- window.addEventListener('resize',()=>{if(mobile())for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,false);else{}else applyGrid()});
+ window.addEventListener('resize',()=>{if(mobile()){for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,false)}else applyGrid()});
 })();
