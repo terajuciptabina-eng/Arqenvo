@@ -630,6 +630,13 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work>.arq-palette-floating>.arq-floating-resize{position:sticky;display:block;flex:0 0 14px;width:100%;height:14px;min-height:14px;margin-top:auto;bottom:0;align-self:stretch;cursor:nwse-resize;touch-action:none;background:linear-gradient(135deg,transparent 0 40%,#a3afb8 41% 47%,transparent 48% 60%,#a3afb8 61% 67%,transparent 68%);z-index:5}
 .work>.arq-palette-floating>.arq-floating-resize:after{content:"";display:block;width:100%;height:100%;cursor:nwse-resize}
 @media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}}
+
+/* Dock panel drag handles stay usable on touch tablets, even when the Toolbox is icon-only. */
+@media (pointer:coarse) and (min-width:601px){
+ #toolbox .toolbox-title{display:block!important;visibility:visible!important;min-height:26px!important;height:26px!important;padding:5px 0 4px!important;overflow:visible!important;font-size:7px!important;line-height:1.2!important;letter-spacing:0!important;text-align:center!important;white-space:nowrap!important;cursor:grab!important;touch-action:none!important}
+ .work>.navigator>.section{display:block!important;visibility:visible!important;min-height:28px!important;padding:7px 38px 7px 8px!important;cursor:grab!important;touch-action:none!important;white-space:nowrap}
+ .work>.arq-palette-floating>.toolbox-title,.work>.arq-palette-floating>.section{min-height:30px!important}
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
