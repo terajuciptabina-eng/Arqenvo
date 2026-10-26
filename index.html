@@ -501,15 +501,15 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media (pointer:coarse) and (min-width:601px){.work.toolbox-floating{grid-template-columns:0 var(--navigator-width,220px) minmax(0,1fr) var(--inspector-width,250px)!important}.work.navigator-floating{grid-template-columns:var(--toolbox-width,48px) 0 minmax(0,1fr) var(--inspector-width,250px)!important}.work.toolbox-floating.navigator-floating,.work.navigator-hidden.toolbox-floating{grid-template-columns:0 0 minmax(0,1fr) var(--inspector-width,250px)!important}}
 
 
-/* Info Box stays a single Archicad-style ribbon: controls compress to fit instead of exposing a horizontal scrollbar. */
-.context-toolbar{overflow-x:hidden!important;overflow-y:hidden!important;scrollbar-width:none;}
-.context-toolbar::-webkit-scrollbar{display:none}
-.context-selection-settings{flex:1 1 0;min-width:0;max-width:none;overflow:hidden}
-.context-properties{flex:1 1 auto;min-width:0;max-width:none;overflow:hidden}
-.context-properties>.field,.context-properties>.field-row{flex:0 1 auto;min-width:0}
-.context-properties .field input,.context-properties .field select{width:clamp(42px,5.5vw,92px);min-width:0;max-width:92px}
-.context-properties .field label{font-size:8px}
-@media(max-width:900px){.context-toolbar{gap:5px}.context-selection-settings{gap:4px}.context-properties .field input,.context-properties .field select{width:clamp(38px,6vw,68px)}}
+/* Info Box: preserve horizontal scrolling while hiding the scrollbar track/thumb, as in a clean CAD ribbon. */
+.context-toolbar{overflow-x:auto!important;overflow-y:hidden!important;scrollbar-width:none!important;-ms-overflow-style:none!important;-webkit-overflow-scrolling:touch;touch-action:pan-x}
+.context-toolbar::-webkit-scrollbar{display:none!important;width:0!important;height:0!important}
+.context-selection-settings{flex:0 0 auto;min-width:max-content;max-width:none;overflow:visible}
+.context-properties{flex:0 0 auto;min-width:max-content;max-width:none;overflow:visible}
+.context-properties>.field,.context-properties>.field-row{flex:0 0 auto;min-width:max-content}
+.context-properties .field input,.context-properties .field select{min-width:68px;max-width:none}
+.context-properties .field label{font-size:9px}
+@media(max-width:900px){.context-toolbar{gap:5px;padding-left:6px;padding-right:6px}.context-selection-settings{gap:4px}.context-properties .field input,.context-properties .field select{min-width:58px}}
 
 /* Archicad-style horizontal Info Box: selected-element properties live in the top contextual strip. */
 .context-selection-settings{display:flex;align-items:center;gap:7px;flex:0 0 auto;min-width:0;max-width:100%;overflow:visible}
