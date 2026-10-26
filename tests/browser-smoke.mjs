@@ -4,6 +4,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { chromium } from "playwright";
+import { doorSwingGeometry } from "../src/core/authoring.js";
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const mime = {
@@ -385,17 +386,31 @@ try {
   // The previous hard-coded arc point was not on the generated door arc, so it did not test opening selection.
   const doorOpeningPoint = await openingPage.evaluate(() => {
     const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),t=window.__arqenvoDebug?.getViewport();
-    const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}");
-    const door=model.elements?.find(e=>e.type==="door");
-    const wall=model.elements?.find(e=>e.id===door?.hostWallId&&e.type==="wall");
+    const model=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];
+    const door=model.find(e=>e.type==="door"),wall=model.find(e=>e.id===door?.hostWallId&&e.type==="wall");
     if(!door||!wall) throw new Error("Hosted door or host wall missing from saved model");
     const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1;
-    const along=(Number(door.offset)||0)+(Number(door.width)||0)/2;
-    const wx=wall.start.x+dx*along/len,wy=wall.start.y+dy*along/len;
+    const a={x:wall.start.x+dx*(Number(door.offset)||0)/len,y:wall.start.y+dy*(Number(door.offset)||0)/len};
+    const b={x:wall.start.x+dx*((Number(door.offset)||0)+(Number(door.width)||0))/len,y:wall.start.y+dy*((Number(door.offset)||0)+(Number(door.width)||0))/len};
+    const g=doorSwingGeometry(a,b,{hingeSide:door.hingeSide,swingDirection:door.swingDirection});
     const scale=t?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=t?.origin||{x:0,y:0};
-    return {x:rect.left+canvas.clientWidth/2+origin.x+wx*scale,y:rect.top+canvas.clientHeight/2+origin.y-wy*scale,wx,wy};
+    const screen=p=>({x:rect.left+canvas.clientWidth/2+origin.x+p.x*scale,y:rect.top+canvas.clientHeight/2+origin.y-p.y*scale});
+    const candidates=[screen({x:(g.hinge.x+g.openFree.x)/2,y:(g.hinge.y+g.openFree.y)/2}),screen(g.openFree)];
+    const arcAngle=g.startAngle+g.sweep*.5;
+    candidates.push(screen({x:g.hinge.x+Math.cos(arcAngle)*g.radius,y:g.hinge.y+Math.sin(arcAngle)*g.radius}));
+    return {x:candidates[0].x,y:candidates[0].y,candidates,scale,door:{hingeSide:door.hingeSide,swingDirection:door.swingDirection,offset:door.offset,width:door.width}};
   });
-  await openingPage.mouse.click(doorOpeningPoint.x,doorOpeningPoint.y);
+  // Prefer the visible leaf segment over the wall's centre; the hit-test follows the door symbol geometry.
+  let doorSelected=false;
+  for(const candidate of doorOpeningPoint.candidates){
+    await openingPage.mouse.click(candidate.x,candidate.y);
+    try{
+      await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"),null,{timeout:1200});
+      doorSelected=true;
+      break;
+    }catch{}
+  }
+  assert.ok(doorSelected, "Clicking the actual door leaf/swing symbol should select Door ahead of its host wall");
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000}).catch(async error => { const diag=await openingPage.evaluate(()=>({hitDebug:window.__arqenvoDebug?.getLastFloorSelectionDebug?.(),status:document.querySelector("#status")?.textContent,selection:document.querySelector("#selectionInfo")?.textContent,tool:document.querySelector("#toolName")?.value,props:document.querySelector("#elementProperties")?.textContent,project:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>["wall","door","window"].includes(e.type)).map(e=>({id:e.id,type:e.type,start:e.start,end:e.end,offset:e.offset,width:e.width,hostWallId:e.hostWallId,storyId:e.storyId,hingeSide:e.hingeSide,swingDirection:e.swingDirection}))})); console.log("DOOR_SELECTION_DIAG",JSON.stringify(diag)); throw new Error(`Door symbol selection failed; diag=${JSON.stringify(diag)}; ${error.message}`); });
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /door ·/i,
     "Clicking the visible door leaf/swing symbol should select Door ahead of its host wall");
