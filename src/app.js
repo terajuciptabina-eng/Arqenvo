@@ -949,8 +949,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(e.pointerType==='mouse'&&e.button!==0)return;
    const r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
    drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,originX:r.left-wr.left,originY:r.top-wr.top,moved:false};
-   e.preventDefault();try{handle.setPointerCapture(e.pointerId)}catch{}
-   window.addEventListener('pointermove',move,true);window.addEventListener('pointerup',finish,true);window.addEventListener('pointercancel',cancel,true);
+   e.preventDefault();
+   try{handle.setPointerCapture(e.pointerId)}catch{}
   };
   const move=e=>{
    if(!drag||drag.id!==e.pointerId)return;
@@ -978,6 +978,9 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   };
   const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;const moved=drag.moved;drag=null;removeCapture();if(moved){applyGrid();save(key)}};
   handle.addEventListener('pointerdown',down);
+  window.addEventListener('pointermove',move,true);
+  window.addEventListener('pointerup',finish,true);
+  window.addEventListener('pointercancel',cancel,true);
  }
  function addFloatingResize(key,panel){const grip=document.createElement('div');grip.className='arq-floating-resize';grip.setAttribute('role','separator');grip.setAttribute('aria-label','Resize '+key+' width and height');grip.title='Drag to resize width and height';panel.append(grip);let drag=null;grip.addEventListener('pointerdown',e=>{if(e.pointerType==='mouse'&&e.button!==0)return;drag={id:e.pointerId,x:e.clientX,y:e.clientY,w:panel.getBoundingClientRect().width,h:panel.getBoundingClientRect().height};try{grip.setPointerCapture(e.pointerId)}catch{}e.preventDefault();e.stopPropagation()});grip.addEventListener('pointermove',e=>{if(!drag||drag.id!==e.pointerId)return;const s=state[key],minW=key==='toolbox'?124:180;s.w=clamp(drag.w+e.clientX-drag.x,minW,Math.max(minW,work.clientWidth-8));s.h=clamp(drag.h+e.clientY-drag.y,140,Math.max(140,work.clientHeight-8));boundFloat(key)});const done=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;save(key)};grip.addEventListener('pointerup',done);grip.addEventListener('pointercancel',done)}
  function addDockResize(key,panel){panel.addEventListener('pointerdown',e=>{const target=e.target.closest('.arq-panel-edge-resize');if(!target||target.dataset.palette!==key||state[key].mode!=='dock')return;if(e.pointerType==='mouse'&&e.button!==0)return;const horizontal=target.classList.contains('horizontal'),r=panel.getBoundingClientRect(),start=horizontal?e.clientY:e.clientX,base=horizontal?r.height:r.width;let size=base;const move=ev=>{const d=(horizontal?ev.clientY:ev.clientX)-start;size=clamp(base+(horizontal?-d:d),horizontal?140:(key==='toolbox'?124:180),horizontal?Math.max(140,work.clientHeight-100):Math.max(180,work.clientWidth-250));if(horizontal){if(key==='toolbox')dims.toolbox.h=size;else dims.navigator.h=size;work.style.setProperty(key==='toolbox'?'--palette-toolbox-h':'--palette-nav-h',size+'px')}else{if(key==='toolbox')dims.toolbox.w=size;else dims.navigator.w=size;work.style.setProperty(key==='toolbox'?'--palette-toolbox-w':'--palette-nav-w',size+'px');work.style.setProperty(key==='toolbox'?'--toolbox-width':'--navigator-width',size+'px')}};const done=()=>{panel.removeEventListener('pointermove',move);panel.removeEventListener('pointerup',done);panel.removeEventListener('pointercancel',done);if(horizontal){if(key==='toolbox')dims.toolbox.h=size;else dims.navigator.h=size}else{if(key==='toolbox')dims.toolbox.w=size;else dims.navigator.w=size}try{localStorage.setItem('arqenvo-'+key+'-width',dims[key].w);localStorage.setItem('arqenvo-'+key+'-height',dims[key].h)}catch{}applyGrid()};e.preventDefault();panel.setPointerCapture?.(e.pointerId);panel.addEventListener('pointermove',move);panel.addEventListener('pointerup',done);panel.addEventListener('pointercancel',done)})}
