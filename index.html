@@ -625,7 +625,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 #contextToolbar .context-properties{flex:0 0 max-content!important;min-width:max-content!important;max-width:none!important;overflow:visible!important}
 #contextToolbar .context-properties>.field,#contextToolbar .context-properties>.field-row{flex:0 0 auto!important;min-width:max-content!important}
 
-/* Palette manager geometry is defined in one place: edge grips and panel bounds. */
+/* Palette manager geometry: bounded floating panels plus real dock and float resize grips. */
 .work>.arq-palette-floating{position:absolute!important;display:flex!important;grid-column:auto!important;grid-row:auto!important;inset:auto!important;left:var(--arq-float-left,4px)!important;top:var(--arq-float-top,4px)!important;right:auto!important;bottom:auto!important;width:var(--arq-float-width,280px)!important;height:var(--arq-float-height,360px)!important;min-width:0!important;min-height:0!important;max-width:calc(100% - 8px)!important;max-height:calc(100% - 8px)!important;z-index:1800!important;overflow:auto!important;box-sizing:border-box!important;box-shadow:0 8px 28px #15233135!important;border:1px solid #8d9ba6!important;border-radius:5px!important}
 .work>#toolbox.arq-palette-floating{min-width:0!important}
 .work>.arq-palette-floating>.toolbox-title,.work>.arq-palette-floating>.section{position:sticky;top:0;z-index:3;cursor:grab;touch-action:none}
@@ -638,9 +638,9 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work.dock-toolbox-bottom>.arq-dock-resize.toolbox{top:0;left:0;right:0;bottom:auto;width:auto;height:8px;cursor:ns-resize}
 .work.dock-navigator-bottom>.arq-dock-resize.navigator{top:0;left:0;right:0;bottom:auto;width:auto;height:8px;cursor:ns-resize}
 @media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}.arq-resize-handle{display:none!important}}
-@media (pointer:coarse) and (min-width:601px){
+@media(pointer:coarse) and (min-width:601px){
  .work>.arq-palette-floating{max-width:calc(100% - 8px)!important}
- #toolbox .toolbox-title,.work>.navigator>.section{touch-action:none!important;user-select:none;-webkit-user-select:none}
+ #toolbox .toolbox-title,.work>.navigator>.section{min-height:28px!important;display:block!important;visibility:visible!important;touch-action:none!important;user-select:none;-webkit-user-select:none;white-space:nowrap}
  .arq-dock-resize{min-width:12px;min-height:12px}
 }
 </style></head>
