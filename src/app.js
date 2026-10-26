@@ -944,12 +944,32 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  function bounds(key){const s=state[key],minW=key==='toolbox'?124:180;s.w=clamp(s.w,minW,Math.max(minW,work.clientWidth-8));s.h=clamp(s.h,140,Math.max(140,work.clientHeight-8));s.x=clamp(s.x,4,Math.max(4,work.clientWidth-s.w-4));s.y=clamp(s.y,4,Math.max(4,work.clientHeight-s.h-4))}
  function applyFloatBounds(key){const s=state[key],p=panels[key];bounds(key);p.style.setProperty('--arq-float-left',s.x+'px');p.style.setProperty('--arq-float-top',s.y+'px');p.style.setProperty('--arq-float-width',s.w+'px');p.style.setProperty('--arq-float-height',s.h+'px')}
  function clearFloatStyles(p){p.classList.remove('arq-palette-floating');['left','top','right','bottom','width','height','max-height','max-width','min-width','min-height'].forEach(x=>p.style.removeProperty(x));['--arq-float-left','--arq-float-top','--arq-float-width','--arq-float-height'].forEach(x=>p.style.removeProperty(x))}
+ function positionDockGrip(key){
+  const panel=panels[key],grip=panel&&panel.querySelector('.arq-dock-resize');
+  if(!grip)return;
+  const s=state[key];
+  grip.style.left='';grip.style.right='';grip.style.top='';grip.style.bottom='';
+  grip.style.width='';grip.style.height='';grip.style.cursor='';
+  if(s.side==='right'){
+   grip.style.left='0';grip.style.right='auto';grip.style.top='0';grip.style.bottom='0';
+   grip.style.width='12px';grip.style.height='auto';grip.style.cursor='ew-resize';
+  }else if(s.side==='top'){
+   grip.style.left='0';grip.style.right='0';grip.style.top='auto';grip.style.bottom='0';
+   grip.style.width='auto';grip.style.height='12px';grip.style.cursor='ns-resize';
+  }else if(s.side==='bottom'){
+   grip.style.left='0';grip.style.right='0';grip.style.top='0';grip.style.bottom='auto';
+   grip.style.width='auto';grip.style.height='12px';grip.style.cursor='ns-resize';
+  }else{
+   grip.style.left='auto';grip.style.right='0';grip.style.top='0';grip.style.bottom='0';
+   grip.style.width='12px';grip.style.height='auto';grip.style.cursor='ew-resize';
+  }
+ }
  function applyGrid(){
   for(const c of [...work.classList])if(/^dock-(toolbox|navigator)-(left|right|top|bottom)$/.test(c))work.classList.remove(c);
   work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');
   work.style.setProperty('--toolbox-width',dims.toolbox.w+'px');work.style.setProperty('--navigator-width',dims.navigator.w+'px');work.style.setProperty('--inspector-width',dims.inspector.w+'px');
   work.style.setProperty('--palette-toolbox-w',dims.toolbox.w+'px');work.style.setProperty('--palette-nav-w',dims.navigator.w+'px');work.style.setProperty('--palette-inspector-w',dims.inspector.w+'px');work.style.setProperty('--palette-toolbox-h',dims.toolbox.h+'px');work.style.setProperty('--palette-nav-h',dims.navigator.h+'px');
-  for(const key of Object.keys(panels)){const s=state[key],p=panels[key];if(s.mode==='float'){p.classList.add('arq-palette-floating');applyFloatBounds(key)}else{clearFloatStyles(p);if(s.side!==(key==='toolbox'?'left':'right'))work.classList.add('dock-'+key+'-'+s.side)}}
+  for(const key of Object.keys(panels)){const s=state[key],p=panels[key];if(s.mode==='float'){p.classList.add('arq-palette-floating');applyFloatBounds(key)}else{clearFloatStyles(p);if(s.side!==(key==='toolbox'?'left':'right'))work.classList.add('dock-'+key+'-'+s.side)}positionDockGrip(key)}
   work.classList.toggle('toolbox-expanded',coarse()&&(dims.toolbox.w>72||state.toolbox.mode==='float'));
   const t=work.querySelector('.toolbox-resize'),n=work.querySelector('.navigator-resize');
   if(t){t.style.left=dims.toolbox.w+'px';t.style.right='auto'}if(n){n.style.left=coarse()?'calc(var(--palette-toolbox-w,48px) + var(--palette-nav-w,220px))':'auto';n.style.right=desktop()?'var(--palette-inspector-w,238px)':'auto'}
@@ -1029,7 +1049,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  function addDockResize(key,panel){
   const grip=document.createElement('div');grip.className='arq-dock-resize '+key;grip.dataset.palette=key;grip.setAttribute('role','separator');grip.setAttribute('aria-label','Resize docked '+key);grip.title='Drag to resize docked panel';panel.append(grip);
   let drag=null;const remove=()=>{document.removeEventListener('pointermove',move,true);document.removeEventListener('pointerup',done,true);document.removeEventListener('pointercancel',cancel,true)};
-  const move=e=>{if(!drag||drag.id!==e.pointerId)return;const s=state[key],dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(drag.axis==='x'){const minW=key==='toolbox'?124:180,sign=key==='toolbox'&&s.side==='right'?-1:1;dims[key].w=clamp(drag.w+dx*sign,minW,Math.max(minW,work.clientWidth-250));s.w=dims[key].w}else{const sign=s.side==='bottom'?-1:1;dims[key].h=clamp(drag.h+dy*sign,140,Math.max(140,work.clientHeight-100));s.h=dims[key].h}applyGrid()};
+  const move=e=>{if(!drag||drag.id!==e.pointerId)return;const s=state[key],dx=e.clientX-drag.x,dy=e.clientY-drag.y;if(drag.axis==='x'){const minW=key==='toolbox'?124:180,sign=s.side==='right'?-1:1;dims[key].w=clamp(drag.w+dx*sign,minW,Math.max(minW,work.clientWidth-250));s.w=dims[key].w}else{const sign=s.side==='bottom'?-1:1;dims[key].h=clamp(drag.h+dy*sign,140,Math.max(140,work.clientHeight-100));s.h=dims[key].h}applyGrid()};
   const done=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();save(key);saveDims(key);applyGrid()};
   const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid()};
   grip.addEventListener('pointerdown',e=>{if(state[key].mode!=='dock'||(e.pointerType==='mouse'&&e.button!==0))return;const r=panel.getBoundingClientRect(),vertical=state[key].side==='top'||state[key].side==='bottom';drag={id:e.pointerId,x:e.clientX,y:e.clientY,axis:vertical?'y':'x',w:r.width,h:r.height};try{grip.setPointerCapture(e.pointerId)}catch{}document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',cancel,true);e.preventDefault();e.stopPropagation()})
