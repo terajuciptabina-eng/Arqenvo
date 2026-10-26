@@ -978,3 +978,27 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  applyGrid();
  window.addEventListener('resize',()=>{if(mobile()){for(const key of ['toolbox','navigator'])if(state[key].mode==='float')setFloating(key,false)}else applyGrid()});
 })();
+
+/* Info Box navigation: support mouse-wheel/Shift-wheel and touch/trackpad horizontal scrolling.
+   Native overflow remains the source of truth; this only maps common input gestures to scrollLeft. */
+(()=>{
+ const bar=document.getElementById('contextToolbar');
+ if(!bar||bar.dataset.horizontalScrollReady==='true')return;
+ bar.dataset.horizontalScrollReady='true';
+ const canScroll=()=>bar.scrollWidth>bar.clientWidth+2;
+ bar.addEventListener('wheel',e=>{
+   if(!canScroll())return;
+   const delta=e.shiftKey?(e.deltaY||e.deltaX):(Math.abs(e.deltaX)>Math.abs(e.deltaY)?e.deltaX:e.deltaY);
+   if(!delta)return;
+   const before=bar.scrollLeft;
+   bar.scrollLeft+=delta;
+   if(bar.scrollLeft!==before)e.preventDefault();
+ },{passive:false});
+ bar.addEventListener('keydown',e=>{
+   if(!canScroll())return;
+   if(e.key==='ArrowRight'){bar.scrollLeft+=60;e.preventDefault()}
+   else if(e.key==='ArrowLeft'){bar.scrollLeft-=60;e.preventDefault()}
+   else if(e.key==='Home'&&e.altKey){bar.scrollLeft=0;e.preventDefault()}
+   else if(e.key==='End'&&e.altKey){bar.scrollLeft=bar.scrollWidth;e.preventDefault()}
+ });
+})();
