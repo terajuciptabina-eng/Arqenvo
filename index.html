@@ -502,6 +502,21 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 .work>.workspace{grid-column:2;grid-row:1;min-width:0;min-height:0}
 .work>.navigator{grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;box-sizing:border-box;background:#f4f5f6;color:#26313b}
 .work>.inspector{grid-column:4;grid-row:1;min-width:0;min-height:0;overflow:auto}
+
+/* Floating palettes are removed from grid flow; rebuild only the tracks still occupied by docked panels. */
+.work.toolbox-floating:not(.navigator-floating){grid-template-columns:minmax(0,1fr) var(--palette-nav-w) var(--palette-inspector-w)}
+.work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:1;grid-row:1}
+.work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:2;grid-row:1}
+.work.toolbox-floating:not(.navigator-floating)>.inspector{grid-column:3;grid-row:1}
+.work.navigator-floating:not(.toolbox-floating){grid-template-columns:var(--palette-toolbox-w) minmax(0,1fr) var(--palette-inspector-w)}
+.work.navigator-floating:not(.toolbox-floating)>.workspace{grid-column:2;grid-row:1}
+.work.navigator-floating:not(.toolbox-floating)>.inspector{grid-column:3;grid-row:1}
+.work.toolbox-floating.navigator-floating{grid-template-columns:minmax(0,1fr) var(--palette-inspector-w)}
+.work.toolbox-floating.navigator-floating>.workspace{grid-column:1;grid-row:1}
+.work.toolbox-floating.navigator-floating>.inspector{grid-column:2;grid-row:1}
+/* The palette itself scrolls vertically when necessary, but its width never creates a horizontal scrollbar. */
+.work>.arq-palette-floating{overflow-x:hidden!important;overflow-y:auto!important;overscroll-behavior:contain}
+
 .work.dock-toolbox-right{grid-template-columns:minmax(0,1fr) var(--palette-toolbox-w) var(--palette-nav-w) var(--palette-inspector-w)}
 .work.dock-toolbox-right>#toolbox{grid-column:2;grid-row:1}
 .work.dock-toolbox-right>.workspace{grid-column:1;grid-row:1}
