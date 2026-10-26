@@ -5,10 +5,11 @@
 <title>ARQENVO — Building Information Modeling</title>
 <meta name="description" content="ARQENVO independent Building Information Modeling software.">
 <style>
+
 :root{--ui:#e8eaed;--panel:#f7f8f9;--line:#c6cbd1;--ink:#26313b;--muted:#65717d;--accent:#087e8b;--select:#d9f0f2}
 *{box-sizing:border-box}body{margin:0;color:var(--ink);font:13px/1.4 Inter,Arial,sans-serif;background:#d4d8dc}button,select,input{font:inherit;color:inherit}button{background:#f9fafb;border:1px solid #bcc3ca;border-radius:3px;padding:6px 9px;cursor:pointer}button:hover,button.active{border-color:var(--accent);background:var(--select)}button:disabled{opacity:.45;cursor:default}
-.app{height:100dvh;min-height:540px;display:grid}.menu{display:flex;align-items:center;gap:15px;padding:0 12px;background:#f5f6f7;border-bottom:1px solid var(--line);font-size:12px}.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.13em;min-width:0}.brand-logo{display:block;height:62px;width:auto;max-width:38vw;object-fit:contain;flex:0 1 auto}.brandmark{display:none}.brandmark span{display:none}@media(max-width:600px){.app{grid-template-rows:28px 54px 1fr 24px}.brand-logo{height:46px;max-width:34vw}.brand{gap:6px}}.top{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#e0e3e6;border-bottom:1px solid #b9c0c7;overflow:auto}.top .spacer{flex:1}.work{min-height:0}.tools,.navigator,.inspector{background:var(--panel);border-right:1px solid var(--line);min-height:0;overflow:auto}.tools{padding:7px 5px;display:flex;flex-direction:column;gap:5px}.tool{font-size:10px;padding:8px 2px;min-height:46px}.tool b{display:block;font-size:17px;font-weight:500}.tool b svg{display:block;width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.tool[data-tool="select"] b svg path{fill:currentColor;stroke:currentColor}.navigator{padding:12px}.inspector{border-right:0;border-left:1px solid var(--line);padding:12px}.section{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:2px 0 10px}.tree{display:block;width:100%;text-align:left;margin:3px 0;background:transparent;border-color:transparent}.tree.active{background:#dcebed}.workspace{min-width:0;min-height:0;background:#fff}.tabs{display:flex;align-items:center;gap:3px;background:#f1f3f5;border-bottom:1px solid var(--line);padding:3px 8px}.tabs button{padding:4px 10px}.canvaswrap{position:relative;min-height:0;overflow:hidden;background:#fff}canvas{display:block;width:100%;height:100%;touch-action:none}.dynamic-tracker{position:absolute;z-index:5;width:218px;padding:6px 9px;background:rgba(48,47,43,.88);color:#f4f4f4;font:12px Arial,sans-serif;box-shadow:0 2px 8px #0002;pointer-events:auto}.dynamic-tracker[hidden]{display:none}.dynamic-tracker label{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:6px;margin:2px 0}.dynamic-tracker label span{white-space:nowrap;color:#e0e0e0}.dynamic-tracker input{width:100%;min-width:0;padding:3px 5px;border:1px solid #74736c;border-radius:2px;background:#33322e;color:#fff;font:600 12px Arial,sans-serif;outline:none;font-variant-numeric:tabular-nums}.dynamic-tracker input:focus{border-color:#7bc5d0;background:#242622}.hint{position:absolute;bottom:10px;left:10px;background:#fffffff0;border:1px solid var(--line);padding:6px 8px;font-size:11px;color:#56616b;pointer-events:none}.field{margin:10px 0}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.field input,.field select{width:100%;padding:7px;border:1px solid var(--line);background:#fff;border-radius:3px}.status{background:#e6e8eb;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 10px;color:#58636d;font-size:11px}.status .right{margin-left:auto}.mobile-nav{display:none}
-@media(max-width:900px) and (pointer:fine){.work{grid-template-columns:48px minmax(0,1fr)}.navigator{display:none}.inspector{display:none}.tool{font-size:9px}.brand{letter-spacing:.04em}.top{gap:5px}.top button{white-space:nowrap}}@media(max-width:760px){.mobile-nav{display:inline-block}}
+.app{height:100dvh;min-height:540px;display:grid}.menu{display:flex;align-items:center;gap:15px;padding:0 12px;background:#f5f6f7;border-bottom:1px solid var(--line);font-size:12px}.brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.13em;min-width:0}.brand-logo{display:block;height:62px;width:auto;max-width:38vw;object-fit:contain;flex:0 1 auto}.brandmark{display:none}.brandmark span{display:none}@media(max-width:600px){.app{grid-template-rows:28px 54px 1fr 24px}.brand-logo{height:46px;max-width:34vw}.brand{gap:6px}}.top{display:flex;align-items:center;gap:8px;padding:7px 10px;background:#e0e3e6;border-bottom:1px solid #b9c0c7;overflow:auto}.top .spacer{flex:1}.work{min-height:0}.tools,.inspector{background:var(--panel);border-right:1px solid var(--line);min-height:0;overflow:auto}.tools{padding:7px 5px;display:flex;flex-direction:column;gap:5px}.tool{font-size:10px;padding:8px 2px;min-height:46px}.tool b{display:block;font-size:17px;font-weight:500}.tool b svg{display:block;width:25px;height:25px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.tool[data-tool="select"] b svg path{fill:currentColor;stroke:currentColor}.inspector{border-right:0;border-left:1px solid var(--line);padding:12px}.section{font-size:10px;font-weight:700;letter-spacing:.12em;color:var(--muted);margin:2px 0 10px}.tree{display:block;width:100%;text-align:left;margin:3px 0;background:transparent;border-color:transparent}.tree.active{background:#dcebed}.workspace{min-width:0;min-height:0;background:#fff}.tabs{display:flex;align-items:center;gap:3px;background:#f1f3f5;border-bottom:1px solid var(--line);padding:3px 8px}.tabs button{padding:4px 10px}.canvaswrap{position:relative;min-height:0;overflow:hidden;background:#fff}canvas{display:block;width:100%;height:100%;touch-action:none}.dynamic-tracker{position:absolute;z-index:5;width:218px;padding:6px 9px;background:rgba(48,47,43,.88);color:#f4f4f4;font:12px Arial,sans-serif;box-shadow:0 2px 8px #0002;pointer-events:auto}.dynamic-tracker[hidden]{display:none}.dynamic-tracker label{display:grid;grid-template-columns:92px minmax(0,1fr);align-items:center;gap:6px;margin:2px 0}.dynamic-tracker label span{white-space:nowrap;color:#e0e0e0}.dynamic-tracker input{width:100%;min-width:0;padding:3px 5px;border:1px solid #74736c;border-radius:2px;background:#33322e;color:#fff;font:600 12px Arial,sans-serif;outline:none;font-variant-numeric:tabular-nums}.dynamic-tracker input:focus{border-color:#7bc5d0;background:#242622}.hint{position:absolute;bottom:10px;left:10px;background:#fffffff0;border:1px solid var(--line);padding:6px 8px;font-size:11px;color:#56616b;pointer-events:none}.field{margin:10px 0}.field label{display:block;color:var(--muted);font-size:11px;margin-bottom:4px}.field input,.field select{width:100%;padding:7px;border:1px solid var(--line);background:#fff;border-radius:3px}.status{background:#e6e8eb;border-top:1px solid var(--line);display:flex;align-items:center;gap:16px;padding:0 10px;color:#58636d;font-size:11px}.status .right{margin-left:auto}.mobile-nav{display:none}
+@media(max-width:900px) and (pointer:fine){.work{grid-template-columns:48px minmax(0,1fr)}.inspector{display:none}.tool{font-size:9px}.brand{letter-spacing:.04em}.top{gap:5px}.top button{white-space:nowrap}}@media(max-width:760px){.mobile-nav{display:inline-block}}
 
 /* ARQENVO professional BIM workspace — coordinated palette, navigator and info box */
 :root{--ui:#e3e6e9;--panel:#f4f5f6;--line:#c5cbd1;--ink:#252d35;--muted:#68737e;--accent:#087e8b;--select:#dceff0}
@@ -28,7 +29,6 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 .tool{min-height:52px;padding:6px 2px;border-color:transparent;background:transparent;border-radius:4px;color:#36414a;font-size:10px}
 .tool b{font-size:19px;line-height:1.25;color:#34434e}
 .tool.active{background:#d3e9eb;border-color:#7eb4b9;box-shadow:0 1px 2px #0000000a}
-.navigator{background:#f6f7f8;padding:12px 10px;border-right:1px solid #b9c1c8}
 .section{font-size:10px;letter-spacing:.1em;color:#596671;border-bottom:1px solid #d8dde1;padding-bottom:7px;margin:0 0 9px}
 .tree{font-size:11px;padding:7px 8px;border-radius:3px;margin:2px 0;color:#39454f}
 .tree.active{background:#d8eaec;border-color:#a4cdd0;color:#175d64}
@@ -45,7 +45,7 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 #delete{width:100%;background:#fff7f5;border-color:#dfc3bd;color:#8d3b2e}
 .status{background:#e9ecef;color:#4d5963;border-top:1px solid #b9c1c8;font-size:10px}
 .hint{box-shadow:0 1px 3px #00000012;border-radius:3px}
-@media(max-width:1100px) and (pointer:fine){.work{grid-template-columns:52px minmax(0,1fr) 235px}.navigator{display:none}.inspector{display:block}}
+@media(max-width:1100px) and (pointer:fine){.work{grid-template-columns:52px minmax(0,1fr) 235px}.inspector{display:block}}
 @media (max-width:760px) and (pointer:fine){.app{grid-template-rows:27px 58px minmax(0,1fr) 24px}.menu{gap:0;padding:0 4px}.menu span{padding:0 6px;font-size:10px}.top{gap:4px;padding:4px 6px}.brand{min-width:90px;padding-right:5px}.brand-logo{height:42px;max-width:100px}.top button{padding:6px;font-size:10px}.work{grid-template-columns:47px minmax(0,1fr)}.inspector{display:none}.tool{min-height:46px;font-size:9px}.tabs{overflow:auto}.status{gap:8px}.status .right{display:none}}
 
 /* Archicad-inspired workspace pass: real menus, categorized toolbox and quick options */
@@ -66,7 +66,6 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 .tool{min-height:55px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .tool b{font-size:21px}
 .tool-note{font-size:9px;color:#7b858e;line-height:1.4;text-align:center;padding:5px 2px}
-.navigator{padding:10px 9px}
 .nav-tabs{display:flex;gap:3px;margin:0 0 12px;border-bottom:1px solid #d2d7dc}
 .nav-tab{flex:1;border:0;border-radius:0;background:transparent;padding:7px 3px;font-size:10px;color:#68747e}
 .nav-tab.active{color:#176a72;border-bottom:2px solid #087e8b;font-weight:700}
@@ -83,7 +82,7 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 #zoomReadout{min-width:36px;text-align:center;font-variant-numeric:tabular-nums}
 .field-help{font-size:10px;color:#77828b;line-height:1.5;margin:0}
 button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px solid #07818c;outline-offset:2px}
-@media(max-width:1100px) and (pointer:fine){.work{grid-template-columns:58px minmax(0,1fr) 240px}.navigator{display:none}}
+@media(max-width:1100px) and (pointer:fine){.work{grid-template-columns:58px minmax(0,1fr) 240px}}
 @media (max-width:760px) and (pointer:fine){.app{grid-template-rows:27px 55px minmax(0,1fr) 23px}.work{grid-template-columns:48px minmax(0,1fr)}.tools{padding:5px 2px}.tool{min-height:44px}.toolbox-title,.tool-group-label,.tool-note{display:none}.workspace{grid-template-rows:34px minmax(0,1fr) 30px}.quick-options{gap:5px;padding:3px 5px}.quick-label{display:none}.quick-options label{gap:2px}.quick-options select{max-width:68px}.menu-group summary{padding:0 7px;font-size:10px}.menu-pop{min-width:190px}.brand{min-width:80px}.brand-logo{max-width:100px}}
 
 /* Prominent Archicad-inspired contextual Info Box ribbon */
@@ -132,9 +131,8 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .work{}
 .tools{background:#e7eaed;border-right:1px solid #aeb8c0}
 .tool{min-height:60px}
-.navigator{background:#f3f5f6}
 .inspector{background:#f3f5f6}
-@media(max-width:1000px) and (pointer:fine){.ribbon-brand{min-width:85px;padding:0 7px}.ribbon-brand .brand-logo{max-width:78px;height:48px}.ribbon-group{padding-left:5px;padding-right:5px}.ribbon-buttons button{min-width:42px;padding:3px}.ribbon-buttons button span{font-size:9px}.work{grid-template-columns:58px minmax(0,1fr) 245px}.navigator{display:none}}
+@media(max-width:1000px) and (pointer:fine){.ribbon-brand{min-width:85px;padding:0 7px}.ribbon-brand .brand-logo{max-width:78px;height:48px}.ribbon-group{padding-left:5px;padding-right:5px}.ribbon-buttons button{min-width:42px;padding:3px}.ribbon-buttons button span{font-size:9px}.work{grid-template-columns:58px minmax(0,1fr) 245px}}
 @media (max-width:760px) and (pointer:fine){.app{grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}.top{padding:3px 4px}.ribbon-brand{min-width:60px;padding:0 4px;margin-right:3px}.ribbon-brand .brand-logo{max-width:56px;height:38px}.ribbon-group{padding:2px 3px 0}.ribbon-group>small{font-size:7px}.ribbon-buttons{height:46px;gap:1px}.ribbon-buttons button{height:43px;min-width:35px;font-size:16px;padding:2px}.ribbon-buttons button span{font-size:8px}.work{grid-template-columns:46px minmax(0,1fr)}.inspector{display:none}.tool{min-height:46px}.context-toolbar{height:43px}.context-identity{min-width:135px}}
 
 /* Navigator layer palette */
@@ -157,13 +155,7 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .tool.active b{color:#fff}
 .tool-note{padding:7px 11px;color:#9c9ea7;text-align:left;font-size:10px;line-height:1.45}
 .workspace{grid-column:2;grid-row:1 / span 2;display:grid;grid-template-rows:34px minmax(0,1fr) 30px;min-width:0;min-height:0;background:#fff}
-.navigator{display:block;grid-column:3;grid-row:1;min-width:0;min-height:0;overflow:auto;padding:9px;background:#303139;color:#e6e6e9;border-left:1px solid #1d1e23;border-right:0;border-bottom:1px solid #17181c;scrollbar-width:thin}
 .inspector{display:block;grid-column:3;grid-row:2;min-width:0;min-height:0;overflow:auto;padding:9px;background:#303139;color:#e6e6e9;border-left:1px solid #1d1e23;border-right:0;scrollbar-width:thin}
-/* Canonical responsive grid for desktop and touch tablets. Desktop base grid is defined above. */
-#navigatorToggle[hidden]{display:none!important}
-#navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
-#navigatorToggle.navigator-toggle{display:none;position:static;align-items:center;justify-content:center;flex:0 0 auto;min-height:32px;min-width:64px;padding:5px 9px;margin:0 0 0 auto;border:1px solid #87939d;border-radius:5px;background:#fff;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 2px #0002;touch-action:manipulation;cursor:pointer}
-#navigator-panel>.section #navigatorToggle.navigator-toggle{display:inline-flex;position:static;margin-left:auto}
 /* Canonical responsive layout.
    Desktop retains the existing 3-column / 2-row grid.
    Touch tablets only use four docked columns; Hide removes only the Navigator column. */
@@ -171,16 +163,8 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px}
  .work{grid-template-columns:48px minmax(190px,240px) minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr);min-width:0;min-height:0;position:relative;overflow:hidden}
  .work>#toolbox{grid-column:1;grid-row:1;display:flex}
- .work>.navigator{grid-column:2;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;height:auto;visibility:visible;overflow:auto;box-shadow:none}
  .work>.workspace{grid-column:3;grid-row:1;display:grid;min-width:0;min-height:0}
  .work>.inspector{grid-column:4;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;height:auto;visibility:visible;overflow:auto}
- #navigatorToggle.navigator-toggle{display:inline-flex;position:static;min-height:34px;min-width:76px;margin:0 0 0 auto}
- .work.navigator-hidden{grid-template-columns:48px 0 minmax(240px,1fr) 250px}
- .work.navigator-hidden>.navigator{display:none;visibility:hidden;width:0;min-width:0;max-width:0;overflow:hidden}
- .work.navigator-hidden>.workspace{grid-column:3;grid-row:1}
- .work.navigator-hidden>.inspector{display:block;visibility:visible;grid-column:4;grid-row:1}
- .work>#navigatorToggle.navigator-toggle{position:absolute;left:52px;right:auto;top:8px;z-index:1600;pointer-events:auto}
- .work.navigator-hidden>#navigatorToggle.navigator-toggle{display:inline-flex;visibility:visible}
  .menu{height:27px;min-height:27px}
  .top{height:48px;min-height:48px;max-height:48px;padding:3px 6px;align-items:center;overflow-x:auto;overflow-y:hidden}
  .top .ribbon-brand{display:flex;flex:0 0 52px;width:52px;min-width:52px;height:40px;align-items:center;justify-content:center;padding:0 4px;margin:0 4px 0 0}
@@ -199,22 +183,12 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 }
 /* Desktop must not display Hide/Show Navigator. */
 @media (min-width:901px) and (pointer:fine){
- #navigatorToggle.navigator-toggle{display:none!important}
 }
 /* Canonical Context Toolbar icon style: dark line-art on the light toolbar. */
 #contextToolIcon{color:#263d47;display:inline-flex;align-items:center;justify-content:center;flex:0 0 38px;width:38px;height:38px}
 #contextToolIcon svg{display:block;width:26px;height:26px;overflow:visible;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 #contextToolIcon svg *{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
-#contextToolIcon svg path[d="M5 3 19 15l-6 1-3 5z"]{fill:currentColor;stroke:currentColor}
-/* Restore the original light UI palette. These rules must not be global dark-theme overrides. */
-.navigator .section,.inspector .section{color:#394650;border-bottom-color:#d4d9de}
-.navigator .nav-tabs{border-bottom-color:#d4d9de}
-.navigator .nav-tab{color:#65727c}
-.navigator .nav-tab.active{color:#24323b;border-bottom-color:#087e8b}
-.navigator .tree{color:#35424b;border-color:transparent;background:transparent}
-.navigator .tree:hover,.navigator .tree.active{background:#e5eff0;color:#20333a;border-color:#c5dadd}
-.navigator .nav-subtitle,.navigator .nav-note{color:#7b858e}
-.navigator hr,.inspector hr{border-top-color:#d8dde1!important}
+#contextToolIcon svg path[d="M5 3 19 15l-6 1-3 5z"]{fill:currentColor;stroke:currentColor}.inspector .section{color:#394650;border-bottom-color:#d4d9de}.inspector hr{border-top-color:#d8dde1!important}
 .inspector .field label{color:#59656e}
 .inspector .field input,.inspector .field select{background:#fff;border-color:#c6cbd1;color:#26313a}
 .inspector #delete{background:#fff0ee;border-color:#dfb7b1;color:#8a332a}
@@ -239,15 +213,13 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .hint{background:#fffffff2;color:#434952;border-color:#b8bdc3}
 @media(max-width:1050px) and (pointer:fine){
  .work{grid-template-columns:142px minmax(0,1fr) 218px;grid-template-rows:minmax(0,1fr) minmax(160px,.5fr)}
- .tool{gap:8px;padding-left:7px}
- .navigator,.inspector{padding:7px}
+ .tool{gap:8px;padding-left:7px}.inspector{padding:7px}
 }
 @media (max-width:760px) and (pointer:fine){
  .app{grid-template-rows:27px 72px 43px minmax(0,1fr) 23px}
  .work{grid-template-columns:124px minmax(0,1fr);grid-template-rows:minmax(0,1fr)}
  #toolbox{grid-column:1;grid-row:1;display:flex!important}
- .workspace{grid-column:2;grid-row:1;grid-template-rows:34px minmax(0,1fr) 30px}
- .navigator,.inspector{display:none!important}
+ .workspace{grid-column:2;grid-row:1;grid-template-rows:34px minmax(0,1fr) 30px}.inspector{display:none!important}
  .tool{min-height:39px;font-size:11px;gap:6px;padding:4px 5px}
  .tool b{flex-basis:23px;width:23px;font-size:18px}
  .toolbox-title{padding:7px 8px}
@@ -329,7 +301,6 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .work{grid-template-columns:132px minmax(0,1fr) 210px;grid-template-rows:minmax(0,1fr) minmax(145px,.42fr)}
  #toolbox{grid-column:1;grid-row:1 / span 2}
  .workspace{grid-column:2;grid-row:1 / span 2;grid-template-rows:34px minmax(0,1fr) 30px}
- .navigator{grid-column:3;grid-row:1;min-width:0}
  .inspector{grid-column:3;grid-row:2;min-width:0}
  .tool{gap:7px;padding-left:6px;font-size:11px}
  .tool b{flex-basis:23px;width:23px;font-size:18px}
@@ -465,15 +436,46 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  #toolbox .tool b svg{width:25px;height:25px;stroke-width:1.8}
  .work{position:relative;grid-template-columns:48px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;min-width:0;min-height:0;overflow:hidden}
  .work>#toolbox{grid-column:1!important;grid-row:1!important;display:flex!important;min-width:0}
- .work>.workspace{grid-column:2!important;grid-row:1!important;min-width:0;min-height:0;width:100%;max-width:100%;overflow:hidden}
+ .work>.workspace{grid-column:2!important;grid-row:1!important;min-width:0;min-height:0;width:100%;max-width:100%;overflow:hidden}.work>.inspector{display:none!important}
+}
+
+/* Canonical palette visibility and responsive workspace layout. */
+.tools,.navigator,.inspector{min-width:0;min-height:0}
+#navigator-panel{box-sizing:border-box}
+#navigatorToggle.navigator-toggle{display:none;align-items:center;justify-content:center;gap:6px;min-width:76px;min-height:34px;padding:6px 10px;margin:0 0 0 auto;border:1px solid #87939d;border-radius:4px;background:#f8fafb;color:#202830;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:0 1px 2px #0002;touch-action:manipulation;cursor:pointer}
+#navigatorToggle.navigator-toggle:focus-visible{outline:2px solid #087e8b;outline-offset:2px}
+#navigator-panel>.section{display:flex;align-items:center;justify-content:space-between;gap:8px}
+#navigator-panel>.section #navigatorToggle.navigator-toggle{display:inline-flex;position:static;margin-left:auto}
+@media (pointer:coarse) and (min-width:601px){
+ .app{grid-template-rows:27px 48px 42px minmax(0,1fr) 23px}
+ .work{grid-template-columns:48px minmax(190px,240px) minmax(0,1fr) 250px;grid-template-rows:minmax(0,1fr);min-height:0;position:relative}
+ .work>.tools{grid-column:1;grid-row:1}
+ .work>.navigator{grid-column:2;grid-row:1;display:block;position:relative;inset:auto;width:auto;min-width:0;max-width:none;height:auto;visibility:visible;overflow:auto;z-index:auto;box-shadow:none}
+ .work>.workspace{grid-column:3;grid-row:1;min-width:0}
+ .work>.inspector{grid-column:4;grid-row:1;display:block;visibility:visible;min-width:0}
+ .work.navigator-hidden{grid-template-columns:48px 0 minmax(240px,1fr) 250px}
+ .work.navigator-hidden>.navigator{display:none;visibility:hidden;min-width:0;width:0;max-width:0;overflow:hidden}
+ .work.navigator-hidden>.workspace{grid-column:3;grid-row:1}
+ .work.navigator-hidden>.inspector{grid-column:4;grid-row:1}
+ .work>#navigatorToggle.navigator-toggle{display:inline-flex;position:absolute;left:52px;top:8px;right:auto;z-index:1600}
+ .work.navigator-hidden>#navigatorToggle.navigator-toggle{visibility:visible}
+}
+@media (min-width:901px) and (pointer:fine){#navigatorToggle.navigator-toggle{display:none!important}}
+@media (max-width:900px) and (pointer:fine){#navigatorToggle.navigator-toggle{display:none!important}}
+@media (max-width:600px) and (pointer:coarse){
+ .work{position:relative;grid-template-columns:48px minmax(0,1fr);grid-template-rows:minmax(0,1fr);min-height:0}
+ .work>.tools{grid-column:1;grid-row:1}
+ .work>.workspace{grid-column:2;grid-row:1}
  .work>.navigator,.work>.inspector{display:none!important}
  #navigatorToggle.navigator-toggle{display:inline-flex!important;position:absolute!important;left:54px!important;right:auto!important;top:8px!important;bottom:auto!important;z-index:1600!important;max-width:calc(100% - 64px);min-height:38px}
- .work.navigator-open>.navigator{display:block!important;position:absolute!important;left:48px!important;right:0!important;top:0!important;bottom:0!important;width:auto!important;max-width:none!important;min-width:0!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;background:var(--panel)!important;overscroll-behavior:contain}
+ .work.navigator-open>.navigator{display:block!important;position:absolute!important;left:48px!important;right:0!important;top:0!important;bottom:0!important;width:auto!important;max-width:none!important;min-width:0!important;min-height:0!important;z-index:1201!important;overflow:auto!important;box-shadow:8px 0 24px #0005!important;background:#f3f5f6!important;color:#252d35!important;overscroll-behavior:contain}
  .work.navigator-open>.navigator .section{position:relative;padding-right:76px}
  .work.navigator-open>.navigator #navigatorToggle.navigator-toggle{position:absolute!important;left:auto!important;right:0!important;top:0!important;max-width:calc(100% - 8px)}
  .work.navigator-open>.navigator .section,.work.navigator-open>.navigator .tree,.work.navigator-open>.navigator .nav-tabs{color:#252d35!important}
  .work.navigator-open:after{content:"";position:absolute;inset:0 0 0 48px;background:#0003;z-index:1200;pointer-events:none}
-}</style></head>
+}
+
+</style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
 
