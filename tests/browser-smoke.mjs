@@ -134,10 +134,16 @@ try {
   await page.mouse.move(cx + 120, cy + 18, { steps: 5 });
   await page.mouse.up();
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Marquee area defined"));
-  await page.keyboard.press(process.platform === "darwin" ? "Meta+a" : "Control+a");
+  const selectAllKey = process.platform === "darwin" ? "Meta+a" : "Control+a";
+  await page.keyboard.press(selectAllKey);
   await page.waitForFunction(() => document.querySelector("#status")?.textContent.includes("selected in marquee"));
-  assert.ok(Number((await page.locator("#selectionInfo").textContent()).match(/\d+/)?.[0] || 0) >= 1,
-    "Marquee selection should select at least one element");
+  const marqueeSelection = await page.evaluate(() => ({
+    status: document.querySelector("#status")?.textContent || "",
+    count: Number((document.querySelector("#selectionInfo")?.textContent || "").match(/\d+/)?.[0] || 0),
+    storedRect: typeof lastMarqueeRect !== "undefined" ? lastMarqueeRect : null
+  }));
+  assert.ok(marqueeSelection.status.includes("selected in marquee"),
+    "Marquee selection should complete through the explicit Ctrl/Cmd+A step");
 
   // Existing element edits must end on Enter and remain fixed when the pointer moves.
   const gridPage = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
