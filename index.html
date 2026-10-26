@@ -626,6 +626,21 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.toolbox-floating.navigator-floating{grid-template-columns:minmax(180px,1fr)!important}
  .work.toolbox-floating.navigator-floating>.workspace{grid-column:1!important}
 }
+/* Responsive canvas track: legacy breakpoints hide the Inspector, so the canonical grid must not retain its fourth column. */
+@media(min-width:901px) and (max-width:1200px) and (pointer:fine){
+ .work{grid-template-columns:142px var(--palette-nav-w) minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important}
+ .work>#toolbox{grid-column:1!important;grid-row:1!important}
+ .work>.navigator{grid-column:2!important;grid-row:1!important;display:block!important}
+ .work>.workspace{grid-column:3!important;grid-row:1!important;min-width:0!important}
+ .work>.inspector{display:none!important}
+ .work.toolbox-floating:not(.navigator-floating){grid-template-columns:var(--palette-nav-w) minmax(0,1fr)!important}
+ .work.toolbox-floating:not(.navigator-floating)>.navigator{grid-column:1!important}
+ .work.toolbox-floating:not(.navigator-floating)>.workspace{grid-column:2!important}
+ .work.navigator-floating:not(.toolbox-floating){grid-template-columns:142px minmax(0,1fr)!important}
+ .work.navigator-floating:not(.toolbox-floating)>.workspace{grid-column:2!important}
+ .work.toolbox-floating.navigator-floating{grid-template-columns:minmax(0,1fr)!important}
+ .work.toolbox-floating.navigator-floating>.workspace{grid-column:1!important}
+}
 @media(max-width:900px) and (pointer:fine){.work{grid-template-columns:48px minmax(0,1fr)}.work>.inspector{display:none}.work>.navigator{display:none}}
 @media(max-width:600px){.work>.arq-palette-floating{max-width:calc(100% - 8px)!important}.arq-dock-resize{min-width:12px;min-height:12px}}
 /* Preserve the Navigator's native stacked tree and tabs while floating. */
