@@ -975,7 +975,14 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   grip.addEventListener('pointerdown',e=>{if(state[key].mode!=='dock'||(e.pointerType==='mouse'&&e.button!==0))return;const r=panel.getBoundingClientRect(),horizontal=state[key].side==='bottom';drag={id:e.pointerId,x:e.clientX,y:e.clientY,axis:horizontal?'y':'x',w:r.width,h:r.height};try{grip.setPointerCapture(e.pointerId)}catch{}document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',cancel,true);e.preventDefault();e.stopPropagation()})
  }
  work.append(Object.assign(document.createElement('div'),{className:'arq-resize-handle toolbox-resize',title:'Resize Toolbox'}),Object.assign(document.createElement('div'),{className:'arq-resize-handle navigator-resize',title:'Resize Navigator'}));
- addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));addDrag('navigator',nav,nav.querySelector('.section'));
+ addDrag('toolbox',toolbox,toolbox.querySelector('.toolbox-title'));
+ const navDragHandle=nav.querySelector('.section');
+ if(navDragHandle){
+  const toggle=navDragHandle.querySelector('#navigatorToggle');
+  if(toggle)toggle.style.pointerEvents='auto';
+  navDragHandle.style.touchAction='none';
+  addDrag('navigator',nav,navDragHandle);
+ }
  for(const key of Object.keys(panels)){addFloatingResize(key,panels[key]);addDockResize(key,panels[key])}
  applyGrid();window.addEventListener('resize',()=>{for(const key of Object.keys(panels))if(state[key].mode==='float')applyFloatBounds(key);applyGrid()});
 })();
