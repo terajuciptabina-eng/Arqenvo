@@ -947,15 +947,18 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  function positionDockGrip(key){
   const panel=panels[key],grip=work.querySelector('.arq-dock-resize[data-palette="'+key+'"]');
   if(!panel||!grip)return;
-  const s=state[key],wr=work.getBoundingClientRect(),pr=panel.getBoundingClientRect();
-  if(s.mode!=='dock'||!wr.width||!wr.height){grip.style.display='none';return}
+  const s=state[key],wr=work.getBoundingClientRect(),pr=panel.getBoundingClientRect(),canvas=work.querySelector('.workspace')?.getBoundingClientRect();
+  if(s.mode!=='dock'||!wr.width||!wr.height||getComputedStyle(panel).display==='none'||pr.width<1||pr.height<1){grip.style.display='none';return}
   grip.style.display='block';grip.style.position='absolute';grip.style.right='auto';grip.style.bottom='auto';
-  if(s.side==='top'||s.side==='bottom'){
-   const edgeY=(s.side==='top'?pr.bottom:pr.top)-wr.top;
+  const horizontalDock=s.side==='top'||s.side==='bottom';
+  if(horizontalDock){
+   const above=canvas?pr.bottom<=canvas.top+2:s.side==='top';
+   const edgeY=(above?pr.bottom:pr.top)-wr.top;
    grip.style.left=Math.max(0,pr.left-wr.left)+'px';grip.style.top=(edgeY-6)+'px';
    grip.style.width=Math.max(0,pr.width)+'px';grip.style.height='12px';grip.style.cursor='ns-resize';
   }else{
-   const edgeX=(s.side==='right'?pr.left:pr.right)-wr.left;
+   const leftOfCanvas=canvas?pr.right<=canvas.left+2:s.side!=='right';
+   const edgeX=(leftOfCanvas?pr.right:pr.left)-wr.left;
    grip.style.left=(edgeX-6)+'px';grip.style.top=Math.max(0,pr.top-wr.top)+'px';
    grip.style.width='12px';grip.style.height=Math.max(0,pr.height)+'px';grip.style.cursor='ew-resize';
   }
@@ -1050,10 +1053,10 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    const s=state[key],dx=e.clientX-drag.x,dy=e.clientY-drag.y;
    if(drag.axis==='x'){
     const minW=key==='toolbox'?124:180,maxW=Math.max(minW,work.clientWidth-250);
-    const sign=s.side==='right'?-1:1;dims[key].w=clamp(drag.w+dx*sign,minW,maxW);s.w=dims[key].w;
+    dims[key].w=clamp(drag.w+dx*drag.sign,minW,maxW);s.w=dims[key].w;
    }else{
-    const minH=140,maxH=Math.max(minH,work.clientHeight-100),sign=s.side==='bottom'?-1:1;
-    dims[key].h=clamp(drag.h+dy*sign,minH,maxH);s.h=dims[key].h;
+    const minH=140,maxH=Math.max(minH,work.clientHeight-100);
+    dims[key].h=clamp(drag.h+dy*drag.sign,minH,maxH);s.h=dims[key].h;
    }
    applyGrid();
   };
@@ -1061,8 +1064,9 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid()};
   grip.addEventListener('pointerdown',e=>{
    if(state[key].mode!=='dock'||(e.pointerType==='mouse'&&e.button!==0))return;
-   const r=panel.getBoundingClientRect(),vertical=state[key].side==='top'||state[key].side==='bottom';
-   drag={id:e.pointerId,x:e.clientX,y:e.clientY,axis:vertical?'y':'x',w:r.width,h:r.height};
+   const r=panel.getBoundingClientRect(),canvas=work.querySelector('.workspace')?.getBoundingClientRect(),vertical=state[key].side==='top'||state[key].side==='bottom';
+   const sign=vertical?(canvas?(r.bottom<=canvas.top+2?1:r.top>=canvas.bottom-2?-1:(state[key].side==='bottom'?-1:1)):(state[key].side==='bottom'?-1:1)):(canvas?(r.right<=canvas.left+2?1:r.left>=canvas.right-2?-1:(state[key].side==='right'?-1:1)):(state[key].side==='right'?-1:1));
+   drag={id:e.pointerId,x:e.clientX,y:e.clientY,axis:vertical?'y':'x',sign,w:r.width,h:r.height};
    try{grip.setPointerCapture(e.pointerId)}catch{}
    document.addEventListener('pointermove',move,true);document.addEventListener('pointerup',done,true);document.addEventListener('pointercancel',cancel,true);
    e.preventDefault();e.stopPropagation();
