@@ -165,7 +165,77 @@ function angleInArc(angle,start,end,anticlockwise){
  const a=normalize(angle),s=normalize(start),e=normalize(end);
  return anticlockwise ? normalize(s-a)<=normalize(s-e)+1e-8 : normalize(a-s)<=normalize(e-s)+1e-8;
 }
-function snapPoint(q,radius){activeSnapPoint=null;if(p.settings?.snap===false)return q;const threshold=radius??(10/Math.max(1,scale));let best=null,bestDistance=threshold,bestKind="";const consider=(point,kind)=>{if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;const d=Math.hypot(q.x-point.x,q.y-point.y);if(d<bestDistance){best={x:point.x,y:point.y};bestDistance=d;bestKind=kind}};for(const el of els()){if(!isLayerVisible(el)||(view==="floor"&&el.storyId!==story().id))continue;if(el.type==="wall"||el.type==="beam"||el.type==="gridline"){consider(el.start,"endpoint");consider(el.end,"endpoint");consider({x:(el.start.x+el.end.x)/2,y:(el.start.y+el.end.y)/2},"midpoint");const dx=el.end.x-el.start.x,dy=el.end.y-el.start.y,len2=dx*dx+dy*dy;if(len2>1e-9){const t=Math.max(0,Math.min(1,((q.x-el.start.x)*dx+(q.y-el.start.y)*dy)/len2));if(t>0.025&&t<0.975)consider({x:el.start.x+t*dx,y:el.start.y+t*dy},"nearest")}}if(el.type==="column")consider(el.position,"center");if(el.type==="slab")for(const v of el.boundary)consider(v,"endpoint")}const snapSegments=[],near=(a,b)=>Math.max(Math.min(a.x,b.x)-q.x,0,q.x-Math.max(a.x,b.x))<=threshold&&Math.max(Math.min(a.y,b.y)-q.y,0,q.y-Math.max(a.y,b.y))<=threshold;for(const el of els()){if(!isLayerVisible(el)||(view==="floor"&&el.storyId!==story().id))continue;if((el.type==="wall"||el.type==="beam"||el.type==="gridline")&&el.start&&el.end){if(near(el.start,el.end))snapSegments.push({a:el.start,b:el.end,id:el.id})}else if(Array.isArray(el.boundary)&&el.boundary.length>1)for(let i=0;i<el.boundary.length;i++){const a=el.boundary[i],b=el.boundary[(i+1)%el.boundary.length];if(near(a,b))snapSegments.push({a,b,id:el.id})}}for(let i=0;i<snapSegments.length;i++)for(let j=i+1;j<snapSegments.length;j++){const a=snapSegments[i],b=snapSegments[j];if(a.id===b.id)continue;const rx=a.b.x-a.a.x,ry=a.b.y-a.a.y,sx=b.b.x-b.a.x,sy=b.b.y-b.a.y,den=rx*sy-ry*sx;if(Math.abs(den)<1e-10)continue;const qx=b.a.x-a.a.x,qy=b.a.y-a.a.y,t=(qx*sy-qy*sx)/den,u=(qx*ry-qy*rx)/den;if(t>=-1e-8&&t<=1+1e-8&&u>=-1e-8&&u<=1+1e-8)consider({x:a.a.x+t*rx,y:a.a.y+t*ry},"intersection")}if(view==="floor"&&gridVisible){const step=Math.max(.1,Number($("grid")?.value)||.5),gp={x:Math.round(q.x/step)*step,y:Math.round(q.y/step)*step};consider(gp,"grid")}if(best)activeSnapPoint={...best,kind:bestKind};return best||q}
+function snapPoint(q,radius){
+ activeSnapPoint=null;
+ if(p.settings?.snap===false)return q;
+ const threshold=radius??(10/Math.max(1,scale));
+ let best=null,bestDistance=threshold,bestKind="";
+ const consider=(point,kind="node")=>{
+  if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
+  const d=Math.hypot(q.x-point.x,q.y-point.y);
+  if(d<bestDistance){best={x:point.x,y:point.y};bestDistance=d;bestKind=kind}
+ };
+ const snapSegments=[];
+ const near=(a,b)=>Math.max(Math.min(a.x,b.x)-q.x,0,q.x-Math.max(a.x,b.x))<=threshold&&Math.max(Math.min(a.y,b.y)-q.y,0,q.y-Math.max(a.y,b.y))<=threshold;
+ const addSegment=(a,b,id)=>{if(a&&b&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&Number.isFinite(b.x)&&Number.isFinite(b.y)&&near(a,b))snapSegments.push({a,b,id})};
+ const seenPoints=new Set();
+ const addNode=(point,kind="endpoint")=>{
+  if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
+  const key=point.x.toFixed(8)+","+point.y.toFixed(8);
+  if(!seenPoints.has(key)){seenPoints.add(key);consider(point,kind)}
+ };
+ const visible=els().filter(el=>isLayerVisible(el)&&(view!=="floor"||el.storyId===story().id));
+ for(const el of visible){
+  const id=el.id;
+  // Every element's explicit geometric nodes are snap targets, not just wall/beam nodes.
+  for(const key of ["start","end","position","center","origin","p1","p2","a","b","node","anchor","referencePoint"])if(el[key]&&typeof el[key]==="object"&&Number.isFinite(el[key].x)&&Number.isFinite(el[key].y))addNode(el[key],key==="position"||key==="center"?"center":"endpoint");
+  for(const key of ["boundary","points","vertices","nodes","controlPoints","dimensionPoints","referencePoints","handles"]){
+   const arr=el[key];
+   if(!Array.isArray(arr))continue;
+   for(const point of arr)if(point&&Number.isFinite(point.x)&&Number.isFinite(point.y))addNode(point,"endpoint");
+   if(["boundary","points","vertices"].includes(key)&&arr.length>1)for(let i=0;i<arr.length;i++)addSegment(arr[i],arr[(i+1)%arr.length],id);
+  }
+  if(el.start&&el.end){
+   addSegment(el.start,el.end,id);
+   const dx=el.end.x-el.start.x,dy=el.end.y-el.start.y,len2=dx*dx+dy*dy;
+   if(len2>1e-9){
+    addNode({x:(el.start.x+el.end.x)/2,y:(el.start.y+el.end.y)/2},"midpoint");
+    const t=Math.max(0,Math.min(1,((q.x-el.start.x)*dx+(q.y-el.start.y)*dy)/len2));
+    if(t>0.025&&t<0.975)consider({x:el.start.x+t*dx,y:el.start.y+t*dy},"nearest");
+   }
+  }
+  if(Array.isArray(el.boundary)&&el.boundary.length>1){
+   for(let i=0;i<el.boundary.length;i++)addSegment(el.boundary[i],el.boundary[(i+1)%el.boundary.length],id);
+  }
+  // Door/window jamb endpoints are nodes on their host wall.
+  if(el.type==="door"||el.type==="window"){
+   const host=visible.find(v=>v.id===el.hostWallId&&v.type==="wall");
+   if(host&&host.start&&host.end){
+    const len=wallLength(host)||Math.hypot(host.end.x-host.start.x,host.end.y-host.start.y);
+    if(len>1e-9){
+     const ux=(host.end.x-host.start.x)/len,uy=(host.end.y-host.start.y)/len;
+     for(const off of [Number(el.offset)||0,(Number(el.offset)||0)+(Number(el.width)||0)]){
+      const point={x:host.start.x+ux*off,y:host.start.y+uy*off};addNode(point,"endpoint");
+     }
+    }
+   }
+  }
+ }
+ // Find intersections across all nearby element edges (not only walls, beams and gridlines).
+ for(let i=0;i<snapSegments.length;i++)for(let j=i+1;j<snapSegments.length;j++){
+  const a=snapSegments[i],b=snapSegments[j];if(a.id===b.id)continue;
+  const rx=a.b.x-a.a.x,ry=a.b.y-a.a.y,sx=b.b.x-b.a.x,sy=b.b.y-b.a.y,den=rx*sy-ry*sx;
+  if(Math.abs(den)<1e-10)continue;
+  const qx=b.a.x-a.a.x,qy=b.a.y-a.a.y,t=(qx*sy-qy*sx)/den,u=(qx*ry-qy*rx)/den;
+  if(t>=-1e-8&&t<=1+1e-8&&u>=-1e-8&&u<=1+1e-8)consider({x:a.a.x+t*rx,y:a.a.y+t*ry},"intersection");
+ }
+ if(view==="floor"&&gridVisible){
+  const step=Math.max(.1,Number($("grid")?.value)||.5);
+  consider({x:Math.round(q.x/step)*step,y:Math.round(q.y/step)*step},"grid");
+ }
+ if(best)activeSnapPoint={...best,kind:bestKind};
+ return best||q;
+}
 function pointInPolygon(p,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){let a=poly[i],b=poly[j];if(((a.y>p.y)!==(b.y>p.y))&&(p.x<(b.x-a.x)*(p.y-a.y)/(b.y-a.y)+a.x))inside=!inside}return inside}
 function drawWallJunctions(){
  const walls=els().filter(e=>e.type==="wall"&&e.storyId===story().id&&isLayerVisible(e)&&Number.isFinite(e.thickness)&&e.thickness>0);
