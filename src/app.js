@@ -1553,9 +1553,9 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(!drag.moved){
     drag.moved=true;
     const s=state[key],r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
-    /* Docked panels fill the workspace height; do not carry that dock geometry into a floating window. */
     const minW=key==='toolbox'?220:280,preferredW=key==='toolbox'?280:320,preferredH=key==='toolbox'?480:560;
-    if(d.originMode==='dock')s.dockRect=d.dockRect||{left:r.left,top:r.top,right:r.right,bottom:r.bottom};
+    // Preserve the original dock slot before reflow changes the workspace.
+    if(drag.originMode==='dock')s.dockRect=drag.dockRect||{left:r.left,top:r.top,right:r.right,bottom:r.bottom};
     s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;
     s.w=clamp(Math.max(minW,preferredW),minW,Math.max(minW,work.clientWidth-8));
     s.h=clamp(preferredH,220,Math.max(220,work.clientHeight-8));
@@ -1571,31 +1571,21 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(!d.moved)return;
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
-   const origin=d.dockRect||(state[key].dockRect)||(d.originMode==='dock'?d.originRect:null);
-   // Docking is determined from the release point, not from the floating
-   // panel's reflowed bounding box. Returning near the Navigator's recorded
-   // dock rectangle should restore the original side even if the workspace
-   // shifted while the palette was floating.
-   const originalSide=d.originSide||state[key].side||(key==='toolbox'?'left':'right');
-   const wr=work.getBoundingClientRect(),edge=Math.max(28,Math.min(48,Math.round(Math.min(wr.width,wr.height)*.045)));
-   const nearOriginalDock=originalSide==='left'?e.clientX<=wr.left+edge+24:originalSide==='right'?e.clientX>=wr.right-edge-24:originalSide==='top'?e.clientY<=wr.top+edge+24:e.clientY>=wr.bottom-edge-24;
-   const inOriginalRect=!!origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24;
-   if(nearOriginalDock||inOriginalRect){setMode(key,'dock',originalSide);return}
+   const origin=d.dockRect||(d.originMode==='dock'?d.originRect:null);
+   if(origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24){
+    setMode(key,'dock',d.dockSide||d.originSide||state[key].side||(key==='toolbox'?'left':'right'));return;
+   }
    const r=panel.getBoundingClientRect(),s=state[key];
    s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key);saveDims(key);
   };
   const cancel=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;remove();applyGrid();save(key)};
   handle.addEventListener('pointerdown',e=>{
    if(e.pointerType==='mouse'&&e.button!==0)return;
-   /* Navigator's header is also its tab strip. Start a pending gesture there; only turn it into a drag after movement, so a normal tab click remains a click. */
    if(e.target.closest('input,select,a')||e.target.closest('#navigatorToggle')||(key==='toolbox'&&e.target.closest('button')))return;
    const r=panel.getBoundingClientRect();
    if(state[key].mode==='dock')state[key].dockRect={left:r.left,top:r.top,right:r.right,bottom:r.bottom};
-   // The first dock-to-float gesture records the stable dock slot. Subsequent
-   // floating drags preserve it so a return drop can restore the same dock.
    const savedDock=state[key].dockRect?{...state[key].dockRect}:null;
-   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},dockRect:savedDock};
-   if(!savedDock&&state[key].mode==='float'&&state[key].dockRect)drag.dockRect={...state[key].dockRect};
+   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},dockRect:savedDock,dockSide:state[key].side};
    active=true;
    document.addEventListener('pointermove',move,true);
    document.addEventListener('pointerup',finish,true);
