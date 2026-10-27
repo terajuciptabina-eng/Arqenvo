@@ -716,6 +716,38 @@ function finish(){if(tool==="slab"&&draft.length>=3){try{hist();els().push(creat
 c.addEventListener("dblclick",e=>{if(tool==="wall"&&wallGeometryMethod==="continuous"){e.preventDefault();draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;redraw();$("status").textContent="Continuous wall drawing finished";return}finish()});
 const settingsPopup=document.createElement("div");settingsPopup.id="arqContextMenu";settingsPopup.style.cssText="position:fixed;z-index:99999;display:none;min-width:190px;padding:5px;background:var(--panel,#fff);border:1px solid var(--border,#cbd5dc);border-radius:7px;box-shadow:0 8px 28px #0003;color:var(--text,#27323a);font:13px Arial,sans-serif";settingsPopup.innerHTML='<button type="button" data-context-action="settings" style="display:block;width:100%;padding:9px 12px;text-align:left;border:0;background:transparent;color:inherit;cursor:pointer;border-radius:4px">Element Settings <span style="float:right;opacity:.65">↗</span></button>';document.body.appendChild(settingsPopup);
 const elementSettingsModal=document.createElement("div");elementSettingsModal.id="arqElementSettingsModal";elementSettingsModal.style.cssText="position:fixed;inset:0;z-index:99998;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(22,29,35,.38)";elementSettingsModal.innerHTML='<section role="dialog" aria-modal="true" aria-labelledby="arqElementSettingsTitle" style="display:flex;flex-direction:column;width:min(430px,calc(100vw - 24px));height:min(860px,88dvh);max-height:88dvh;background:var(--panel,#f6f7f8);color:var(--text,#26313b);border:1px solid #aeb8c1;border-radius:5px;box-shadow:0 18px 60px #0004;overflow:hidden"><header style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#e9edf0;border-bottom:1px solid #c5cbd1"><strong id="arqElementSettingsTitle" style="flex:1;font-size:14px">Element Settings</strong><span id="arqElementSettingsType" style="font-size:11px;color:#59656e"></span><button type="button" data-settings-close aria-label="Close Element Settings" style="padding:5px 10px">✕</button></header><div data-settings-body style="display:block;flex:1 1 auto;min-height:0;padding:10px 14px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain"></div><footer style="display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;border-top:1px solid #c5cbd1;background:#f0f2f4"><button type="button" data-settings-close>Close</button></footer></section>';document.body.appendChild(elementSettingsModal);
+const settingsDialog=elementSettingsModal.querySelector('[role="dialog"]');
+const settingsHeader=elementSettingsModal.querySelector("header");
+settingsDialog.style.position="absolute";
+settingsDialog.style.left="50%";
+settingsDialog.style.top="50%";
+settingsDialog.style.transform="translate(-50%,-50%)";
+settingsHeader.style.cursor="move";
+settingsHeader.style.touchAction="none";
+settingsHeader.title="Drag to move Element Settings";
+let settingsDrag=null;
+settingsHeader.addEventListener("pointerdown",event=>{
+ if(event.target.closest("button"))return;
+ if(event.button!==undefined&&event.button!==0)return;
+ const rect=settingsDialog.getBoundingClientRect();
+ settingsDrag={pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,left:rect.left,top:rect.top};
+ settingsDialog.style.left=rect.left+"px";
+ settingsDialog.style.top=rect.top+"px";
+ settingsDialog.style.transform="none";
+ try{settingsHeader.setPointerCapture(event.pointerId)}catch(_){}
+ event.preventDefault();
+});
+settingsHeader.addEventListener("pointermove",event=>{
+ if(!settingsDrag||settingsDrag.pointerId!==event.pointerId)return;
+ const margin=8,rect=settingsDialog.getBoundingClientRect();
+ const left=Math.max(margin,Math.min(window.innerWidth-rect.width-margin,settingsDrag.left+event.clientX-settingsDrag.startX));
+ const top=Math.max(margin,Math.min(window.innerHeight-rect.height-margin,settingsDrag.top+event.clientY-settingsDrag.startY));
+ settingsDialog.style.left=left+"px";settingsDialog.style.top=top+"px";
+});
+const stopSettingsDrag=event=>{if(settingsDrag&&(!event||event.pointerId===settingsDrag.pointerId))settingsDrag=null};
+settingsHeader.addEventListener("pointerup",stopSettingsDrag);
+settingsHeader.addEventListener("pointercancel",stopSettingsDrag);
+window.addEventListener("resize",()=>{if(elementSettingsModal.style.display!=="flex")return;const rect=settingsDialog.getBoundingClientRect(),margin=8;settingsDialog.style.left=Math.max(margin,Math.min(window.innerWidth-rect.width-margin,rect.left))+"px";settingsDialog.style.top=Math.max(margin,Math.min(window.innerHeight-rect.height-margin,rect.top))+"px";settingsDialog.style.transform="none"});
 const settingsBody=elementSettingsModal.querySelector("[data-settings-body]");
 const settingsStyle=document.createElement("style");
 settingsStyle.textContent=`
