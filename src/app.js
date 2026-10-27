@@ -1830,3 +1830,29 @@ renderProperties=function(){
   input.addEventListener("input",()=>{input.dataset.unitEdited="true"});
  }
 };
+
+/* Archicad-style transform ghost: preview selected geometry at the cursor before committing. */
+function drawTransformShadow(){
+ const state=transformInteraction;if(!state||view!=="floor"||!state.points.length)return;
+ const list=chosen();if(!list.length)return;
+ const pts=state.points,mode=state.mode;
+ let dx=0,dy=0,angle=0,pivot=null,axisStart=null,axisEnd=null;
+ const cursor=mouse?wpos(mouse):null;if(!cursor)return;
+ if(mode==="move"||mode==="copy"){dx=cursor.x-pts[0].x;dy=cursor.y-pts[0].y}
+ else if(mode==="rotate"){
+  pivot=pts[0];if(pts.length===1){axisStart=pts[0];axisEnd=cursor}else if(pts.length===2){axisStart=pts[1];axisEnd=cursor}
+  if(pts.length>=2)angle=Math.atan2(cursor.y-pivot.y,cursor.x-pivot.x)-Math.atan2(pts[1].y-pivot.y,pts[1].x-pivot.x);
+ }else if(mode==="mirror"){axisStart=pts[0];axisEnd=cursor}
+ const cx=pivot?.x??list.reduce((a,e)=>a+(e.position||e.center||e.start||e.boundary?.[0]||{x:0}).x,0)/list.length;
+ const cy=pivot?.y??list.reduce((a,e)=>a+(e.position||e.center||e.start||e.boundary?.[0]||{y:0}).y,0)/list.length;
+ const map=q=>{let px=q.x,py=q.y;if(mode==="move"||mode==="copy"){px+=dx;py+=dy}else if(mode==="rotate"){const ax=px-cx,ay=py-cy;px=cx+ax*Math.cos(angle)-ay*Math.sin(angle);py=cy+ax*Math.sin(angle)+ay*Math.cos(angle)}else if(mode==="mirror"&&axisStart&&axisEnd){const vx=axisEnd.x-axisStart.x,vy=axisEnd.y-axisStart.y,l=vx*vx+vy*vy;if(l>1e-12){const t=((px-axisStart.x)*vx+(py-axisStart.y)*vy)/l,xx=axisStart.x+t*vx,yy=axisStart.y+t*vy;px=2*xx-px;py=2*yy-py}}return spos({x:px,y:py})};
+ x.save();x.globalAlpha=.72;x.strokeStyle="#00a6b2";x.fillStyle="rgba(0,166,178,.12)";x.lineWidth=2;x.setLineDash([7,4]);
+ for(const e of list){if(e.storyId!==story().id)continue;x.beginPath();
+  if(e.type==="wall"||e.type==="beam"||e.type==="dimension"||e.type==="gridline"){if(e.start&&e.end){const a=map(e.start),b=map(e.end);x.moveTo(a.x,a.y);x.lineTo(b.x,b.y)}}
+  else {const poly=e.boundary||e.points||e.vertices||e.nodes;if(Array.isArray(poly)&&poly.length>1){poly.forEach((q,i)=>{const z=map(q);i?x.lineTo(z.x,z.y):x.moveTo(z.x,z.y)});x.closePath()}else{const q=e.position||e.center||e.start;if(q){const z=map(q);x.arc(z.x,z.y,7,0,Math.PI*2)}}}
+  x.fill();x.stroke();
+ }
+ x.setLineDash([]);if(cursor){const p=spos(cursor);x.beginPath();x.arc(p.x,p.y,4,0,Math.PI*2);x.fillStyle="#00a6b2";x.fill()}
+ x.restore();
+}
+document.addEventListener("pointermove",()=>{if(transformInteraction&&transformInteraction.points.length){drawTransformShadow()}});
