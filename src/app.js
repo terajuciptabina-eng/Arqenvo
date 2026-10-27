@@ -1141,6 +1141,78 @@ $("editBackspace")?.addEventListener("click",()=>{document.dispatchEvent(new Key
 $("editCancel")?.addEventListener("click",()=>{lastMarqueeRect=null;selectionBoxGesture=null;selected.clear();if(releasedTouchEditPending){releasedTouchEditPending=false;if(releasedTouchEditSnapshot){try{const snapshot=JSON.parse(releasedTouchEditSnapshot);if(snapshot&&Array.isArray(snapshot.elements)){modelHistory.discardLast(snapshot);p=snapshot;activeStoryId=p.stories.some(v=>v.id===activeStoryId)?activeStoryId:p.stories[0].id}else{const current=els();current.splice(0,current.length,...snapshot)}}catch(error){console.error("Could not restore touch edit snapshot",error)}}releasedTouchEditSnapshot=null;updateEditActions();scheduleAutoSave();renderProperties();redraw();$("status").textContent="Element edit cancelled";return}if(finishElementEditGesture("cancel")){releasedTouchEditPending=false;updateEditActions();return}if(pendingOpeningPlacement){openingPlacement.cancel();pendingOpeningPlacement=null;releasedTouchEditPending=false;updateEditActions();redraw();$("status").textContent="Opening placement cancelled";return}if(cancelProvisionalDrawing()){$("status").textContent="Drawing cancelled · provisional elements removed";releasedTouchEditPending=false;updateEditActions();return}draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;trackerDistanceOverride=null;trackerAngleOverride=null;releasedTouchEditPending=false;updateEditActions();redraw();$("status").textContent="Command cancelled"});
 window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAngleLock=null;if(draft.length&&view==="floor")redraw()}if(e.code==="Space"){spaceHeld=false;if(spaceMagicWandActive){spaceMagicWandActive=false;tool=spaceMagicWandReturnTool||"select";spaceMagicWandReturnTool=null;document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));$("toolName").value=tool;updateContextUI();redraw();}}});window.addEventListener("blur",()=>{spaceHeld=false;if(spaceMagicWandActive){spaceMagicWandActive=false;tool=spaceMagicWandReturnTool||"select";spaceMagicWandReturnTool=null;document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===tool));$("toolName").value=tool;updateContextUI();redraw();}isPanning=false;panStart=null;orbiting=false;lastCameraPointer=null;c.style.cursor=""});window.addEventListener("resize",resize);// Mount live element settings inside the horizontal Info Box, matching Archicad's contextual palette.
 (()=>{const ribbon=$("contextToolbar"),info=$("selectionInfo"),props=$("elementProperties");if(!ribbon||!info||!props)return;const group=document.createElement("div");group.className="context-selection-settings";group.id="contextSelectionSettings";const count=document.createElement("div");count.className="context-selection-count";count.id="contextSelectionCountLive";group.append(count,info,props);const fill=ribbon.querySelector(".context-fill");ribbon.insertBefore(group,fill||null);info.classList.add("context-selection-count-source");props.classList.add("context-properties");const sync=()=>{count.textContent=info.textContent||"No selection";count.hidden=!info.textContent;};new MutationObserver(sync).observe(info,{childList:true,characterData:true,subtree:true});sync()})();
+
+/* ARQENVO contextual Pet Palette: actions follow the current selection and never alter selection just by opening. */
+(()=>{
+ const canvas=$("canvas");if(!canvas)return;
+ const style=document.createElement("style");
+ style.textContent=`
+ #arqPetPalette{position:fixed;z-index:99970;display:none;align-items:center;gap:4px;padding:6px;background:linear-gradient(180deg,#303b45,#202830);border:1px solid #111920;border-radius:9px;box-shadow:0 9px 28px #11182745;color:#f3f6f8;max-width:min(94vw,560px);overflow-x:auto;white-space:nowrap}
+ #arqPetPalette .pet-separator{width:1px;height:30px;background:#52606b;margin:0 3px;flex:none}
+ #arqPetPalette button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:43px;height:46px;padding:4px 5px;border:1px solid transparent;border-radius:6px;background:transparent;color:#e8edf1;font:10px/1.1 Inter,Arial,sans-serif}
+ #arqPetPalette button:hover,#arqPetPalette button:focus-visible{background:#465663;border-color:#72818d;outline:none}
+ #arqPetPalette button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+ #arqPetPalette button:disabled{opacity:.35}
+ @media(max-width:600px){#arqPetPalette{gap:2px;padding:4px;border-radius:7px}#arqPetPalette button{min-width:39px;height:42px;font-size:9px}}
+ `;
+ document.head.appendChild(style);
+ const palette=document.createElement("div");palette.id="arqPetPalette";palette.setAttribute("role","toolbar");palette.setAttribute("aria-label","Contextual element actions");document.body.appendChild(palette);
+ const icons={
+ move:'<svg viewBox="0 0 24 24"><path d="M12 2v20M2 12h20M12 2 9 5m3-3 3 3M22 12l-3-3m3 3-3 3M12 22l-3-3m3 3 3-3M2 12l3-3m-3 3 3 3"/></svg>',
+ rotate:'<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0 1 4M20 4v7h-7"/></svg>',
+ mirror:'<svg viewBox="0 0 24 24"><path d="M12 2v20M4 6h5v12H4zM15 6h5v12h-5z"/></svg>',
+ multiply:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="11" height="11" rx="1"/><rect x="10" y="10" width="11" height="11" rx="1"/></svg>',
+ settings:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19 13 2 1-2 4-2-1-2 2v2H9v-2l-2-2-2 1-2-4 2-1v-2l-2-1 2-4 2 1 2-2V3h6v2l2 2 2-1 2 4-2 1z"/></svg>'
+ };
+ const actions=[
+  {key:"moveSelection",label:"Move",icon:"move",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]},
+  {key:"rotateSelection",label:"Rotate",icon:"rotate",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension"]},
+  {key:"mirrorSelection",label:"Mirror",icon:"mirror",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension"]},
+  {key:"copySelection",label:"Multiply",icon:"multiply",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]},
+  {key:"settings",label:"Settings",icon:"settings",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]}
+ ];
+ const hide=()=>{palette.style.display="none"};
+ const render=()=>{
+  const list=chosen();
+  if(!list.length||view!=="floor"||tool!=="select"||elementSettingsModal?.style.display==="flex"){hide();return}
+  const types=[...new Set(list.map(el=>el.type))];
+  const relevant=actions.filter(a=>types.every(t=>a.types.includes(t)));
+  palette.innerHTML="";
+  relevant.forEach((a,index)=>{
+   if(index===4){const sep=document.createElement("span");sep.className="pet-separator";palette.append(sep)}
+   const b=document.createElement("button");b.type="button";b.innerHTML=icons[a.icon]+'<span>'+a.label+'</span>';b.title=a.label;b.setAttribute("aria-label",a.label);
+   b.addEventListener("pointerdown",e=>e.stopPropagation());
+   b.addEventListener("click",e=>{
+    e.preventDefault();e.stopPropagation();
+    if(a.key==="settings"){openElementSettings();return}
+    const command=document.querySelector('[data-command="'+a.key+'"]');
+    if(command){hide();command.click();return}
+    $("status").textContent=a.label+" is not available for this selection yet";
+   });
+   palette.append(b);
+  });
+  const rect=canvas.getBoundingClientRect(),anchor=mouse&&Number.isFinite(mouse.x)&&Number.isFinite(mouse.y)?{x:rect.left+mouse.x,y:rect.top+mouse.y}:{x:rect.left+rect.width/2,y:rect.top+rect.height/2};
+  palette.style.display="flex";
+  const w=palette.offsetWidth,h=palette.offsetHeight;
+  let left=Math.max(6,Math.min(window.innerWidth-w-6,anchor.x+14));
+  let top=anchor.y+h+16<window.innerHeight?anchor.y+16:anchor.y-h-14;
+  top=Math.max(6,Math.min(window.innerHeight-h-6,top));
+  palette.style.left=left+"px";palette.style.top=top+"px";
+ };
+ const info=$("selectionInfo");
+ if(info)new MutationObserver(render).observe(info,{childList:true,characterData:true,subtree:true});
+ document.addEventListener("pointermove",e=>{
+  if(e.target===canvas){const r=canvas.getBoundingClientRect();mouse={x:e.clientX-r.left,y:e.clientY-r.top};if(palette.style.display==="flex")render()}
+ },{passive:true});
+ window.addEventListener("resize",render);
+ document.addEventListener("keydown",e=>{if(e.key==="Escape")hide()});
+ const originalRenderProperties=renderProperties;
+ renderProperties=function(){originalRenderProperties();render()};
+ const originalRedraw=redraw;
+ redraw=function(){originalRedraw();render()};
+ render();
+})();
+
 setTool("select");refreshStories();renderProperties();for(const sheet of p.layouts||[])ensureLayoutDefaults(sheet);activeLayoutId=p.layouts?.some(s=>s.id===activeLayoutId)?activeLayoutId:(p.layouts?.[0]?.id||null);activeLayoutDrawingId=layoutSheet()?.drawings?.[0]?.id||null;renderLayoutList();resize();updateEditActions();
 
 /* Canonical palette manager — one bounded state model for docked and floating panels. */
