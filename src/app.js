@@ -488,7 +488,6 @@ function stretchSelectedWall(){
  hist("Stretch wall");
  const endRecords=captureConnectedNode(wall.end);
  applyConnectedNodeMove(endRecords,dx*delta,dy*delta);
- wall.start.x=wall.start.x;wall.start.y=wall.start.y;
  scheduleAutoSave();renderProperties();redraw();
  $("status").textContent="Wall stretched to "+next.toFixed(3)+" m";
 }
@@ -1298,13 +1297,13 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  offset:'<svg viewBox="0 0 24 24"><path d="M4 19 19 4M5 5h6M5 5v6M19 19h-6M19 19v-6"/></svg>'
  };
  const actions=[
-  {key:"stretchWall",label:"Stretch",icon:"stretch",types:["wall"],single:true},
-  {key:"offsetWall",label:"Offset",icon:"offset",types:["wall"],single:true},
+  {key:"stretchWall",label:"Stretch",icon:"stretch",types:["wall"],single:true,context:["node"]},
+  {key:"offsetWall",label:"Offset",icon:"offset",types:["wall"],single:true,context:["edge"]},
   {key:"moveSelection",label:"Move",icon:"move",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]},
   {key:"rotateSelection",label:"Rotate",icon:"rotate",types:["wall","slab","zone","column","beam","roof","gridline","dimension","room"]},
   {key:"mirrorSelection",label:"Mirror",icon:"mirror",types:["wall","slab","zone","column","beam","roof","gridline","dimension","room"]},
   {key:"copySelection",label:"Multiply",icon:"multiply",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]},
-  {key:"settings",label:"Settings",icon:"settings",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]}
+  {key:"settings",label:"Settings",icon:"settings",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"],context:["node","edge"]}
  ];
  const hide=()=>{palette.style.display="none";palette.dataset.forSelection="";palette.dataset.context="";};
  const selectionKey=list=>list.map(el=>el.id).sort().join("|");
@@ -1340,10 +1339,13 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    hide();lastContextKey="";palette.dataset.positioned="";palette.dataset.userMoved="";return;
   }
   if(context.key===lastContextKey&&palette.style.display==="flex")return;
-  const {list}=context,types=[...new Set(list.map(el=>el.type))],relevant=actions.filter(action=>types.every(type=>action.types.includes(type))&&(!action.single||list.length===1));
+  const {list}=context,types=[...new Set(list.map(el=>el.type))],relevant=actions.filter(action=>types.every(type=>action.types.includes(type))&&(!action.single||list.length===1)&&(!action.context||action.context.includes(context.kind)));
+  // Geometry-specific edits must never silently fall through to whole-selection transforms.
+  const contextActions=context.kind==="node"||context.kind==="edge";
+  const safeActions=contextActions?relevant.filter(action=>action.context&&action.context.includes(context.kind)):relevant;
   palette.replaceChildren();
   const handle=document.createElement("span");handle.className="pet-drag-handle";handle.title="Drag palette";handle.setAttribute("aria-label","Drag palette");handle.textContent="⠿";palette.append(handle);
-  relevant.forEach((action,index)=>{
+  safeActions.forEach((action,index)=>{
    if(index===4){const sep=document.createElement("span");sep.className="pet-separator";palette.append(sep)}
    const button=document.createElement("button");button.type="button";button.dataset.action=action.key;button.innerHTML=icons[action.icon]+'<span>'+action.label+'</span>';button.title=action.label;button.setAttribute("aria-label",action.label);
    button.addEventListener("pointerdown",event=>event.stopPropagation());
