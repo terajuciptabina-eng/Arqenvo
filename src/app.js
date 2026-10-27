@@ -301,20 +301,23 @@ function drawDraftReferenceLine3d(project3d){
  if(["slab","roof","zone"].includes(tool)&&draft.length>1&&mouse){x.closePath();x.fill()}
  x.stroke();x.setLineDash([]);x.restore();
 }
-function drawPendingOpeningReferenceLine(){
- if(!pendingOpeningPlacement)return;
+function drawPendingOpeningReferenceLine(project3d){
+ if(!pendingOpeningPlacement||!mouse)return;
  const wall=els().find(item=>item.id===pendingOpeningPlacement.wallId&&item.type==="wall");
  if(!wall)return;
  const length=wallLength(wall)||1,ux=(wall.end.x-wall.start.x)/length,uy=(wall.end.y-wall.start.y)/length;
  const a={x:wall.start.x+ux*pendingOpeningPlacement.offset,y:wall.start.y+uy*pendingOpeningPlacement.offset};
  const b={x:wall.start.x+ux*(pendingOpeningPlacement.offset+pendingOpeningPlacement.width),y:wall.start.y+uy*(pendingOpeningPlacement.offset+pendingOpeningPlacement.width)};
- const point=mouse?(view==="3d"?screenToWorld3d(mouse,story().elevation||0):wpos(mouse)):pendingOpeningPlacement.cursor;
- if(!point)return;
- const anchor= view==="3d"?screenToWorld3d(mouse||{x:c.clientWidth/2,y:c.clientHeight/2},story().elevation||0):wpos(mouse||{x:c.clientWidth/2,y:c.clientHeight/2});
- const cursor={x:point.x,y:point.y};
- const projected=[a,b,cursor].map(pt=>view==="3d"?null:spos(pt));
  x.save();x.strokeStyle="#00a6b5";x.lineWidth=1.5;x.setLineDash([3,3]);
- if(view==="floor"){x.beginPath();x.moveTo(projected[0].x,projected[0].y);x.lineTo(projected[1].x,projected[1].y);x.stroke();const cpos=spos(cursor);x.beginPath();x.moveTo(cpos.x-7,cpos.y);x.lineTo(cpos.x+7,cpos.y);x.moveTo(cpos.x,cpos.y-7);x.lineTo(cpos.x,cpos.y+7);x.stroke()}
+ if(view==="floor"){
+  const pa=spos(a),pb=spos(b),pc=spos(wpos(mouse));x.beginPath();x.moveTo(pa.x,pa.y);x.lineTo(pb.x,pb.y);x.lineTo(pc.x,pc.y);x.stroke();
+  x.beginPath();x.moveTo(pc.x-7,pc.y);x.lineTo(pc.x+7,pc.y);x.moveTo(pc.x,pc.y-7);x.lineTo(pc.x,pc.y+7);x.stroke();
+ }else if(view==="3d"&&typeof project3d==="function"){
+  const pc=project3d(screenToWorld3d(mouse,story().elevation||0),story().elevation||0);
+  const pa=project3d(a,story().elevation||0),pb=project3d(b,story().elevation||0);
+  x.beginPath();x.moveTo(pa.x,pa.y);x.lineTo(pb.x,pb.y);x.lineTo(pc.x,pc.y);x.stroke();
+  x.beginPath();x.moveTo(pc.x-7,pc.y);x.lineTo(pc.x+7,pc.y);x.moveTo(pc.x,pc.y-7);x.lineTo(pc.x,pc.y+7);x.stroke();
+ }
  x.setLineDash([]);x.restore();
 }
 
@@ -370,7 +373,7 @@ const px=(rx-camera3d.panX)*scale*.72*camera3d.zoom;
 const py=((ry-camera3d.panY)*sp-(wz-camera3d.targetZ)*cp)*scale*.72*camera3d.zoom;
 return{x:c.clientWidth/2+origin.x+px,y:c.clientHeight*.58+origin.y+py,depth:ry*cp+wz*sp};
 };
-render3DScene(x,els(),project3d,{interactive:true});drawDraftReferenceLine3d(project3d);drawPendingOpeningReferenceLine();
+render3DScene(x,els(),project3d,{interactive:true});drawDraftReferenceLine3d(project3d);drawPendingOpeningReferenceLine(project3d);
 $("selectionInfo").textContent=selected.size?selected.size+" selected · "+chosen().map(e=>e.type).join(", "):"No selection";updateHistoryButtons()}}
 function renderProperties(){updateContextUI();const host=$("elementProperties"),info=$("selectionInfo");if(!host)return;const list=chosen();host.innerHTML="";if(info)info.textContent=list.length?list.length+" element"+(list.length===1?"":"s")+" selected":"";if(!list.length){host.replaceChildren();return}if(list.length>1||(list.length===1&&list[0].type==="gridline"&&!!list[0].gridSystemId)){
 const type=list.every(e=>e.type===list[0].type)?list[0].type:"mixed";
