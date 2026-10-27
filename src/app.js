@@ -1373,6 +1373,7 @@ function initGridSettingsSections(){
  });
 }
 const gridSystemDialog=$("gridSystemDialog");
+initGridSettingsSections();
 const gridSystemHeader=gridSystemDialog.querySelector("form>header");
 gridSystemDialog.style.position="fixed";
 gridSystemDialog.style.left="50%";
