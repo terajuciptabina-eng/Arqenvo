@@ -471,8 +471,9 @@ function beginConnectedWallEdgeGesture(wall,edge){
  const same=(a,b)=>!!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<1e-4;
  const a={...edge.a.point},b={...edge.b.point};
  const neighbors=[];
+ // Only explicitly selected walls participate in connected-edge editing.
  for(const el of els()){
-  if(el.id===wall.id||el.type!=="wall"||(view==="floor"&&el.storyId!==story().id))continue;
+  if(el.id===wall.id||!selected.has(el.id)||el.type!=="wall"||(view==="floor"&&el.storyId!==story().id))continue;
   for(const key of ["start","end"]){
    const pt=el[key];
    if(same(pt,a))neighbors.push({id:el.id,key,connectedTo:"a",start:{...el.start},end:{...el.end}});
@@ -483,11 +484,17 @@ function beginConnectedWallEdgeGesture(wall,edge){
 }
 function moveConnectedWallEdge(g,dx,dy){
  const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");if(!wall)return;
- // Single-wall edge edits are local: do not propagate endpoint movement to
- // adjacent walls. Multi-selection is handled by the general selected-element
- // transform path, which updates only elements explicitly in the selection.
  wall.start={x:g.start.x+dx,y:g.start.y+dy};
  wall.end={x:g.end.x+dx,y:g.end.y+dy};
+ // Carry matching endpoints only on walls that were explicitly selected.
+ // Unselected neighbours are deliberately left untouched.
+ for(const rec of g.neighbors||[]){
+  if(!selected.has(rec.id))continue;
+  const neighbor=els().find(el=>el.id===rec.id&&el.type==="wall");if(!neighbor)continue;
+  const original=rec.key==="start"?rec.start:rec.end;
+  const moved={x:original.x+dx,y:original.y+dy};
+  if(rec.key==="start")neighbor.start=moved;else neighbor.end=moved;
+ }
 }
 function elementEditableEdges(el){
  const out=[];
