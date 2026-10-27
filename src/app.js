@@ -483,12 +483,13 @@ function moveConnectedWallEdge(g,dx,dy){
  // Set the edited wall from its pointer-down snapshot, avoiding cumulative drift.
  wall.start={x:g.start.x+dx,y:g.start.y+dy};wall.end={x:g.end.x+dx,y:g.end.y+dy};
  const vx=b.x-a.x,vy=b.y-a.y,eps=1e-9;
+ const junctions={start:[],end:[]};
  for(const rec of g.neighbors){
   const neighbor=els().find(el=>el.id===rec.id&&el.type==="wall");if(!neighbor)continue;
   const oldConnected=rec.key==="start"?rec.start:rec.end;
   const other=rec.key==="start"?rec.end:rec.start;
   const anchor=rec.connectedTo==="a"?a:b;
-  // Intersect the translated edited edge with the neighbour's original infinite axis.
+  // Intersect the translated wall axis with the neighbour's original axis.
   const wx=other.x-oldConnected.x,wy=other.y-oldConnected.y;
   const den=vx*wy-vy*wx;
   let point;
@@ -496,12 +497,19 @@ function moveConnectedWallEdge(g,dx,dy){
    const t=((oldConnected.x-a.x)*wy-(oldConnected.y-a.y)*wx)/den;
    point={x:a.x+t*vx,y:a.y+t*vy};
   }else{
-   // Parallel/collinear junction: preserve the junction by translating it rigidly.
    point={x:anchor.x,y:anchor.y};
   }
+  // Remember the intersection for the moved wall endpoint as well as its neighbour.
+  const wallEnd=rec.connectedTo==="a"?"start":"end";
+  junctions[wallEnd].push(point);
   if(rec.key==="start"){neighbor.start={...point};neighbor.end={...rec.end}}
   else{neighbor.end={...point};neighbor.start={...rec.start}}
  }
+ // Critical: connected endpoints of the dragged wall must meet the recalculated
+ // neighbour intersections. Leaving them at the raw pointer translation creates
+ // overhanging/undershooting wall ends (as seen in the regression screenshot).
+ if(junctions.start.length)wall.start={x:junctions.start.reduce((n,p)=>n+p.x,0)/junctions.start.length,y:junctions.start.reduce((n,p)=>n+p.y,0)/junctions.start.length};
+ if(junctions.end.length)wall.end={x:junctions.end.reduce((n,p)=>n+p.x,0)/junctions.end.length,y:junctions.end.reduce((n,p)=>n+p.y,0)/junctions.end.length};
 }
 function elementEditableEdges(el){
  const out=[];
