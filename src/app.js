@@ -1339,6 +1339,45 @@ function finishLayoutDrag(){if(!layoutPointerGesture)return;const changed=layout
 c.addEventListener("pointerup",finishLayoutDrag);c.addEventListener("pointercancel",finishLayoutDrag);
 $("gridSystemOpen").addEventListener("click",()=>{if(view!=="floor")setView("floor");const info=["<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\"/><path d=\"M3 9h18M3 15h18M9 3v18M15 3v18\"/></svg>","Grid System","Configure grid intervals, axis labels, markers and optional structural helpers"];if($("contextToolIcon"))$("contextToolIcon").innerHTML=info[0];if($("contextToolName"))$("contextToolName").textContent=info[1];if($("contextToolHint"))$("contextToolHint").textContent=info[2];$("gridSystemDialog").showModal()});
 $("gridSystemClose").addEventListener("click",()=>$("gridSystemDialog").close());
+const gridSystemDialog=$("gridSystemDialog");
+const gridSystemHeader=gridSystemDialog.querySelector("form>div:first-child");
+gridSystemDialog.style.position="fixed";
+gridSystemDialog.style.left="50%";
+gridSystemDialog.style.top="50%";
+gridSystemDialog.style.transform="translate(-50%,-50%)";
+gridSystemDialog.style.margin="0";
+gridSystemHeader.style.cursor="move";
+gridSystemHeader.title="Drag to move Grid System Settings";
+let gridSystemDrag=null;
+gridSystemHeader.addEventListener("pointerdown",event=>{
+ if(event.target.closest("button, input, select, label"))return;
+ if(event.button!==undefined&&event.button!==0)return;
+ const rect=gridSystemDialog.getBoundingClientRect();
+ gridSystemDrag={pointerId:event.pointerId,startX:event.clientX,startY:event.clientY,left:rect.left,top:rect.top};
+ gridSystemDialog.style.left=rect.left+"px";
+ gridSystemDialog.style.top=rect.top+"px";
+ gridSystemDialog.style.transform="none";
+ try{gridSystemHeader.setPointerCapture(event.pointerId)}catch(_){}
+ event.preventDefault();
+});
+gridSystemHeader.addEventListener("pointermove",event=>{
+ if(!gridSystemDrag||gridSystemDrag.pointerId!==event.pointerId)return;
+ const margin=8,rect=gridSystemDialog.getBoundingClientRect();
+ const left=Math.max(margin,Math.min(window.innerWidth-rect.width-margin,gridSystemDrag.left+event.clientX-gridSystemDrag.startX));
+ const top=Math.max(margin,Math.min(window.innerHeight-rect.height-margin,gridSystemDrag.top+event.clientY-gridSystemDrag.startY));
+ gridSystemDialog.style.left=left+"px";gridSystemDialog.style.top=top+"px";
+});
+const stopGridSystemDrag=event=>{if(gridSystemDrag&&(!event||event.pointerId===gridSystemDrag.pointerId))gridSystemDrag=null};
+gridSystemHeader.addEventListener("pointerup",stopGridSystemDrag);
+gridSystemHeader.addEventListener("pointercancel",stopGridSystemDrag);
+gridSystemDialog.addEventListener("close",()=>{gridSystemDrag=null;gridSystemDialog.style.left="50%";gridSystemDialog.style.top="50%";gridSystemDialog.style.transform="translate(-50%,-50%)"});
+window.addEventListener("resize",()=>{
+ if(!gridSystemDialog.open)return;
+ const rect=gridSystemDialog.getBoundingClientRect(),margin=8;
+ gridSystemDialog.style.left=Math.max(margin,Math.min(window.innerWidth-rect.width-margin,rect.left))+"px";
+ gridSystemDialog.style.top=Math.max(margin,Math.min(window.innerHeight-rect.height-margin,rect.top))+"px";
+ gridSystemDialog.style.transform="none";
+});
 $("gridSystemCancel").addEventListener("click",()=>$("gridSystemDialog").close());
 $("gridSystemForm").addEventListener("submit",e=>{e.preventDefault();const parseSpacing=id=>$(id).value.split(",").map(v=>Number(v.trim())/1000).filter(v=>Number.isFinite(v));const xSpacing=parseSpacing("gridSystemX"),ySpacing=parseSpacing("gridSystemY");if(!xSpacing.length||!ySpacing.length||xSpacing.length>29||ySpacing.length>29||[...xSpacing,...ySpacing].some(v=>v<=0||v>100)){ $("status").textContent="Enter positive axis spacings in metres (maximum 29 intervals per direction)";return}const xLabel=$("gridSystemXLabel").value.trim()||"A",yLabel=$("gridSystemYLabel").value.trim()||"1";if(!/^[A-Za-z]+$/.test(xLabel)&&!/^[0-9]+$/.test(xLabel)){$("status").textContent="X-axis label must start with letters or numbers";return}if(!/^[A-Za-z]+$/.test(yLabel)&&!/^[0-9]+$/.test(yLabel)){$("status").textContent="Y-axis label must start with letters or numbers";return}pendingGridSystem={xSpacing,ySpacing,xLabel,yLabel,markerRadius:Math.max(4,Math.min(20,Number($("gridSystemMarker").value)||10)),extension:Math.max(0,Math.min(5,(Number($("gridSystemExtension").value)||4000)/1000)),markerSides:{top:$("gridMarkerTop").checked,bottom:$("gridMarkerBottom").checked,left:$("gridMarkerLeft").checked,right:$("gridMarkerRight").checked,start:$("gridMarkerLeft").checked||$("gridMarkerTop").checked,end:$("gridMarkerRight").checked||$("gridMarkerBottom").checked},placeColumns:$("gridSystemColumns").checked,createBeams:$("gridSystemBeams").checked,createDimensions:$("gridSystemDimensions").checked,totalDimension:$("gridSystemTotalDimension").checked,chainDimensionOffset:Math.max(0,Number($("gridSystemChainDimensionOffset").value)||0),totalDimensionOffset:Math.max(0,Number($("gridSystemTotalDimensionOffset").value)||0),startCorner:$("gridSystemStartCorner").value,origin:null};$("gridSystemDialog").close();setTool("select");$("status").textContent="Grid System ready · click origin, then click to define X-axis direction";redraw()});
 $("newProjectRibbon").addEventListener("click",()=>$("new").click());
