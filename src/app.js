@@ -482,34 +482,53 @@ function beginConnectedWallEdgeGesture(wall,edge){
  return {wallId:wall.id,start:{...wall.start},end:{...wall.end},edgeA:a,edgeB:b,selectedWallEndpoints};
 }
 function moveConnectedWallEdge(g,dx,dy){
- // Archicad-style wall-edge drag: constrain the movement to the wall's
- // perpendicular axis (90 degrees to its baseline), not the raw cursor vector.
+ // Archicad-style wall edge edit: move the picked wall parallel to itself.
+ // Connected selected walls keep their own axis; only their end points/lengths
+ // change to meet the moved wall. Never translate the connected outline as a
+ // rigid cluster and never drag the cursor vector directly into wall nodes.
  const vx=g.end.x-g.start.x,vy=g.end.y-g.start.y,len=Math.hypot(vx,vy);
  if(!(len>1e-8))return;
  const nx=-vy/len,ny=vx/len;
- const normalDistance=dx*nx+dy*ny;
- const moveX=nx*normalDistance,moveY=ny*normalDistance;
- const movedStart={x:g.start.x+moveX,y:g.start.y+moveY};
- const movedEnd={x:g.end.x+moveX,y:g.end.y+moveY};
+ const distance=dx*nx+dy*ny;
+ const mx=nx*distance,my=ny*distance;
+ const movedStart={x:g.start.x+mx,y:g.start.y+my};
+ const movedEnd={x:g.end.x+mx,y:g.end.y+my};
  const same=(a,b)=>!!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<1e-4;
- // Build one coordinate map for the two edited nodes. Every endpoint in the
- // explicit selection that shared either original node receives exactly the
- // same new coordinate; unselected walls are never visited or mutated.
- const nodeMoves=[{from:g.start,to:movedStart},{from:g.end,to:movedEnd}];
- for(const rec of g.selectedWallEndpoints||[]){
-  if(!selected.has(rec.id))continue;
-  const wall=els().find(el=>el.id===rec.id&&el.type==="wall");
-  if(!wall)continue;
+ const cross=(ax,ay,bx,by)=>ax*by-ay*bx;
+ const intersection=(a,b,c,d)=>{
+  const rx=b.x-a.x,ry=b.y-a.y,sx=d.x-c.x,sy=d.y-c.y;
+  const den=cross(rx,ry,sx,sy);
+  if(Math.abs(den)<1e-8)return null;
+  const t=cross(c.x-a.x,c.y-a.y,sx,sy)/den;
+  return {x:a.x+t*rx,y:a.y+t*ry};
+ };
+ const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");
+ if(!wall)return;
+ // Use immutable gesture-start coordinates for every neighbour so pointer
+ // frames do not accumulate drift.
+ const records=g.selectedWallEndpoints||[];
+ const neighbours=[];
+ for(const rec of records){
+  if(rec.id===g.wallId||!selected.has(rec.id))continue;
   for(const key of ["start","end"]){
-   const original=rec[key];
-   const move=nodeMoves.find(m=>same(original,m.from));
-   if(move)wall[key]={x:move.to.x,y:move.to.y};
+   const point=rec[key];
+   if(same(point,g.start)||same(point,g.end)){
+    neighbours.push({rec,key,point,other:rec[key==="start"?"end":"start"]});
+   }
   }
  }
- // The edited wall must still move even if it was removed from selection
- // during a transient pointer update.
- const target=els().find(el=>el.id===g.wallId&&el.type==="wall");
- if(target){target.start=movedStart;target.end=movedEnd}
+ wall.start=movedStart;
+ wall.end=movedEnd;
+ // Reposition only the endpoint of each connected selected wall. Its original
+ // centreline is preserved, so it lengthens/shortens rather than rotating or
+ // detaching from the junction.
+ for(const n of neighbours){
+  const adjacent=els().find(el=>el.id===n.rec.id&&el.type==="wall");
+  if(!adjacent)continue;
+  const hit=intersection(movedStart,movedEnd,n.point,n.other);
+  if(!hit)continue;
+  adjacent[n.key]={x:hit.x,y:hit.y};
+ }
 }
 function elementEditableEdges(el){
  const out=[];
