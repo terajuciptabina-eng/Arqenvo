@@ -463,6 +463,46 @@ function captureConnectedNodes(points){
  for(const point of points||[])for(const rec of captureConnectedNode(point))map.set(rec.id,rec);
  return [...map.values()];
 }
+function beginConnectedWallEdgeGesture(wall,edge){
+ const same=(a,b)=>!!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<1e-4;
+ const a={...edge.a.point},b={...edge.b.point};
+ const neighbors=[];
+ for(const el of els()){
+  if(el.id===wall.id||el.type!=="wall"||(view==="floor"&&el.storyId!==story().id))continue;
+  for(const key of ["start","end"]){
+   const pt=el[key];
+   if(same(pt,a))neighbors.push({id:el.id,key,connectedTo:"a",start:{...el.start},end:{...el.end}});
+   else if(same(pt,b))neighbors.push({id:el.id,key,connectedTo:"b",start:{...el.start},end:{...el.end}});
+  }
+ }
+ return {wallId:wall.id,start:{...wall.start},end:{...wall.end},edgeA:{...a},edgeB:{...b},neighbors};
+}
+function moveConnectedWallEdge(g,dx,dy){
+ const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");if(!wall)return;
+ const a={x:g.edgeA.x+dx,y:g.edgeA.y+dy},b={x:g.edgeB.x+dx,y:g.edgeB.y+dy};
+ // Set the edited wall from its pointer-down snapshot, avoiding cumulative drift.
+ wall.start={x:g.start.x+dx,y:g.start.y+dy};wall.end={x:g.end.x+dx,y:g.end.y+dy};
+ const vx=b.x-a.x,vy=b.y-a.y,eps=1e-9;
+ for(const rec of g.neighbors){
+  const neighbor=els().find(el=>el.id===rec.id&&el.type==="wall");if(!neighbor)continue;
+  const oldConnected=rec.key==="start"?rec.start:rec.end;
+  const other=rec.key==="start"?rec.end:rec.start;
+  const anchor=rec.connectedTo==="a"?a:b;
+  // Intersect the translated edited edge with the neighbour's original infinite axis.
+  const wx=other.x-oldConnected.x,wy=other.y-oldConnected.y;
+  const den=vx*wy-vy*wx;
+  let point;
+  if(Math.abs(den)>eps){
+   const t=((oldConnected.x-a.x)*wy-(oldConnected.y-a.y)*wx)/den;
+   point={x:a.x+t*vx,y:a.y+t*vy};
+  }else{
+   // Parallel/collinear junction: preserve the junction by translating it rigidly.
+   point={x:anchor.x,y:anchor.y};
+  }
+  if(rec.key==="start"){neighbor.start={...point};neighbor.end={...rec.end}}
+  else{neighbor.end={...point};neighbor.start={...rec.start}}
+ }
+}
 function elementEditableEdges(el){
  const out=[];
  if(["wall","beam","gridline","dimension"].includes(el.type)&&el.start&&el.end)out.push({a:{key:"start",index:null,point:el.start},b:{key:"end",index:null,point:el.end}});
@@ -738,10 +778,11 @@ if(genericEdgeMoveGesture&&genericEdgeMoveGesture.pointerId===e.pointerId){
   if(p.settings?.snap!==false){const step=Math.max(.1,Number($("grid")?.value)||.5);if(!g.axisLock||g.axisLock==="x")dx=Math.round((g.startWorld.x+dx)/step)*step-g.startWorld.x;if(!g.axisLock||g.axisLock==="y")dy=Math.round((g.startWorld.y+dy)/step)*step-g.startWorld.y}
   if(Math.hypot(dx,dy)>1e-9){
    if(!g.historyStarted){hist("Move connected edge");g.historyStarted=true}
-   // Edge translation is rigid: derive every point from the original snapshot on each
-   // pointer frame, never from geometry mutated by a previous frame.
-   applyConnectedNodeMove(g.pointRecords,dx,dy);
-   g.didMove=true;$("status").textContent="Moving edge · connected nodes move together";redraw()
+   // Walls need topology-aware junctions: translate the chosen wall edge, then
+   // intersect adjacent wall axes so corners stay joined instead of skewing neighbours.
+   if(g.wallEdge)moveConnectedWallEdge(g.wallEdge,dx,dy);
+   else applyConnectedNodeMove(g.pointRecords,dx,dy);
+   g.didMove=true;$("status").textContent=g.wallEdge?"Moving wall edge · connected corners maintained":"Moving edge · connected nodes move together";redraw()
   }
  }
  return;
@@ -785,7 +826,8 @@ if(tool==="select"&&view==="floor"&&!e.shiftKey){
  edgeHits.sort((a,b)=>a.dist-b.dist);
  if(edgeHits.length){
   const h=edgeHits[0],pointRecords=captureConnectedNodes([h.edge.a.point,h.edge.b.point]);
-  genericEdgeMoveGesture={pointerId:e.pointerId,elementId:h.el.id,pointRecords,startWorld:{...wpos(screenPoint)},startClient:{x:e.clientX,y:e.clientY},didMove:false,historyStarted:false,axisLock:null,modelBefore:structuredClone(p)};
+  const wallEdge=h.el.type==="wall"?beginConnectedWallEdgeGesture(h.el,h.edge):null;
+  genericEdgeMoveGesture={pointerId:e.pointerId,elementId:h.el.id,elementType:h.el.type,edge:{a:{...h.edge.a.point},b:{...h.edge.b.point}},wallEdge,pointRecords,startWorld:{...wpos(screenPoint)},startClient:{x:e.clientX,y:e.clientY},didMove:false,historyStarted:false,axisLock:null,modelBefore:structuredClone(p)};
   try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{}
   $("status").textContent="Edge selected · drag to move connected geometry";renderProperties();redraw();e.preventDefault();return;
  }
