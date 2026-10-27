@@ -862,4 +862,17 @@ document.addEventListener("keydown",event=>{
 })();
 </script>
 
+<script>
+/* Arqenvo anonymous visit counter; backend is deployed separately. */
+(function(){
+  try{
+    var key='arqenvo_visit_day';
+    var day=new Date().toISOString().slice(0,10);
+    if(localStorage.getItem(key)===day)return;
+    fetch('https://terajuciptabina.vercel.app/api/admin?public=arqenvo-visitor-insights',{method:'POST',mode:'cors',keepalive:true})
+      .then(function(response){if(response.ok)localStorage.setItem(key,day);})
+      .catch(function(){});
+  }catch(_){}
+})();
+</script>
 </body></html>
