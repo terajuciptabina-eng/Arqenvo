@@ -482,52 +482,47 @@ function beginConnectedWallEdgeGesture(wall,edge){
  return {wallId:wall.id,start:{...wall.start},end:{...wall.end},edgeA:a,edgeB:b,selectedWallEndpoints};
 }
 function moveConnectedWallEdge(g,dx,dy){
- // Archicad-style wall edge edit: move the picked wall parallel to itself.
- // Connected selected walls keep their own axis; only their end points/lengths
- // change to meet the moved wall. Never translate the connected outline as a
- // rigid cluster and never drag the cursor vector directly into wall nodes.
- const vx=g.end.x-g.start.x,vy=g.end.y-g.start.y,len=Math.hypot(vx,vy);
+ // Move the picked wall on its normal and solve every selected shared junction
+ // from immutable centre-lines. Connected walls retain their bearing; their
+ // lengths change at intersections rather than their segments rotating.
+ const records=(g.selectedWallEndpoints||[]).filter(r=>selected.has(r.id));
+ const targetRecord=records.find(r=>r.id===g.wallId);
+ const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");
+ if(!wall||!targetRecord)return;
+ const vx=targetRecord.end.x-targetRecord.start.x,vy=targetRecord.end.y-targetRecord.start.y,len=Math.hypot(vx,vy);
  if(!(len>1e-8))return;
- const nx=-vy/len,ny=vx/len;
- const distance=dx*nx+dy*ny;
- const mx=nx*distance,my=ny*distance;
- const movedStart={x:g.start.x+mx,y:g.start.y+my};
- const movedEnd={x:g.end.x+mx,y:g.end.y+my};
+ const nx=-vy/len,ny=vx/len,offset=dx*nx+dy*ny;
  const same=(a,b)=>!!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<1e-4;
  const cross=(ax,ay,bx,by)=>ax*by-ay*bx;
- const intersection=(a,b,c,d)=>{
-  const rx=b.x-a.x,ry=b.y-a.y,sx=d.x-c.x,sy=d.y-c.y;
-  const den=cross(rx,ry,sx,sy);
+ const intersect=(a,b,c,d)=>{
+  const rx=b.x-a.x,ry=b.y-a.y,sx=d.x-c.x,sy=d.y-c.y,den=cross(rx,ry,sx,sy);
   if(Math.abs(den)<1e-8)return null;
   const t=cross(c.x-a.x,c.y-a.y,sx,sy)/den;
   return {x:a.x+t*rx,y:a.y+t*ry};
  };
- const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");
- if(!wall)return;
- // Use immutable gesture-start coordinates for every neighbour so pointer
- // frames do not accumulate drift.
- const records=g.selectedWallEndpoints||[];
- const neighbours=[];
- for(const rec of records){
-  if(rec.id===g.wallId||!selected.has(rec.id))continue;
-  for(const key of ["start","end"]){
-   const point=rec[key];
-   if(same(point,g.start)||same(point,g.end)){
-    neighbours.push({rec,key,point,other:rec[key==="start"?"end":"start"]});
-   }
+ const lines=new Map(records.map(r=>[r.id,{
+  start:{x:r.start.x+(r.id===g.wallId?nx*offset:0),y:r.start.y+(r.id===g.wallId?ny*offset:0)},
+  end:{x:r.end.x+(r.id===g.wallId?nx*offset:0),y:r.end.y+(r.id===g.wallId?ny*offset:0)}
+ }]));
+ const endpoints=new Map(records.map(r=>[r.id,{start:{...r.start},end:{...r.end}}]));
+ // Every coincident endpoint pair in the explicit selection is a junction.
+ // Recompute it from the two centre-lines, then apply all endpoints together.
+ for(let i=0;i<records.length;i++)for(let j=i+1;j<records.length;j++){
+  const a=records[i],b=records[j],la=lines.get(a.id),lb=lines.get(b.id);
+  for(const ka of ["start","end"])for(const kb of ["start","end"]){
+   if(!same(a[ka],b[kb]))continue;
+   const hit=intersect(la.start,la.end,lb.start,lb.end);if(!hit)continue;
+   endpoints.get(a.id)[ka]={...hit};endpoints.get(b.id)[kb]={...hit};
   }
  }
- wall.start=movedStart;
- wall.end=movedEnd;
- // Reposition only the endpoint of each connected selected wall. Its original
- // centreline is preserved, so it lengthens/shortens rather than rotating or
- // detaching from the junction.
- for(const n of neighbours){
-  const adjacent=els().find(el=>el.id===n.rec.id&&el.type==="wall");
-  if(!adjacent)continue;
-  const hit=intersection(movedStart,movedEnd,n.point,n.other);
-  if(!hit)continue;
-  adjacent[n.key]={x:hit.x,y:hit.y};
+ for(const rec of records){
+  const el=els().find(v=>v.id===rec.id&&v.type==="wall");if(!el)continue;
+  const pts=endpoints.get(rec.id);
+  // Unconnected ends of the edited wall move with its parallel offset.
+  if(rec.id===g.wallId){
+   for(const key of ["start","end"])if(![...records].some(other=>other.id!==rec.id&&["start","end"].some(k=>same(rec[key],other[k]))))pts[key]={x:rec[key].x+nx*offset,y:rec[key].y+ny*offset};
+  }
+  el.start={...pts.start};el.end={...pts.end};
  }
 }
 function elementEditableEdges(el){
