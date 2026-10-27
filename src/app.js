@@ -1106,12 +1106,12 @@ function organizeElementSettings(){
  if(host.querySelector(".arq-setting-panel"))return;
  const children=[...host.children];if(!children.length)return;
  const groups=[
-  // Archicad-style hierarchy: geometry first, then identity and classification.
+  // Standard order requested for every element's settings, matching an Archicad-style workflow.
   {title:"Geometry & Positioning",match:l=>/height|thickness|width|depth|length|elevation|offset|pitch|sill|rotation|position|start point|end point|\b[xy]\b|vertical grid intervals|horizontal grid intervals|area|base level|top level/i.test(l)},
+  {title:"Display & Annotation",match:l=>/text size|hinge|opening direction|position on host wall|line type|pen|display|symbol|dimension text|line weight/i.test(l)},
+  {title:"Additional Settings",match:()=>true},
   {title:"Identification",match:l=>/element type|zone number|room name|grid axis label|element id/i.test(l)},
-  {title:"Classification & Properties",match:l=>/classification|building material|category|structure|composite|surface|layer/i.test(l)},
-  {title:"Display & Annotation",match:l=>/text size|hinge|opening direction|position on host wall|line type|pen|display/i.test(l)},
-  {title:"Additional Settings",match:()=>true}
+  {title:"Classification & Properties",match:l=>/classification|building material|category|structure|composite|surface|layer/i.test(l)}
  ];
  const panels=groups.map((g,i)=>{const d=document.createElement("details");d.className="arq-setting-panel";d.open=i<3;const summary=document.createElement("summary");summary.textContent=g.title;const body=document.createElement("div");body.className="arq-setting-panel-content";d.append(summary,body);return{...g,node:d,body}});
  for(const child of children){
