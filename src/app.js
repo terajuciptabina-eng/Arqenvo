@@ -1385,7 +1385,7 @@ const gridLetters=n=>{let out="";for(n=Math.max(0,n);n>=0;n=Math.floor(n/26)-1)o
 function gridDefaultPositions(id){
  const values=$(id).value.split(",").map(v=>Number(v.trim())).filter(v=>Number.isFinite(v)&&v>0);
  const out=[{label:id==="gridSystemX"?"A":"1",distance:0}];
- let total=0;for(const v of values){total+=v;out.push({label:id==="gridSystemX"?gridLetters(out.length):String(out.length+1),distance:total})}
+ for(const v of values)out.push({label:id==="gridSystemX"?gridLetters(out.length):String(out.length+1),distance:v});
  return out;
 }
 function renderGridPositionRows(axis){
@@ -1399,7 +1399,7 @@ function renderGridPositionRows(axis){
   const distanceWrap=document.createElement("label");distanceWrap.style.cssText="display:flex;align-items:center;gap:5px;min-width:0;font-size:11px;color:#65717d";
   const caption=document.createElement("span");caption.textContent="Distance:";caption.style.whiteSpace="nowrap";
   const distance=document.createElement("input");distance.type="number";distance.min="0";distance.step="1";distance.value=String(Math.round(item.distance));distance.setAttribute("aria-label",axis+" grid line distance in mm");distance.style.cssText="min-width:0;width:100%;padding:6px;border:1px solid #c4cfd7;border-radius:4px;background:"+(index===0?"#eef1f3":"#fbfcfd")+";color:#26313b";distance.disabled=index===0;
-  distance.addEventListener("change",()=>{let next=Math.max(0,Number(distance.value)||0);if(index===0)next=0;const delta=next-item.distance;item.distance=next;if(index<items.length-1&&delta!==0){for(let k=index+1;k<items.length;k++)items[k].distance=Math.max(items[k-1].distance+1,items[k].distance+delta)}items.sort((a,b)=>a.distance-b.distance);renderGridPositionRows(axis);syncGridPositionSpacing()});
+  distance.addEventListener("change",()=>{if(index===0){item.distance=0;distance.value="0";return}const next=Math.max(1,Number(distance.value)||1);item.distance=next;distance.value=String(Math.round(next));syncGridPositionSpacing()});
   distanceWrap.append(caption,distance);row.append(move,label,distanceWrap);rows.append(row);
  });
  const add=$(axis==="horizontal"?"gridHorizontalAdd":"gridVerticalAdd"),remove=$(axis==="horizontal"?"gridHorizontalRemove":"gridVerticalRemove");
@@ -1407,17 +1407,18 @@ function renderGridPositionRows(axis){
 }
 function syncGridPositionSpacing(){
  for(const [axis,hiddenId,labelId] of [["horizontal","gridSystemY","gridSystemXLabel"],["vertical","gridSystemX","gridSystemYLabel"]]){
-  const items=gridPositionState[axis];$(hiddenId).value=items.slice(1).map((item,i)=>Math.max(1,item.distance-items[i].distance)).join(", ");
+  const items=gridPositionState[axis];
+  $(hiddenId).value=items.slice(1).map(item=>Math.max(1,Math.round(item.distance))).join(", ");
   $(labelId).value=items[0]?.label||(axis==="horizontal"?"A":"1");
  }
 }
 function distributeGridPositions(axis){
  const items=gridPositionState[axis],count=Math.max(2,Math.min(30,Number($(axis==="horizontal"?"gridHorizontalCount":"gridVerticalCount").value)||items.length));
  if(items.length<2)return;
- const first=items[0].distance,last=items[items.length-1].distance;
- const labels=items.map(x=>x.label),next=[];
- for(let i=0;i<count;i++)next.push({label:labels[i]||(axis==="horizontal"?gridLetters(i):String(i+1)),distance:Math.round(first+(last-first)*i/(count-1))});
- for(let i=1;i<next.length;i++)if(next[i].distance<=next[i-1].distance)next[i].distance=next[i-1].distance+1;
+ const total=items.slice(1).reduce((sum,item)=>sum+Math.max(1,Number(item.distance)||1),0);
+ const interval=Math.max(1,Math.round(total/(count-1)));
+ const labels=items.map(x=>x.label),next=[{label:labels[0]||(axis==="horizontal"?"A":"1"),distance:0}];
+ for(let i=1;i<count;i++)next.push({label:labels[i]||(axis==="horizontal"?gridLetters(i):String(i+1)),distance:interval});
  gridPositionState[axis]=next;renderGridPositionRows(axis);syncGridPositionSpacing();
 }
 function initGridPositionEditors(){
@@ -1428,8 +1429,8 @@ function initGridPositionEditors(){
  gridPositionState.vertical.forEach((v,i)=>v.label=String(i+1));
  renderGridPositionRows("horizontal");renderGridPositionRows("vertical");syncGridPositionSpacing();
 }
-$("gridHorizontalAdd").addEventListener("click",()=>{const a=gridPositionState.horizontal;if(a.length>=30)return;const last=a[a.length-1];a.push({label:gridLetters(a.length),distance:last.distance+Math.max(1000,a.length>1?last.distance-a[a.length-2].distance:4000)});renderGridPositionRows("horizontal");syncGridPositionSpacing()});
-$("gridVerticalAdd").addEventListener("click",()=>{const a=gridPositionState.vertical;if(a.length>=30)return;const last=a[a.length-1];a.push({label:String(a.length+1),distance:last.distance+Math.max(1000,a.length>1?last.distance-a[a.length-2].distance:4000)});renderGridPositionRows("vertical");syncGridPositionSpacing()});
+$("gridHorizontalAdd").addEventListener("click",()=>{const a=gridPositionState.horizontal;if(a.length>=30)return;const last=a[a.length-1];a.push({label:gridLetters(a.length),distance:Math.max(1000,Number(last.distance)||4000)});renderGridPositionRows("horizontal");syncGridPositionSpacing()});
+$("gridVerticalAdd").addEventListener("click",()=>{const a=gridPositionState.vertical;if(a.length>=30)return;const last=a[a.length-1];a.push({label:String(a.length+1),distance:Math.max(1000,Number(last.distance)||4000)});renderGridPositionRows("vertical");syncGridPositionSpacing()});
 $("gridHorizontalRemove").addEventListener("click",()=>{if(gridPositionState.horizontal.length<=2)return;gridPositionState.horizontal.pop();renderGridPositionRows("horizontal");syncGridPositionSpacing()});
 $("gridVerticalRemove").addEventListener("click",()=>{if(gridPositionState.vertical.length<=2)return;gridPositionState.vertical.pop();renderGridPositionRows("vertical");syncGridPositionSpacing()});
 for(const axis of ["horizontal","vertical"]){const check=$(axis==="horizontal"?"gridHorizontalDistribute":"gridVerticalDistribute"),count=$(axis==="horizontal"?"gridHorizontalCount":"gridVerticalCount");check.addEventListener("change",()=>{count.disabled=!check.checked;if(check.checked)distributeGridPositions(axis)});count.addEventListener("change",()=>{if(check.checked)distributeGridPositions(axis)})}
