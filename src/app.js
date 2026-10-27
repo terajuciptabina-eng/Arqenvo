@@ -484,15 +484,11 @@ function beginConnectedWallEdgeGesture(wall,edge){
 }
 function moveConnectedWallEdge(g,dx,dy){
  const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");if(!wall)return;
- // An edge gesture shifts the clicked edge, not the entire wall. For a
- // straight wall this is normal translation of both endpoints only when the
- // edge itself is the wall axis; endpoint edits use the node gesture above.
- // Keep the edge endpoints explicit so later wall representations can expose
- // independently editable boundary edges without changing this contract.
- wall.start={x:g.start.x+dx,y:g.end.y===g.start.y?g.start.y+dy:g.start.y+dy};
+ // A wall's editable edge is represented by its axis segment; translate the
+ // target segment while limiting connected endpoint propagation to explicit
+ // members of the current selection. Unselected neighbours remain immutable.
+ wall.start={x:g.start.x+dx,y:g.start.y+dy};
  wall.end={x:g.end.x+dx,y:g.end.y+dy};
- // Apply only to walls explicitly included in the selection, and only at the
- // endpoint that coincides with a moved endpoint on the selected edge.
  for(const rec of g.neighbors||[]){
   if(!selected.has(rec.id))continue;
   const neighbor=els().find(el=>el.id===rec.id&&el.type==="wall");if(!neighbor)continue;
