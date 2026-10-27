@@ -473,6 +473,41 @@ function elementEditableEdges(el){
 function groupSelected(){const list=chosen();if(list.length<2){$("status").textContent="Select at least two elements to group";return}const id=crypto.randomUUID();hist("Group elements");for(const el of list){el.groupId=id;delete el.gridSystemId;delete el.gridSystemAxis;delete el.gridSystemIndex}selected=new Set(list.map(el=>el.id));scheduleAutoSave();renderProperties();redraw();$("status").textContent=list.length+" elements grouped"}
 function ungroupSelected(){gridlineMoveGesture=null;genericMoveGesture=null;genericNodeMoveGesture=null;genericEdgeMoveGesture=null;openingMoveGesture=null;isPanning=false;panStart=null;const list=chosen();if(!list.length){$("status").textContent="Select grouped elements to ungroup";return}const ids=new Set();for(const el of list){const key=groupKey(el);if(key){for(const member of els())if(groupKey(member)===key)ids.add(member.id)}else ids.add(el.id)}const members=els().filter(el=>ids.has(el.id));if(!members.some(el=>groupKey(el))){$("status").textContent="Selection contains no grouped elements";return}hist("Ungroup elements");for(const el of members){delete el.groupId;delete el.gridSystemId;delete el.gridSystemAxis;delete el.gridSystemIndex}selected=new Set(members.map(el=>el.id));scheduleAutoSave();renderProperties();redraw();$("status").textContent="Group separated into "+members.length+" independently editable elements"}
 function toggleSuspendGroups(){groupsSuspended=!groupsSuspended;const button=document.querySelector('[data-command="suspendGroups"]');if(button){button.classList.toggle("active",groupsSuspended);button.textContent=groupsSuspended?"Resume Groups":"Suspend Groups"}if(!groupsSuspended){const ids=[...selected];selected=new Set();for(const id of ids){const el=els().find(v=>v.id===id);if(el)for(const member of groupMembers(el))selected.add(member.id)}}renderProperties();redraw();$("status").textContent=groupsSuspended?"Suspend Groups enabled · members can be selected individually":"Groups enabled · grouped elements select together"}
+function stretchSelectedWall(){
+ const list=chosen();
+ if(list.length!==1||list[0].type!=="wall"){$("status").textContent="Select one wall to stretch";return}
+ const wall=list[0],len=wallLength(wall);
+ if(!(len>1e-8))return;
+ const value=prompt("New wall length (m)",String(Number(len.toFixed(3))));
+ if(value===null)return;
+ const next=Number(value);
+ if(!Number.isFinite(next)||next<=0){$("status").textContent="Wall length must be greater than zero";return}
+ const dx=(wall.end.x-wall.start.x)/len,dy=(wall.end.y-wall.start.y)/len,delta=next-len;
+ hist("Stretch wall");
+ const endRecords=captureConnectedNode(wall.end);
+ applyConnectedNodeMove(endRecords,dx*delta,dy*delta);
+ scheduleAutoSave();renderProperties();redraw();
+ $("status").textContent="Wall stretched to "+next.toFixed(3)+" m";
+}
+function offsetSelectedWall(){
+ const list=chosen();
+ if(list.length!==1||list[0].type!=="wall"){$("status").textContent="Select one wall to offset";return}
+ const wall=list[0],len=wallLength(wall);
+ if(!(len>1e-8))return;
+ const value=prompt("Wall offset (m) · positive = left, negative = right","0.1");
+ if(value===null)return;
+ const amount=Number(value);
+ if(!Number.isFinite(amount)){$("status").textContent="Enter a valid offset";return}
+ if(Math.abs(amount)<1e-9)return;
+ const dx=(wall.end.x-wall.start.x)/len,dy=(wall.end.y-wall.start.y)/len,ox=-dy*amount,oy=dx*amount;
+ hist("Offset wall");
+ // Offset only the selected wall axis; adjacent connected geometry remains fixed intentionally.
+ wall.start.x+=ox;wall.start.y+=oy;wall.end.x+=ox;wall.end.y+=oy;
+ const children=els().filter(el=>(el.type==="door"||el.type==="window")&&el.hostWallId===wall.id);
+ for(const child of children){const opening=wall.openings?.find(o=>o.id===child.id);if(opening){child.offset=opening.offset;child.width=opening.width;child.height=opening.height;child.sill=opening.sill}}
+ scheduleAutoSave();renderProperties();redraw();
+ $("status").textContent="Wall offset by "+amount.toFixed(3)+" m";
+}
 function transformSelected(mode){
 const list=chosen();if(!list.length){$("status").textContent="Select one or more elements first";return}
 const number=(label,def=0)=>{const raw=prompt(label,String(def));if(raw===null)return null;const v=Number(raw);return Number.isFinite(v)?v:null};
@@ -1255,9 +1290,13 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  rotate:'<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0 1 4M20 4v7h-7"/></svg>',
  mirror:'<svg viewBox="0 0 24 24"><path d="M12 2v20M4 6h5v12H4zM15 6h5v12h-5z"/></svg>',
  multiply:'<svg viewBox="0 0 24 24"><rect x="3" y="3" width="11" height="11" rx="1"/><rect x="10" y="10" width="11" height="11" rx="1"/></svg>',
- settings:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19 13 2 1-2 4-2-1-2 2v2H9v-2l-2-2-2 1-2-4 2-1v-2l-2-1 2-4 2 1 2-2V3h6v2l2 2 2-1 2 4-2 1z"/></svg>'
+ settings:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19 13 2 1-2 4-2-1-2 2v2H9v-2l-2-2-2 1-2-4 2-1v-2l-2-1 2-4 2 1 2-2V3h6v2l2 2 2-1 2 4-2 1z"/></svg>',
+ stretch:'<svg viewBox="0 0 24 24"><path d="M3 12h18M3 12l4-4m-4 4 4 4M21 12l-4-4m4 4-4 4"/></svg>',
+ offset:'<svg viewBox="0 0 24 24"><path d="M4 19 19 4M5 5h6M5 5v6M19 19h-6M19 19v-6"/></svg>'
  };
  const actions=[
+  {key:"stretchWall",label:"Stretch",icon:"stretch",types:["wall"]},
+  {key:"offsetWall",label:"Offset",icon:"offset",types:["wall"]},
   {key:"moveSelection",label:"Move",icon:"move",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]},
   {key:"rotateSelection",label:"Rotate",icon:"rotate",types:["wall","slab","zone","column","beam","roof","gridline","dimension","room"]},
   {key:"mirrorSelection",label:"Mirror",icon:"mirror",types:["wall","slab","zone","column","beam","roof","gridline","dimension","room"]},
@@ -1299,7 +1338,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    if(index===4){const sep=document.createElement("span");sep.className="pet-separator";palette.append(sep)}
    const button=document.createElement("button");button.type="button";button.dataset.action=action.key;button.innerHTML=icons[action.icon]+'<span>'+action.label+'</span>';button.title=action.label;button.setAttribute("aria-label",action.label);
    button.addEventListener("pointerdown",event=>event.stopPropagation());
-   button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(action.key==="settings"){hide();openElementSettings();return}const command=$(action.key);if(command){hide();command.click();return}$("status").textContent=action.label+" is not available for this selection yet"});
+   button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(action.key==="settings"){hide();openElementSettings();return}if(action.key==="stretchWall"){hide();stretchSelectedWall();return}if(action.key==="offsetWall"){hide();offsetSelectedWall();return}const command=$(action.key);if(command){hide();command.click();return}$("status").textContent=action.label+" is not available for this selection yet"});
    palette.append(button);
   });
   palette.dataset.context=context.key;palette.dataset.forSelection=selectionKey(list);palette.dataset.kind=context.kind;lastContextKey=context.key;
