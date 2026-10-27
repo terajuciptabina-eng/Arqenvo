@@ -1336,27 +1336,11 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
   palette.dataset.context=context.key;palette.dataset.forSelection=selectionKey(list);palette.dataset.kind=context.kind;lastContextKey=context.key;
   palette.style.display="flex";if(!palette.dataset.positioned){positionPalette();palette.dataset.positioned="true"}
  };
- style.textContent+=`
- #arqPetPalette{background:linear-gradient(180deg,#ffffff,#f1f5f7);border:1px solid #c5d0d8;border-radius:9px;box-shadow:0 8px 24px #24374620;color:#344653;cursor:grab}
- #arqPetPalette .pet-separator{background:#d3dce2}
- #arqPetPalette button{color:#455967}
- #arqPetPalette button:hover,#arqPetPalette button:focus-visible{background:#e3f3f4;border-color:#acd8dc;color:#087e8b}
- #arqElementSettingsModal{background:rgba(31,45,56,.28)!important;color:#273640!important}
- #arqElementSettingsModal>div{background:#f5f7f8!important;color:#273640!important;border:1px solid #cbd5dc!important;box-shadow:0 22px 64px #24374630!important}
- #arqElementSettingsModal [data-settings-header]{background:linear-gradient(180deg,#ffffff,#edf2f5)!important;color:#263844!important;border-color:#d4dde3!important}
- #arqElementSettingsModal [data-settings-footer]{background:#f0f4f6!important;color:#344653!important;border-color:#d4dde3!important}
- #arqElementSettingsModal button{background:#ffffff!important;color:#344653!important;border-color:#c6d1d9!important}
- #arqElementSettingsModal button:hover{background:#e8f5f5!important;border-color:#8fcbd0!important}
- #arqElementSettingsModal input,#arqElementSettingsModal select,#arqElementSettingsModal textarea{background:#ffffff!important;color:#273640!important;border:1px solid #c5d0d8!important;color-scheme:light}
- #arqElementSettingsModal label,#arqElementSettingsModal p,#arqElementSettingsModal small,#arqElementSettingsModal span{color:#455967}
- #arqElementSettingsModal [style*="background:#fff"],#arqElementSettingsModal [style*="background: #fff"],#arqElementSettingsModal [style*="background:#f"],#arqElementSettingsModal [style*="background: #f"]{background:#f8fafb!important}
- #arqElementSettingsModal [style*="border-bottom"],#arqElementSettingsModal [style*="border-top"]{border-color:#dbe3e8!important}
- #arqElementSettingsModal input:focus,#arqElementSettingsModal select:focus,#arqElementSettingsModal textarea:focus{outline:2px solid #6dbfc5!important;outline-offset:1px}
-`;
+
  let drag=null;
  palette.addEventListener("pointerdown",e=>{if(e.target.closest("button")||e.target.closest(".pet-drag-handle")===null)return;const r=palette.getBoundingClientRect();drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:r.left,top:r.top};palette.setPointerCapture?.(e.pointerId);palette.style.cursor="grabbing";e.preventDefault();e.stopPropagation()});
  palette.addEventListener("pointermove",e=>{if(!drag||drag.id!==e.pointerId)return;const left=Math.max(4,Math.min(innerWidth-palette.offsetWidth-4,drag.left+e.clientX-drag.x)),top=Math.max(4,Math.min(innerHeight-palette.offsetHeight-4,drag.top+e.clientY-drag.y));palette.style.left=left+"px";palette.style.top=top+"px";palette.dataset.userMoved="true"});
- const finishDrag=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;palette.style.cursor="grab"};palette.addEventListener("pointerup",finishDrag);palette.addEventListener("pointercancel",finishDrag);
+ const finishDrag=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;palette.style.cursor="default"};palette.addEventListener("pointerup",finishDrag);palette.addEventListener("pointercancel",finishDrag);
  document.addEventListener("pointermove",e=>{
   if(e.target===canvas){const r=canvas.getBoundingClientRect();mouse={x:e.clientX-r.left,y:e.clientY-r.top};queueRenderContext()}
  },{passive:true});
