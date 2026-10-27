@@ -1571,14 +1571,16 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
    const origin=state[key].dockRect||(d.originMode==='dock'?d.originRect:null);
-   // A floating Navigator can be dropped back near its original dock even if
-   // the header moved after the dock/float transition changed the workspace.
-   // Restore the original dock when the release point is inside its recorded
-   // rectangle or within the dock-side activation strip of that original side.
+   // Prefer an explicit return to the original dock rectangle over leaving a
+   // panel floating at the edge. The old dock can shift while floating because
+   // the workspace has reflowed, so accept either its original or current dock
+   // edge activation strip when the user drops the palette there.
    const originalSide=d.originSide||state[key].side||(key==='toolbox'?'left':'right');
    const wr=work.getBoundingClientRect(),edge=Math.max(28,Math.min(48,Math.round(Math.min(wr.width,wr.height)*.045)));
    const nearOriginalDock=originalSide==='left'?e.clientX<=wr.left+edge+24:originalSide==='right'?e.clientX>=wr.right-edge-24:originalSide==='top'?e.clientY<=wr.top+edge+24:e.clientY>=wr.bottom-edge-24;
-   if(origin&&((e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24)||nearOriginalDock)){setMode(key,'dock',originalSide);return}
+   const panelRect=panel.getBoundingClientRect();
+   const overlapsOriginalDock=!!origin&&panelRect.left<=origin.right+24&&panelRect.right>=origin.left-24&&panelRect.top<=origin.bottom+24&&panelRect.bottom>=origin.top-24;
+   if(nearOriginalDock||(origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24&&overlapsOriginalDock)){setMode(key,'dock',originalSide);return}
    const r=panel.getBoundingClientRect(),s=state[key];
    s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key);saveDims(key);
   };
