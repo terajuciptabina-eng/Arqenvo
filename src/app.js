@@ -483,9 +483,12 @@ function stretchSelectedWall(){
  const next=Number(value);
  if(!Number.isFinite(next)||next<=0){$("status").textContent="Wall length must be greater than zero";return}
  const dx=(wall.end.x-wall.start.x)/len,dy=(wall.end.y-wall.start.y)/len,delta=next-len;
+ // Move the far endpoint and only geometry genuinely sharing that endpoint.
+ // Do not translate the entire selection or move both endpoints of the wall.
  hist("Stretch wall");
  const endRecords=captureConnectedNode(wall.end);
  applyConnectedNodeMove(endRecords,dx*delta,dy*delta);
+ wall.start.x=wall.start.x;wall.start.y=wall.start.y;
  scheduleAutoSave();renderProperties();redraw();
  $("status").textContent="Wall stretched to "+next.toFixed(3)+" m";
 }
@@ -1295,8 +1298,8 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  offset:'<svg viewBox="0 0 24 24"><path d="M4 19 19 4M5 5h6M5 5v6M19 19h-6M19 19v-6"/></svg>'
  };
  const actions=[
-  {key:"stretchWall",label:"Stretch",icon:"stretch",types:["wall"]},
-  {key:"offsetWall",label:"Offset",icon:"offset",types:["wall"]},
+  {key:"stretchWall",label:"Stretch",icon:"stretch",types:["wall"],single:true},
+  {key:"offsetWall",label:"Offset",icon:"offset",types:["wall"],single:true},
   {key:"moveSelection",label:"Move",icon:"move",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]},
   {key:"rotateSelection",label:"Rotate",icon:"rotate",types:["wall","slab","zone","column","beam","roof","gridline","dimension","room"]},
   {key:"mirrorSelection",label:"Mirror",icon:"mirror",types:["wall","slab","zone","column","beam","roof","gridline","dimension","room"]},
@@ -1337,7 +1340,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    hide();lastContextKey="";palette.dataset.positioned="";palette.dataset.userMoved="";return;
   }
   if(context.key===lastContextKey&&palette.style.display==="flex")return;
-  const {list}=context,types=[...new Set(list.map(el=>el.type))],relevant=actions.filter(action=>types.every(type=>action.types.includes(type)));
+  const {list}=context,types=[...new Set(list.map(el=>el.type))],relevant=actions.filter(action=>types.every(type=>action.types.includes(type))&&(!action.single||list.length===1));
   palette.replaceChildren();
   const handle=document.createElement("span");handle.className="pet-drag-handle";handle.title="Drag palette";handle.setAttribute("aria-label","Drag palette");handle.textContent="⠿";palette.append(handle);
   relevant.forEach((action,index)=>{
