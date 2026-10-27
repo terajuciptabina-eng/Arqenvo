@@ -868,7 +868,7 @@ function renderModelSnapshot(ctx,rect,source,storyId,scaleDenominator=100,frameW
   const cx=(minX+maxX)/2,cy=(minY+maxY)/2,projected=points.map(q=>({x:(q.x-cx)-(q.y-cy)*.55,y:(q.x-cx)+(q.y-cy)*.45})),pMinX=Math.min(...projected.map(q=>q.x)),pMaxX=Math.max(...projected.map(q=>q.x)),pMinY=Math.min(...projected.map(q=>q.y)),pMaxY=Math.max(...projected.map(q=>q.y)),maxWallHeight=Math.max(2,...items.filter(el=>el.type==="wall"||el.type==="column").map(el=>Number(el.height)||3))*.34,projectedWidth=Math.max(1,pMaxX-pMinX),projectedHeight=Math.max(1,pMaxY-pMinY)*.34+maxWallHeight,factor=Math.max(.001,rect.width/Math.max(1,frameWidthMm)*1000/Math.max(1,scaleDenominator)),baseY=rect.y+rect.height/2-(pMinY+pMaxY)*factor*.34/2+maxWallHeight*factor/2,iso3d=(q,z=0)=>({x:rect.x+rect.width/2+((q.x-cx)-(q.y-cy)*.55)*factor,y:baseY+((q.x-cx)+(q.y-cy)*.45)*factor*.34-z*factor*.34,depth:q.y});
   render3DScene(ctx,items,iso3d,{interactive:false});ctx.restore();return
  }
- renderFloorPlanElements(ctx,items,pt,scaleFactor,{interactive:false,includePending:false,annotationScale:rect.width/Math.max(1,frameWidthMm)});
+ renderFloorPlanElements(ctx,items,pt,scaleFactor,{interactive:false,includePending:false,annotationScale:.25*rect.width/Math.max(1,frameWidthMm)});
  ctx.restore()
 }
 function renderLayoutCanvas(w,h){
