@@ -1570,7 +1570,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(!d.moved)return;
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
-   const origin=state[key].dockRect||(d.originMode==='dock'?d.originRect:null);
+   const origin=d.dockRect||(state[key].dockRect)||(d.originMode==='dock'?d.originRect:null);
    // Docking is determined from the release point, not from the floating
    // panel's reflowed bounding box. Returning near the Navigator's recorded
    // dock rectangle should restore the original side even if the workspace
@@ -1590,7 +1590,11 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(e.target.closest('input,select,a')||e.target.closest('#navigatorToggle')||(key==='toolbox'&&e.target.closest('button')))return;
    const r=panel.getBoundingClientRect();
    if(state[key].mode==='dock')state[key].dockRect={left:r.left,top:r.top,right:r.right,bottom:r.bottom};
-   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom}};
+   // Preserve the original dock rectangle across drags that begin while the
+   // palette is floating. A return drag must target the last dock location,
+   // not treat the current floating rectangle as the new dock origin.
+   const savedDock=state[key].dockRect?{...state[key].dockRect}:null;
+   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},dockRect:savedDock};
    active=true;
    document.addEventListener('pointermove',move,true);
    document.addEventListener('pointerup',finish,true);
