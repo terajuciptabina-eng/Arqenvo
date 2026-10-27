@@ -16,7 +16,7 @@ try{
  assert.equal(before.coarse,true);assert.ok(before.nav.width>100&&before.workspace.width>100);assert.equal(before.inspector.display,"none");assert.ok(before.nav.x<before.workspace.x&&Math.abs(before.workspace.right-before.work.right)<3,"Tablet canvas must fill the available right edge without a hidden Inspector track");assert.equal(before.toggleHidden,false);
  // Docked Toolbox splitter must be a live hit target outside the scrollable palette and change its width.
  const toolboxWidthBefore=await tablet.locator("#toolbox").evaluate(e=>e.getBoundingClientRect().width);
- const toolboxGrip=await tablet.locator(".arq-dock-resize.toolbox").boundingBox();assert.ok(toolboxGrip&&toolboxGrip.width>=8,"Toolbox dock splitter must be visible");
+ const toolboxGrip=await tablet.locator(".arq-dock-resize.toolbox-resize").boundingBox();assert.ok(toolboxGrip&&toolboxGrip.width>=8,"Toolbox dock splitter must be visible");
  await tablet.mouse.move(toolboxGrip.x+toolboxGrip.width/2,toolboxGrip.y+Math.min(100,toolboxGrip.height/2));await tablet.mouse.down();await tablet.mouse.move(toolboxGrip.x+toolboxGrip.width/2+35,toolboxGrip.y+Math.min(100,toolboxGrip.height/2),{steps:5});await tablet.mouse.up();
  const toolboxWidthAfter=await tablet.locator("#toolbox").evaluate(e=>e.getBoundingClientRect().width);assert.ok(toolboxWidthAfter>toolboxWidthBefore+20,"Dragging the docked Toolbox splitter must resize its actual grid track");
  // Refresh the geometry baseline because resizing Toolbox moves Navigator and reduces the canvas track.
@@ -61,7 +61,7 @@ try{
  assert.equal(after.display,"block");assert.equal(Math.round(after.x),Math.round(before.nav.x));assert.equal(Math.round(after.width),Math.round(before.nav.width));
  // Docked Navigator splitter must resize the panel in its actual layout direction (it is left of canvas on tablets).
  const navWidthBeforeResize=await tablet.locator(".navigator").evaluate(e=>e.getBoundingClientRect().width);
- const navGrip=await tablet.locator(".arq-dock-resize.navigator").boundingBox();assert.ok(navGrip&&navGrip.width>=8,"Navigator dock splitter must be visible");
+ const navGrip=await tablet.locator(".arq-dock-resize.navigator-resize").boundingBox();assert.ok(navGrip&&navGrip.width>=8,"Navigator dock splitter must be visible");
  await tablet.mouse.move(navGrip.x+navGrip.width/2,navGrip.y+Math.min(100,navGrip.height/2));await tablet.mouse.down();await tablet.mouse.move(navGrip.x+navGrip.width/2+35,navGrip.y+Math.min(100,navGrip.height/2),{steps:5});await tablet.mouse.up();
  const navWidthAfterResize=await tablet.locator(".navigator").evaluate(e=>e.getBoundingClientRect().width);assert.ok(navWidthAfterResize>navWidthBeforeResize+20,"Dragging the docked Navigator splitter must resize its actual grid track");await tablet.close();
  const narrowTablet=await browser.newPage({viewport:{width:700,height:900},hasTouch:true,isMobile:false});narrowTablet.setDefaultTimeout(8000);narrowTablet.on("pageerror",e=>errors.push(e.message));
@@ -85,7 +85,7 @@ try{
  const desktop=await browser.newPage({viewport:{width:1440,height:1000}});desktop.on("pageerror",e=>errors.push(e.message));await desktop.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});await desktop.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100&&document.querySelector("#navigatorToggle"));
  const state=await desktop.evaluate(()=>({toggleHidden:document.querySelector("#navigatorToggle").hidden,toolbox:document.querySelector("#toolbox").getBoundingClientRect().width,workspace:document.querySelector(".workspace").getBoundingClientRect().width,nav:getComputedStyle(document.querySelector(".navigator")).display,inspector:getComputedStyle(document.querySelector(".inspector")).display}));
  assert.equal(state.toggleHidden,true,"Desktop must not expose the Hide/Show Navigator control");assert.ok(state.workspace>100&&state.toolbox>0&&state.nav==="block"&&state.inspector==="none","Desktop layout must not retain a hidden Inspector panel");
- const desktopNavWidthBefore=await desktop.locator(".navigator").evaluate(e=>e.getBoundingClientRect().width),desktopGrip=await desktop.locator(".arq-dock-resize.navigator").boundingBox();assert.ok(desktopGrip&&desktopGrip.width>=8,"Desktop Navigator splitter must be visible");
+ const desktopNavWidthBefore=await desktop.locator(".navigator").evaluate(e=>e.getBoundingClientRect().width),desktopGrip=await desktop.locator(".arq-dock-resize.navigator-resize").boundingBox();assert.ok(desktopGrip&&desktopGrip.width>=8,"Desktop Navigator splitter must be visible");
  await desktop.mouse.move(desktopGrip.x+desktopGrip.width/2,desktopGrip.y+Math.min(100,desktopGrip.height/2));await desktop.mouse.down();await desktop.mouse.move(desktopGrip.x+desktopGrip.width/2-35,desktopGrip.y+Math.min(100,desktopGrip.height/2),{steps:5});await desktop.mouse.up();
  const desktopNavWidthAfter=await desktop.locator(".navigator").evaluate(e=>e.getBoundingClientRect().width);assert.ok(desktopNavWidthAfter>desktopNavWidthBefore+20,"Dragging the right-docked Navigator splitter left must increase its width");
  // Desktop regression: moving a palette must float it, preserve the workspace, and allow docking at its original edge.
