@@ -169,8 +169,27 @@ export function validateProject(data) {
 export function normalizeHostedOpenings(project) {
   const elements = project.elements;
   const known = new Map(elements.filter(el => el.type === "door" || el.type === "window").map(el => [el.id, el]));
-  for (const wall of elements) {
-    if (wall.type !== "wall" || !Array.isArray(wall.openings)) continue;
+  const walls = elements.filter(el => el.type === "wall");
+  // The selectable opening element is the editable source of truth. Reconcile it
+  // into the host wall's opening list before rendering, validation, or serialization.
+  for (const openingElement of [...known.values()]) {
+    const wall = walls.find(candidate => candidate.id === openingElement.hostWallId);
+    if (!wall) continue;
+    if (!Array.isArray(wall.openings)) wall.openings = [];
+    const index = wall.openings.findIndex(opening => opening?.id === openingElement.id);
+    const openingData = Object.fromEntries(
+      ["id", "type", "offset", "width", "height", "sill", "hingeSide", "swingDirection", "revealSide", "alignment"]
+        .filter(key => openingElement[key] !== undefined)
+        .map(key => [key, openingElement[key]])
+    );
+    if (index >= 0) wall.openings[index] = { ...wall.openings[index], ...openingData };
+    else wall.openings.push({ ...openingData });
+    openingElement.storyId ??= wall.storyId ?? project.stories?.[0]?.id;
+  }
+  // Legacy projects may contain hosted openings only on the wall. Expose those
+  // as selectable elements without creating duplicates.
+  for (const wall of walls) {
+    if (!Array.isArray(wall.openings)) continue;
     for (const opening of wall.openings) {
       if (!opening || !["door", "window"].includes(opening.type) || !opening.id) continue;
       const existing = known.get(opening.id);
@@ -188,9 +207,17 @@ export function normalizeHostedOpenings(project) {
 }
 
 function migrateProject(input) {
+  const candidate = structuredClone(input);
+  if (input.version === MODEL_VERSION) {
+    normalizeHostedOpenings(candidate);
+    const check = validateProject(candidate);
+    if (!check.valid) throw new Error(check.errors.join("; "));
+    candidate.layouts ??= []; candidate.views ??= []; candidate.publisher ??= { format: "pdf", scope: "all" };
+    for (const sheet of candidate.layouts) { sheet.drawings ??= []; sheet.paper ??= "A3"; sheet.orientation ??= "landscape"; sheet.titleBlock ??= {}; }
+    return candidate;
+  }
   const check = validateProject(input);
   if (!check.valid) throw new Error(check.errors.join("; "));
-  if (input.version === MODEL_VERSION) { const current = normalizeHostedOpenings(structuredClone(input)); current.layouts ??= []; current.views ??= []; current.publisher ??= { format: "pdf", scope: "all" }; for (const sheet of current.layouts) { sheet.drawings ??= []; sheet.paper ??= "A3"; sheet.orientation ??= "landscape"; sheet.titleBlock ??= {}; } return current; }
   const p = createProject(input.project?.name ?? "Imported Project");
   p.project = { ...p.project, ...(input.project ?? {}) };
   p.stories = input.stories?.length ? structuredClone(input.stories) : [{ ...DEFAULT_STORY }];
