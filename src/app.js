@@ -1244,15 +1244,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
     if(a.key==="settings"){hide();openElementSettings();return}
     if(a.key==="cancel"){hide();return}
     if(a.key==="moveNode"){
-     const node=currentContext().target;if(!node){$("status").textContent="Select a node to edit";return}
-     const el=els().find(v=>v.id===node.id);if(!el){hide();return}
-     let gesture=null;
-     if(node.key==="start"||node.key==="end"){if(el.type==="wall")gesture={type:"wall",point:el[node.key],end:node.key};else if(el.type==="gridline")gesture={type:"gridline",point:el[node.key],end:node.key};else gesture={type:"generic",point:el[node.key],end:node.key}}
-     else if(node.key==="boundary")gesture={type:"boundary",point:el.boundary?.[node.index],index:node.index};
-     else if(node.key==="position")gesture={type:"generic",point:el.position};
-     else if(node.key==="openingStart"||node.key==="openingEnd")gesture={type:"opening",point:node.point,key:node.key};
-     if(!gesture){$("status").textContent="Node editing is unavailable for this geometry";return}
-     hide();beginPetPaletteNodeEdit(el,gesture);return;
+     $("status").textContent="Node editing is being prepared for this element type";return;
     }
     const command=document.getElementById(a.key);if(command){hide();command.click();return}
     $("status").textContent=a.label+" is not available for this selection yet";
