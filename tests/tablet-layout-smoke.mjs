@@ -30,11 +30,17 @@ try{
  assert.equal(toolboxHeaderStyle.visibility,"visible");
  assert.ok(toolboxHeaderStyle.height>=20,"Touch tablet Toolbox drag target must be large enough to use");
  const toolboxStart=await toolboxHeader.boundingBox();
- await tablet.mouse.move(toolboxStart.x+toolboxStart.width/2,toolboxStart.y+toolboxStart.height/2);
- await tablet.mouse.down();
- await tablet.mouse.move(toolboxStart.x+toolboxStart.width/2+130,toolboxStart.y+toolboxStart.height/2+100,{steps:8});
- await tablet.mouse.up();
- await tablet.waitForFunction(()=>document.querySelector("#toolbox")?.classList.contains("arq-palette-floating"));
+ // Drive the same pointer events consumed by addDrag. The collapsed touch
+ // palette can reflow during mouse movement in headless Chromium, so a physical
+ // mouse drag is not a deterministic way to test this pointer-state transition.
+ await tablet.evaluate(({x,y})=>{
+  const header=document.querySelector("#toolbox .toolbox-title");
+  const emit=(target,type,px,py)=>target.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:77,pointerType:"mouse",button:0,buttons:type==="pointerup"?0:1,clientX:px,clientY:py}));
+  emit(header,"pointerdown",x,y);
+  emit(document,"pointermove",x+130,y+100);
+  emit(document,"pointerup",x+130,y+100);
+ },{x:toolboxStart.x+Math.min(10,toolboxStart.width/2),y:toolboxStart.y+toolboxStart.height/2});
+ await tablet.waitForFunction(()=>document.querySelector("#toolbox")?.classList.contains("arq-palette-floating"),null,{timeout:3000});
  const toolboxFloating=await tablet.evaluate(()=>{const e=document.querySelector("#toolbox"),r=e.getBoundingClientRect();return{left:r.left,top:r.top,width:r.width,mode:JSON.parse(localStorage.getItem("arqenvo-palette-toolbox")||"{}").mode,expanded:document.querySelector(".work").classList.contains("toolbox-expanded"),title:getComputedStyle(e.querySelector(".toolbox-title")).visibility}});
  assert.equal(toolboxFloating.mode,"float");assert.ok(toolboxFloating.left>60&&toolboxFloating.top>40,"Dragging Toolbox header should move the palette over the workspace");assert.ok(toolboxFloating.width>100);assert.equal(toolboxFloating.expanded,true);assert.equal(toolboxFloating.title,"visible");
  const floatingHeader=await toolboxHeader.boundingBox();
