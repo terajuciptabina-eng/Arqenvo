@@ -1200,20 +1200,21 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
   palette.style.left=left+"px";palette.style.top=top+"px";palette.dataset.forSelection=list.map(el=>el.id).sort().join("|");
  };
  style.textContent+=`
- #arqPetPalette{background:linear-gradient(180deg,#3b4651,#29323b);border:1px solid #56636e;border-radius:9px;box-shadow:0 10px 30px #11182750;color:#e5edf3}
- #arqPetPalette .pet-separator{background:#64727e}
- #arqPetPalette button{color:#e2e9ee}
- #arqPetPalette button:hover,#arqPetPalette button:focus-visible{background:#4a5a67;border-color:#738493}
- #arqElementSettingsModal{background:rgba(12,18,24,.68)!important;color:#e3eaf0!important}
- #arqElementSettingsModal>div{background:#252e37!important;color:#e3eaf0!important;border:1px solid #4a5966!important;box-shadow:0 24px 70px #0008!important}
- #arqElementSettingsModal [data-settings-header],#arqElementSettingsModal [data-settings-footer]{background:#303b46!important;color:#eef3f7!important;border-color:#4a5966!important}
- #arqElementSettingsModal button{background:#36434e!important;color:#e6edf2!important;border-color:#566673!important}
- #arqElementSettingsModal button:hover{background:#465662!important}
- #arqElementSettingsModal input,#arqElementSettingsModal select,#arqElementSettingsModal textarea{background:#1d252d!important;color:#e6edf2!important;border:1px solid #536270!important;color-scheme:dark}
- #arqElementSettingsModal label,#arqElementSettingsModal p,#arqElementSettingsModal small,#arqElementSettingsModal span{color:#d6e0e7}
- #arqElementSettingsModal [style*="background:#fff"],#arqElementSettingsModal [style*="background: #fff"],#arqElementSettingsModal [style*="background:#f"],#arqElementSettingsModal [style*="background: #f"]{background:#2c3741!important}
- #arqElementSettingsModal [style*="border-bottom"],#arqElementSettingsModal [style*="border-top"]{border-color:#465560!important}
- #arqElementSettingsModal input:focus,#arqElementSettingsModal select:focus,#arqElementSettingsModal textarea:focus{outline:2px solid #55b9c2!important;outline-offset:1px}
+ #arqPetPalette{background:linear-gradient(180deg,#ffffff,#f1f5f7);border:1px solid #c5d0d8;border-radius:9px;box-shadow:0 8px 24px #24374620;color:#344653;cursor:grab}
+ #arqPetPalette .pet-separator{background:#d3dce2}
+ #arqPetPalette button{color:#455967}
+ #arqPetPalette button:hover,#arqPetPalette button:focus-visible{background:#e3f3f4;border-color:#acd8dc;color:#087e8b}
+ #arqElementSettingsModal{background:rgba(31,45,56,.28)!important;color:#273640!important}
+ #arqElementSettingsModal>div{background:#f5f7f8!important;color:#273640!important;border:1px solid #cbd5dc!important;box-shadow:0 22px 64px #24374630!important}
+ #arqElementSettingsModal [data-settings-header]{background:linear-gradient(180deg,#ffffff,#edf2f5)!important;color:#263844!important;border-color:#d4dde3!important}
+ #arqElementSettingsModal [data-settings-footer]{background:#f0f4f6!important;color:#344653!important;border-color:#d4dde3!important}
+ #arqElementSettingsModal button{background:#ffffff!important;color:#344653!important;border-color:#c6d1d9!important}
+ #arqElementSettingsModal button:hover{background:#e8f5f5!important;border-color:#8fcbd0!important}
+ #arqElementSettingsModal input,#arqElementSettingsModal select,#arqElementSettingsModal textarea{background:#ffffff!important;color:#273640!important;border:1px solid #c5d0d8!important;color-scheme:light}
+ #arqElementSettingsModal label,#arqElementSettingsModal p,#arqElementSettingsModal small,#arqElementSettingsModal span{color:#455967}
+ #arqElementSettingsModal [style*="background:#fff"],#arqElementSettingsModal [style*="background: #fff"],#arqElementSettingsModal [style*="background:#f"],#arqElementSettingsModal [style*="background: #f"]{background:#f8fafb!important}
+ #arqElementSettingsModal [style*="border-bottom"],#arqElementSettingsModal [style*="border-top"]{border-color:#dbe3e8!important}
+ #arqElementSettingsModal input:focus,#arqElementSettingsModal select:focus,#arqElementSettingsModal textarea:focus{outline:2px solid #6dbfc5!important;outline-offset:1px}
 `;\n let drag=null;\n palette.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;const r=palette.getBoundingClientRect();drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:r.left,top:r.top};palette.setPointerCapture?.(e.pointerId);palette.style.cursor="grabbing";e.preventDefault();e.stopPropagation()});\n palette.addEventListener("pointermove",e=>{if(!drag||drag.id!==e.pointerId)return;const left=Math.max(4,Math.min(innerWidth-palette.offsetWidth-4,drag.left+e.clientX-drag.x)),top=Math.max(4,Math.min(innerHeight-palette.offsetHeight-4,drag.top+e.clientY-drag.y));palette.style.left=left+"px";palette.style.top=top+"px";palette.dataset.userMoved="true"});\n const finishDrag=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;palette.style.cursor="grab"};palette.addEventListener("pointerup",finishDrag);palette.addEventListener("pointercancel",finishDrag);\n const info=$("selectionInfo");
  if(info)new MutationObserver(render).observe(info,{childList:true,characterData:true,subtree:true});
  document.addEventListener("pointermove",e=>{
