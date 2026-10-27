@@ -1342,7 +1342,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
   const {list}=context,types=[...new Set(list.map(el=>el.type))],relevant=actions.filter(action=>types.every(type=>action.types.includes(type))&&(!action.single||list.length===1)&&(!action.context||action.context.includes(context.kind)));
   // Geometry-specific edits must never silently fall through to whole-selection transforms.
   const contextActions=context.kind==="node"||context.kind==="edge";
-  const safeActions=contextActions?relevant.filter(action=>action.context&&action.context.includes(context.kind)):relevant;
+  const safeActions=contextActions?relevant.filter(action=>!action.context||action.context.includes(context.kind)):relevant;
   palette.replaceChildren();
   const handle=document.createElement("span");handle.className="pet-drag-handle";handle.title="Drag palette";handle.setAttribute("aria-label","Drag palette");handle.textContent="⠿";palette.append(handle);
   safeActions.forEach((action,index)=>{
