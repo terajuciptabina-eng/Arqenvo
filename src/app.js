@@ -1555,6 +1555,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
     const s=state[key],r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
     /* Docked panels fill the workspace height; do not carry that dock geometry into a floating window. */
     const minW=key==='toolbox'?220:280,preferredW=key==='toolbox'?280:320,preferredH=key==='toolbox'?480:560;
+    if(d.originMode==='dock')s.dockRect=d.dockRect||{left:r.left,top:r.top,right:r.right,bottom:r.bottom};
     s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;
     s.w=clamp(Math.max(minW,preferredW),minW,Math.max(minW,work.clientWidth-8));
     s.h=clamp(preferredH,220,Math.max(220,work.clientHeight-8));
@@ -1590,11 +1591,11 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(e.target.closest('input,select,a')||e.target.closest('#navigatorToggle')||(key==='toolbox'&&e.target.closest('button')))return;
    const r=panel.getBoundingClientRect();
    if(state[key].mode==='dock')state[key].dockRect={left:r.left,top:r.top,right:r.right,bottom:r.bottom};
-   // Preserve the original dock rectangle across drags that begin while the
-   // palette is floating. A return drag must target the last dock location,
-   // not treat the current floating rectangle as the new dock origin.
+   // The first dock-to-float gesture records the stable dock slot. Subsequent
+   // floating drags preserve it so a return drop can restore the same dock.
    const savedDock=state[key].dockRect?{...state[key].dockRect}:null;
    drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},dockRect:savedDock};
+   if(!savedDock&&state[key].mode==='float'&&state[key].dockRect)drag.dockRect={...state[key].dockRect};
    active=true;
    document.addEventListener('pointermove',move,true);
    document.addEventListener('pointerup',finish,true);
