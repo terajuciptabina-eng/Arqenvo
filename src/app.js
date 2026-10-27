@@ -742,7 +742,7 @@ if(tool==="select"&&view==="floor"&&!e.shiftKey){
  edgeHits.sort((a,b)=>a.dist-b.dist);
  if(edgeHits.length){
   const h=edgeHits[0],pointRecords=captureConnectedNodes([h.edge.a.point,h.edge.b.point]);
-  genericEdgeMoveGesture={pointerId:e.pointerId,elementId:h.el.id,pointRecords,startWorld:{...rawPointerWorld},startClient:{x:e.clientX,y:e.clientY},didMove:false,historyStarted:false,axisLock:null,modelBefore:structuredClone(p)};
+  genericEdgeMoveGesture={pointerId:e.pointerId,elementId:h.el.id,pointRecords,startWorld:{...q},startClient:{x:e.clientX,y:e.clientY},didMove:false,historyStarted:false,axisLock:null,modelBefore:structuredClone(p)};
   try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{}
   $("status").textContent="Edge selected · drag to move connected geometry";renderProperties();redraw();e.preventDefault();return;
  }
