@@ -1402,9 +1402,9 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
   {key:"copySelection",label:"Multiply",icon:"multiply",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]},
   {key:"settings",label:"Settings",icon:"settings",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"],context:["node","edge"]}
  ];
- const hide=()=>{palette.style.display="none";palette.dataset.forSelection="";palette.dataset.context="";};
+ const hide=()=>{palette.style.display="none";palette.dataset.forSelection="";palette.dataset.context="";palette.dataset.kind="";lastContextKey="";};
  const selectionKey=list=>list.map(el=>el.id).sort().join("|");
- let renderQueued=false,lastContextKey="";
+ let renderQueued=false,lastContextKey="",lastValidContext=null;
  const currentContext=()=>{
   const list=chosen(),sel=selectionKey(list);
   if(!list.length||view!=="floor"||tool!=="select"||elementSettingsModal?.style.display==="flex")return {key:"",list,kind:"none"};
@@ -1417,8 +1417,16 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
   let edge=null;
   if(pointer&&!node)for(const el of list)for(const segment of elementEditableEdges(el)){const world=wpos(pointer),dist=pointSegmentDistance(world,segment.a.point,segment.b.point);if(dist<=12/Math.max(1,scale)&&(!edge||dist<edge.dist)){const a=segment.a.point,b=segment.b.point,dx=b.x-a.x,dy=b.y-a.y,den=dx*dx+dy*dy,t=den?Math.max(0,Math.min(1,((world.x-a.x)*dx+(world.y-a.y)*dy)/den)):0;edge={el,segment,dist,point:{x:a.x+t*dx,y:a.y+t*dy}}}}
   const context=node?"node":edge?"edge":"none";
-  if(context==="none")return {key:"",list:[],kind:"none"};
-  return {key:sel+"|"+context+"|"+(node?node.el.id+":"+node.key+":"+node.index:edge.el.id+":"+edge.segment.a.key+":"+edge.segment.a.index),list,kind:context,edge};
+  if(context==="none"){
+   // Keep the last valid node/edge context while the pointer travels from the
+   // drawing to the floating palette. This prevents the palette actions from
+   // disappearing or changing underneath the pointer before a button is clicked.
+   if(palette.style.display==="flex"&&palette.dataset.forSelection===sel&&lastValidContext)return {...lastValidContext,list};
+   return {key:"",list:[],kind:"none"};
+  }
+  const result={key:sel+"|"+context+"|"+(node?node.el.id+":"+node.key+":"+node.index:edge.el.id+":"+edge.segment.a.key+":"+edge.segment.a.index),list,kind:context,edge};
+  lastValidContext=result;
+  return result;
  };
  const positionPalette=()=>{
   const rect=canvas.getBoundingClientRect(),anchor=mouse&&Number.isFinite(mouse.x)&&Number.isFinite(mouse.y)?{x:rect.left+mouse.x,y:rect.top+mouse.y}:{x:rect.left+rect.width/2,y:rect.top+rect.height/2},w=palette.offsetWidth,h=palette.offsetHeight;
@@ -1433,7 +1441,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    // from the geometry to the floating toolbar. Hide only when selection/mode changes.
    const sameSelection=palette.style.display==="flex"&&palette.dataset.forSelection===selectionKey(chosen())&&view==="floor"&&tool==="select"&&elementSettingsModal?.style.display!=="flex";
    if(sameSelection)return;
-   hide();lastContextKey="";palette.dataset.positioned="";palette.dataset.userMoved="";return;
+   hide();lastContextKey="";lastValidContext=null;palette.dataset.positioned="";palette.dataset.userMoved="";return;
   }
   if(context.key===lastContextKey&&palette.style.display==="flex")return;
   const {list}=context,types=[...new Set(list.map(el=>el.type))],relevant=actions.filter(action=>types.every(type=>action.types.includes(type))&&(!action.single||list.length===1)&&(!action.context||action.context.includes(context.kind)));
@@ -1457,6 +1465,10 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  palette.addEventListener("pointerdown",e=>{if(e.target.closest("button")||e.target.closest(".pet-drag-handle")===null)return;const r=palette.getBoundingClientRect();drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:r.left,top:r.top};palette.setPointerCapture?.(e.pointerId);palette.style.cursor="grabbing";e.preventDefault();e.stopPropagation()});
  palette.addEventListener("pointermove",e=>{if(!drag||drag.id!==e.pointerId)return;const left=Math.max(4,Math.min(innerWidth-palette.offsetWidth-4,drag.left+e.clientX-drag.x)),top=Math.max(4,Math.min(innerHeight-palette.offsetHeight-4,drag.top+e.clientY-drag.y));palette.style.left=left+"px";palette.style.top=top+"px";palette.dataset.userMoved="true"});
  const finishDrag=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;palette.style.cursor="default"};palette.addEventListener("pointerup",finishDrag);palette.addEventListener("pointercancel",finishDrag);
+ // Treat the floating palette as an interactive surface, not as part of the canvas
+ // hit-test. Pointer travel over its controls must never clear the geometry context.
+ palette.addEventListener("pointerenter",()=>{palette.dataset.pointerInside="true"});
+ palette.addEventListener("pointerleave",()=>{delete palette.dataset.pointerInside});
  document.addEventListener("pointermove",e=>{
   if(e.target===canvas){const r=canvas.getBoundingClientRect();mouse={x:e.clientX-r.left,y:e.clientY-r.top};queueRenderContext()}
  },{passive:true});
