@@ -1341,35 +1341,41 @@ $("gridSystemOpen").addEventListener("click",()=>{if(view!=="floor")setView("flo
 $("gridSystemClose").addEventListener("click",()=>$("gridSystemDialog").close());
 // Archicad-style collapsible sections inside Grid System Settings.
 function initGridSettingsSections(){
- const sections=[...gridSystemDialog.querySelectorAll("form>div:nth-of-type(2)>section")];
+ const sections=[...gridSystemDialog.querySelectorAll("form>div>section")];
  sections.forEach((section,index)=>{
   if(section.dataset.collapsibleReady)return;
-  const header=[...section.children].find(el=>el.tagName==="DIV"&&/font-size:13px/.test(el.getAttribute("style")||""));
-  if(!header)return;
-  const body=document.createElement("div");
-  body.className="grid-settings-section-body";
-  body.style.cssText="display:block;min-width:0";
-  while(header.nextSibling){body.append(header.nextSibling)}
+  const header=section.firstElementChild;
+  const body=section.children[1];
+  if(!header||!body)return;
   const title=header.textContent.trim();
-  header.textContent="";
+  header.replaceChildren();
   header.style.cssText+=";display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;min-height:36px";
   const chevron=document.createElement("span");
-  chevron.textContent="▾";chevron.setAttribute("aria-hidden","true");chevron.style.cssText="display:inline-block;width:14px;color:#596671;font-size:14px";
-  const label=document.createElement("span");label.textContent=title;label.style.flex="1";
+  chevron.textContent=index===0?"▾":"▸";
+  chevron.setAttribute("aria-hidden","true");
+  chevron.style.cssText="display:inline-block;width:14px;color:#596671;font-size:14px;flex:0 0 14px";
+  const label=document.createElement("span");
+  label.textContent=title;label.style.flex="1";
   header.append(chevron,label);
-  header.setAttribute("role","button");header.tabIndex=0;header.setAttribute("aria-expanded","true");
-  const toggle=()=>{
-   const expanded=header.getAttribute("aria-expanded")==="true";
-   header.setAttribute("aria-expanded",String(!expanded));
-   body.hidden=expanded;
-   body.style.display=expanded?"none":"block";
-   chevron.textContent=expanded?"▸":"▾";
-   header.style.borderBottom=expanded?"0":"1px solid #c6cbd1";
-   header.style.borderRadius=expanded?"5px":"5px 5px 0 0";
+  header.setAttribute("role","button");
+  header.setAttribute("aria-expanded",String(index===0));
+  header.tabIndex=0;
+  const expanded=index===0;
+  body.hidden=!expanded;
+  body.style.display=expanded?"block":"none";
+  const syncHeader=()=>{
+   const open=header.getAttribute("aria-expanded")==="true";
+   body.hidden=!open;
+   body.style.display=open?"block":"none";
+   chevron.textContent=open?"▾":"▸";
+   header.style.borderBottom=open?"1px solid #c6cbd1":"0";
+   header.style.borderRadius=open?"5px 5px 0 0":"5px";
   };
+  const toggle=()=>{header.setAttribute("aria-expanded",String(header.getAttribute("aria-expanded")!=="true"));syncHeader()};
   header.addEventListener("click",toggle);
   header.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();toggle()}});
-  section.append(body);section.dataset.collapsibleReady="true";
+  syncHeader();
+  section.dataset.collapsibleReady="true";
  });
 }
 const gridSystemDialog=$("gridSystemDialog");
