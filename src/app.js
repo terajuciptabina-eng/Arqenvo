@@ -1555,7 +1555,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
     const s=state[key],r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
     const minW=key==='toolbox'?220:280,preferredW=key==='toolbox'?280:320,preferredH=key==='toolbox'?480:560;
     // Capture the real dock slot exactly once, before the panel/layout reflows.
-    if(d.originMode==='dock')s.dockRect=d.dockRect||{left:r.left,top:r.top,right:r.right,bottom:r.bottom};
+    if(drag.originMode==='dock')s.dockRect=drag.dockRect||{left:r.left,top:r.top,right:r.right,bottom:r.bottom};
     s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;
     s.w=clamp(Math.max(minW,preferredW),minW,Math.max(minW,work.clientWidth-8));
     s.h=clamp(preferredH,220,Math.max(220,work.clientHeight-8));
