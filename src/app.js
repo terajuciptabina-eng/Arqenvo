@@ -423,18 +423,6 @@ function captureConnectedNode(point){
  }
  return records;
 }
-function beginPetPaletteNodeEdit(element,gesture){
- if(!element||!gesture?.point){$("status").textContent="No editable node found";return false}
- const pointerId=1,point={x:gesture.point.x,y:gesture.point.y},connectedPoints=captureConnectedNode(point);
- const startClient={x:mouse?.x??spos(point).x,y:mouse?.y??spos(point).y},before=structuredClone(p);
- const common={pointerId,elementId:element.id,startPoint:point,connectedPoints,startClient,didMove:false,historyStarted:false,modelBefore:before,fromPetPalette:true,petPaletteDrag:true};
- if(gesture.type==="wall")wallPointMoveGesture={...common,wallId:element.id,end:gesture.end,axisLock:null};
- else if(gesture.type==="gridline")gridlinePointMoveGesture={...common,end:gesture.end,axisLock:null};
- else if(gesture.type==="boundary")boundaryPointMoveGesture={...common,index:gesture.index};
- else if(gesture.type==="generic")genericMoveGesture={...common,elementIds:[element.id],startWorld:{...point},startElements:[{id:element.id,geometry:{start:element.start?{...element.start}:null,end:element.end?{...element.end}:null,position:element.position?{...element.position}:null,boundary:element.boundary?element.boundary.map(v=>({...v})):null,witnessStart:element.witnessStart?{...element.witnessStart}:null,witnessEnd:element.witnessEnd?{...element.witnessEnd}:null,offset:Number.isFinite(element.offset)?element.offset:null,openings:element.openings?element.openings.map(v=>({...v})):null}}]};
- else return false;
- updateEditActions();$("status").textContent="Move Node active · drag from the selected node";redraw();return true;
-}
 function applyConnectedNodeMove(records,dx,dy){
  for(const rec of records||[]){
   const el=els().find(v=>v.id===rec.id);if(!el)continue;
