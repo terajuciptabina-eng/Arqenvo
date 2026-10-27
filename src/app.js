@@ -64,7 +64,8 @@ function elementIntersectsScreenRect(el,r){
  return false;
 }
 function pointInScreenPolygon(point,poly){let inside=false;for(let i=0,j=poly.length-1;i<poly.length;j=i++){const a=poly[i],b=poly[j];if(((a.y>point.y)!==(b.y>point.y))&&(point.x<(b.x-a.x)*(point.y-a.y)/(b.y-a.y||1e-12)+a.x))inside=!inside}return inside}
-function segmentIntersectsScreenPolygon(a,b,poly){if(pointInScreenPolygon(a,poly)||pointInScreenPolygon(b,poly))return true;for(let i=0;i<poly.length;i++)if(segmentsIntersect(a,b,poly[i],poly[(i+1)%poly.length]))return true;return false}
+function screenSegmentsIntersect(a,b,c,d){const cross=(p,q,r)=>(q.x-p.x)*(r.y-p.y)-(q.y-p.y)*(r.x-p.x);const on=(p,q,r)=>Math.min(p.x,q.x)-1e-8<=r.x&&r.x<=Math.max(p.x,q.x)+1e-8&&Math.min(p.y,q.y)-1e-8<=r.y&&r.y<=Math.max(p.y,q.y)+1e-8;const o1=cross(a,b,c),o2=cross(a,b,d),o3=cross(c,d,a),o4=cross(c,d,b);if(((o1>0&&o2<0)||(o1<0&&o2>0))&&((o3>0&&o4<0)||(o3<0&&o4>0)))return true;return Math.abs(o1)<1e-8&&on(a,b,c)||Math.abs(o2)<1e-8&&on(a,b,d)||Math.abs(o3)<1e-8&&on(c,d,a)||Math.abs(o4)<1e-8&&on(c,d,b)}
+function segmentIntersectsScreenPolygon(a,b,poly){if(pointInScreenPolygon(a,poly)||pointInScreenPolygon(b,poly))return true;for(let i=0;i<poly.length;i++)if(screenSegmentsIntersect(a,b,poly[i],poly[(i+1)%poly.length]))return true;return false}
 function elementIntersectsScreenPolygon(el,poly){
  if(!poly||poly.length<3)return false;
  if(el.type==="door"||el.type==="window"){const w=els().find(v=>v.id===el.hostWallId&&v.type==="wall");if(!w)return false;const len=wallLength(w)||1,at=off=>spos({x:w.start.x+(w.end.x-w.start.x)*off/len,y:w.start.y+(w.end.y-w.start.y)*off/len});return segmentIntersectsScreenPolygon(at(el.offset),at(el.offset+el.width),poly)}
