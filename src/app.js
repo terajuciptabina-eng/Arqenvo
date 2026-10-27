@@ -470,37 +470,39 @@ function captureConnectedNodes(points){
 function beginConnectedWallEdgeGesture(wall,edge){
  const same=(a,b)=>!!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<1e-4;
  const a={...edge.a.point},b={...edge.b.point};
- const neighbors=[];
- // Only explicitly selected walls participate in connected-edge editing.
+ // Snapshot endpoints for the entire explicit selection. Shared topology is
+ // resolved from this immutable snapshot, not from geometry already mutated
+ // by an earlier pointer frame.
+ const selectedWallEndpoints=[];
  for(const el of els()){
-  if(el.id===wall.id||!selected.has(el.id)||el.type!=="wall"||(view==="floor"&&el.storyId!==story().id))continue;
-  for(const key of ["start","end"]){
-   const pt=el[key];
-   if(same(pt,a))neighbors.push({id:el.id,key,connectedTo:"a",start:{...el.start},end:{...el.end}});
-   else if(same(pt,b))neighbors.push({id:el.id,key,connectedTo:"b",start:{...el.start},end:{...el.end}});
-  }
+  if(!selected.has(el.id)||el.type!=="wall"||(view==="floor"&&el.storyId!==story().id))continue;
+  if(!el.start||!el.end)continue;
+  selectedWallEndpoints.push({id:el.id,start:{...el.start},end:{...el.end}});
  }
- return {wallId:wall.id,start:{...wall.start},end:{...wall.end},edgeA:{...a},edgeB:{...b},neighbors};
+ return {wallId:wall.id,start:{...wall.start},end:{...wall.end},edgeA:a,edgeB:b,selectedWallEndpoints};
 }
 function moveConnectedWallEdge(g,dx,dy){
- const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");if(!wall)return;
  const movedStart={x:g.start.x+dx,y:g.start.y+dy};
  const movedEnd={x:g.end.x+dx,y:g.end.y+dy};
- // Apply each pointer frame from the gesture-start geometry.
- wall.start=movedStart;
- wall.end=movedEnd;
- for(const rec of g.neighbors||[]){
-  // Only explicitly selected neighbouring walls may participate.
+ const same=(a,b)=>!!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<1e-4;
+ // Build one coordinate map for the two edited nodes. Every endpoint in the
+ // explicit selection that shared either original node receives exactly the
+ // same new coordinate; unselected walls are never visited or mutated.
+ const nodeMoves=[{from:g.start,to:movedStart},{from:g.end,to:movedEnd}];
+ for(const rec of g.selectedWallEndpoints||[]){
   if(!selected.has(rec.id))continue;
-  const neighbor=els().find(el=>el.id===rec.id&&el.type==="wall");
-  if(!neighbor||!rec.start||!rec.end)continue;
-  // Keep the far endpoint fixed and move only the shared endpoint. Translating
-  // the whole neighbour opens a gap at its far end; intersecting axes can also
-  // move the junction away from the edited wall's actual endpoint.
-  const junction=rec.connectedTo==="a"?movedStart:movedEnd;
-  if(rec.key==="start")neighbor.start={x:junction.x,y:junction.y};
-  else neighbor.end={x:junction.x,y:junction.y};
+  const wall=els().find(el=>el.id===rec.id&&el.type==="wall");
+  if(!wall)continue;
+  for(const key of ["start","end"]){
+   const original=rec[key];
+   const move=nodeMoves.find(m=>same(original,m.from));
+   if(move)wall[key]={x:move.to.x,y:move.to.y};
+  }
  }
+ // The edited wall must still move even if it was removed from selection
+ // during a transient pointer update.
+ const target=els().find(el=>el.id===g.wallId&&el.type==="wall");
+ if(target){target.start=movedStart;target.end=movedEnd}
 }
 function elementEditableEdges(el){
  const out=[];
