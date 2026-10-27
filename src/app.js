@@ -1329,7 +1329,13 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  };
  const render=()=>{
   const context=currentContext();
-  if(!context.list.length){hide();lastContextKey="";palette.dataset.positioned="";palette.dataset.userMoved="";return}
+  if(!context.list.length){
+   // Once opened for a selection, keep the palette reachable while the pointer travels
+   // from the geometry to the floating toolbar. Hide only when selection/mode changes.
+   const sameSelection=palette.style.display==="flex"&&palette.dataset.forSelection===selectionKey(chosen())&&view==="floor"&&tool==="select"&&elementSettingsModal?.style.display!=="flex";
+   if(sameSelection)return;
+   hide();lastContextKey="";palette.dataset.positioned="";palette.dataset.userMoved="";return;
+  }
   if(context.key===lastContextKey&&palette.style.display==="flex")return;
   const {list}=context,types=[...new Set(list.map(el=>el.type))],relevant=actions.filter(action=>types.every(type=>action.types.includes(type)));
   palette.replaceChildren();
