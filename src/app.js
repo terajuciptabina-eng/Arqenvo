@@ -1126,6 +1126,51 @@ settingsPopup.querySelector('[data-context-action="settings"]').addEventListener
 elementSettingsModal.querySelectorAll("[data-settings-close]").forEach(button=>button.addEventListener("click",closeElementSettings));elementSettingsModal.addEventListener("pointerdown",e=>{if(e.target===elementSettingsModal)closeElementSettings()});
 document.addEventListener("pointerdown",e=>{if(!settingsPopup.contains(e.target))settingsPopup.style.display="none"},true);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){settingsPopup.style.display="none";if(elementSettingsModal.style.display==="flex")closeElementSettings()}},true);
+// Touch long-press mirrors desktop right-click. Cancel when the finger moves so drawing,
+// drag, marquee and two-finger navigation keep their existing behavior.
+let touchContextPress=null,longPressHandledPointerId=null;
+c.addEventListener("pointerdown",e=>{
+ if(e.pointerType!=="touch"||e.button!==0||view==="layout"||draft.length||floorTouchPointers.size>1)return;
+ const rect=c.getBoundingClientRect(),start={x:e.clientX,y:e.clientY},pointerId=e.pointerId;
+ const hit=nearestElement(wpos({x:start.x-rect.left,y:start.y-rect.top}));
+ if(!hit)return;
+ if(touchContextPress)clearTimeout(touchContextPress.timer);
+ const press={pointerId,start,hitId:hit.id,fired:false,timer:null};
+ press.timer=setTimeout(()=>{
+  if(touchContextPress!==press)return;
+  press.fired=true;longPressHandledPointerId=pointerId;
+  // A stationary long-press is a context action, not the start of a move/edit gesture.
+  floorDrawGesture=null;selectionBoxGesture=null;roomLabelMoveGesture=null;
+  genericNodeMoveGesture=null;genericEdgeMoveGesture=null;openingMoveGesture=null;
+  isPanning=false;panStart=null;transformInteraction=null;
+  selected=new Set(groupMembers(els().find(el=>el.id===press.hitId)).map(el=>el.id));
+  renderProperties();redraw();
+  const event=new MouseEvent("contextmenu",{bubbles:true,cancelable:true,view:window,clientX:start.x,clientY:start.y,button:2});
+  c.dispatchEvent(event);
+  touchContextPress=null;
+ },560);
+ touchContextPress=press;
+},true);
+c.addEventListener("pointermove",e=>{
+ const press=touchContextPress;
+ if(!press||press.pointerId!==e.pointerId)return;
+ if(Math.hypot(e.clientX-press.start.x,e.clientY-press.start.y)>9){
+  clearTimeout(press.timer);touchContextPress=null;
+ }
+},true);
+c.addEventListener("pointerup",e=>{
+ const press=touchContextPress;
+ if(press&&press.pointerId===e.pointerId){clearTimeout(press.timer);touchContextPress=null}
+ if(longPressHandledPointerId===e.pointerId){
+  longPressHandledPointerId=null;
+  floorTouchPointers.delete(e.pointerId);threeTouchPointers.delete(e.pointerId);
+  e.preventDefault();e.stopImmediatePropagation();
+ }
+},true);
+c.addEventListener("pointercancel",e=>{
+ if(touchContextPress?.pointerId===e.pointerId){clearTimeout(touchContextPress.timer);touchContextPress=null}
+ if(longPressHandledPointerId===e.pointerId)longPressHandledPointerId=null;
+},true);
 c.addEventListener("contextmenu",e=>{e.preventDefault();if(draft.length){finish();return}const list=chosen();if(!list.length){settingsPopup.style.display="none";$("status").textContent="Select an element first, then right-click to open its settings";return}/* Context settings belong to the current selection. Do not hit-test again here: overlapping elements (for example a gridline over a wall) must not replace the element selected by the preceding left-click. */settingsPopup.style.left=Math.max(6,Math.min(window.innerWidth-220,e.clientX))+"px";settingsPopup.style.top=Math.max(6,Math.min(window.innerHeight-60,e.clientY))+"px";settingsPopup.style.display="block"});
 function zoomAt(clientX,clientY,factor){
  const rect=c.getBoundingClientRect(),mx=clientX-rect.left,my=clientY-rect.top;
