@@ -467,6 +467,7 @@ function elementEditableEdges(el){
  const out=[];
  if(["wall","beam","gridline","dimension"].includes(el.type)&&el.start&&el.end)out.push({a:{key:"start",index:null,point:el.start},b:{key:"end",index:null,point:el.end}});
  if(Array.isArray(el.boundary)&&el.boundary.length>1)for(let i=0;i<el.boundary.length;i++)out.push({a:{key:"boundary",index:i,point:el.boundary[i]},b:{key:"boundary",index:(i+1)%el.boundary.length,point:el.boundary[(i+1)%el.boundary.length]}});
+ for(const key of ["points","vertices","nodes"]){const points=el[key];if(Array.isArray(points)&&points.length>1)for(let i=0;i<points.length-1;i++)out.push({a:{key,index:i,point:points[i]},b:{key,index:i+1,point:points[i+1]}})}
  return out;
 }
 function groupSelected(){const list=chosen();if(list.length<2){$("status").textContent="Select at least two elements to group";return}const id=crypto.randomUUID();hist("Group elements");for(const el of list){el.groupId=id;delete el.gridSystemId;delete el.gridSystemAxis;delete el.gridSystemIndex}selected=new Set(list.map(el=>el.id));scheduleAutoSave();renderProperties();redraw();$("status").textContent=list.length+" elements grouped"}
