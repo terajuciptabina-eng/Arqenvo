@@ -51,7 +51,10 @@ try{
  const navFloatingHeader=await navHeader.boundingBox();
  await tablet.mouse.move(navFloatingHeader.x+15,navFloatingHeader.y+navFloatingHeader.height/2);
  await tablet.mouse.down();await tablet.mouse.move(Math.round(before.nav.x+Math.min(80,before.nav.width/2)),Math.round(before.nav.y+Math.min(80,before.nav.height/2)),{steps:8});await tablet.mouse.up();
- await tablet.waitForFunction(()=>!document.querySelector(".navigator")?.classList.contains("arq-palette-floating"));
+ await tablet.waitForFunction(()=>!document.querySelector(".navigator")?.classList.contains("arq-palette-floating")).catch(async error=>{
+  const diagnostic=await tablet.evaluate(()=>{const e=document.querySelector(".navigator"),r=e?.getBoundingClientRect(),w=document.querySelector(".work")?.getBoundingClientRect(),saved=JSON.parse(localStorage.getItem("arqenvo-palette-navigator")||"{}");return{classes:e?.className,rect:r?{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}:null,work:w?{x:w.x,y:w.y,width:w.width,height:w.height,right:w.right,bottom:w.bottom}:null,saved,header:document.querySelector(".navigator > .section")?.getBoundingClientRect().toJSON()||null}}).catch(e=>({diagnosticError:e.message}));
+  throw new Error("Navigator failed to dock after return drag: "+JSON.stringify(diagnostic)+"; "+error.message);
+ });
  assert.equal(JSON.parse(await tablet.evaluate(()=>localStorage.getItem("arqenvo-palette-navigator"))).mode,"dock","Dropping Navigator back at its dock area should restore its docked layout");
  await tablet.locator("#navigatorToggle").click({force:true});await tablet.waitForFunction(()=>document.querySelector(".work")?.classList.contains("navigator-hidden"));
  const hidden=await tablet.evaluate(()=>({nav:getComputedStyle(document.querySelector(".navigator")).display,inspector:getComputedStyle(document.querySelector(".inspector")).display,toggleHidden:document.querySelector("#navigatorToggle").hidden,workspaceWidth:document.querySelector(".workspace").getBoundingClientRect().width,workWidth:document.querySelector(".work").getBoundingClientRect().width}));
