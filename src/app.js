@@ -1233,6 +1233,8 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  #arqPetPalette .pet-drag-handle{display:flex;align-items:center;justify-content:center;width:14px;align-self:stretch;flex:none;color:#738795;cursor:grab;font-size:17px;touch-action:none;user-select:none}
  #arqPetPalette .pet-separator{background:#d3dce2}
  #arqPetPalette button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:43px;height:46px;padding:4px 5px;border:1px solid transparent;border-radius:6px;background:transparent;color:#455967;font:10px/1.1 Inter,Arial,sans-serif;pointer-events:auto;touch-action:manipulation;position:relative;z-index:1}
+ #arqPetPalette button svg{width:19px;height:19px;display:block;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+ #arqPetPalette button svg rect,#arqPetPalette button svg circle{fill:none;stroke:currentColor}
  #arqPetPalette button:hover,#arqPetPalette button:focus-visible{background:#e3f3f4;border-color:#acd8dc;color:#087e8b;outline:none}
  #arqElementSettingsModal{background:rgba(31,45,56,.28)!important;color:#273640!important}
  #arqElementSettingsModal>div{background:#f5f7f8!important;color:#273640!important;border:1px solid #cbd5dc!important;box-shadow:0 22px 64px #24374630!important}
@@ -1274,7 +1276,11 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
   }
   candidates.sort((a,b)=>a.dist-b.dist);
   const node=candidates[0]||null;
-  return {key:sel+"|"+(node?"node":"element")+"|"+(node?node.el.id+":"+node.key+":"+node.index:""),list,kind:node?"node":"element"};
+  let edge=null;
+  if(pointer&&!node)for(const el of list)for(const segment of elementEditableEdges(el)){const dist=pointSegmentDistance(wpos(pointer),segment.a.point,segment.b.point);if(dist<=12/Math.max(1,scale)&&(!edge||dist<edge.dist))edge={el,segment,dist}}
+  const context=node?"node":edge?"edge":"none";
+  if(context==="none")return {key:"",list:[],kind:"none"};
+  return {key:sel+"|"+context+"|"+(node?node.el.id+":"+node.key+":"+node.index:edge.el.id+":"+edge.segment.a.key+":"+edge.segment.a.index),list,kind:context};
  };
  const positionPalette=()=>{
   const rect=canvas.getBoundingClientRect(),anchor=mouse&&Number.isFinite(mouse.x)&&Number.isFinite(mouse.y)?{x:rect.left+mouse.x,y:rect.top+mouse.y}:{x:rect.left+rect.width/2,y:rect.top+rect.height/2},w=palette.offsetWidth,h=palette.offsetHeight;
@@ -1284,7 +1290,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  };
  const render=()=>{
   const context=currentContext();
-  if(!context.list.length){hide();lastContextKey="";return}
+  if(!context.list.length){hide();lastContextKey="";palette.dataset.positioned="";palette.dataset.userMoved="";return}
   if(context.key===lastContextKey&&palette.style.display==="flex")return;
   const {list}=context,types=[...new Set(list.map(el=>el.type))],relevant=actions.filter(action=>types.every(type=>action.types.includes(type)));
   palette.replaceChildren();
