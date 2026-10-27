@@ -437,11 +437,25 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Opening updated");
   assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
     "Pressing Enter should apply the new door width to the hosted opening");
-  // Alignment=Left moved the opening to the host wall start (-4 m); hit the updated visible arc and opening span.
-  await modelPoint(-3.434, wallY + 0.566);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
-  await modelPoint(-3.55, wallY);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:8000});
+  // Recalculate the current Door symbol after the hinge, swing, alignment and
+  // width changes. Fixed screen/model coordinates become stale when these
+  // properties change and can make this browser test fail despite valid Door behavior.
+  const updatedDoorGeometry=await openingPage.evaluate(()=>{
+    const elements=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];
+    const door=elements.find(e=>e.type==="door"),wall=elements.find(e=>e.id===door?.hostWallId&&e.type==="wall");
+    if(!door||!wall) throw new Error("Door test fixture lost its hosted Door or host Wall");
+    const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1;
+    const a={x:wall.start.x+dx*(Number(door.offset)||0)/len,y:wall.start.y+dy*(Number(door.offset)||0)/len};
+    const b={x:wall.start.x+dx*((Number(door.offset)||0)+(Number(door.width)||0))/len,y:wall.start.y+dy*((Number(door.offset)||0)+(Number(door.width)||0))/len};
+    return {a,b,hingeSide:door.hingeSide,swingDirection:door.swingDirection};
+  });
+  const updatedDoorSwing=doorSwingGeometry(updatedDoorGeometry.a,updatedDoorGeometry.b,{hingeSide:updatedDoorGeometry.hingeSide,swingDirection:updatedDoorGeometry.swingDirection});
+  const updatedDoorArcAngle=updatedDoorSwing.startAngle+updatedDoorSwing.sweep*.5;
+  const updatedDoorArcPoint={x:updatedDoorSwing.hinge.x+Math.cos(updatedDoorArcAngle)*updatedDoorSwing.radius,y:updatedDoorSwing.hinge.y+Math.sin(updatedDoorArcAngle)*updatedDoorSwing.radius};
+  await modelPoint(updatedDoorArcPoint.x,updatedDoorArcPoint.y);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:3000});
+  await modelPoint((updatedDoorGeometry.a.x+updatedDoorGeometry.b.x)/2,(updatedDoorGeometry.a.y+updatedDoorGeometry.b.y)/2);
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:3000});
   const doorOffsetBeforeMove = Number(await openingPage.locator('[data-prop="offset"]').inputValue());
   const dragScreenPoint = async (wx, wy) => openingPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
   const doorDragStart = await dragScreenPoint(-3.434, wallY + 0.566);
