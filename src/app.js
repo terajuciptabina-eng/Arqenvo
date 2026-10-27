@@ -329,7 +329,7 @@ const type=list.every(e=>e.type===list[0].type)?list[0].type:"mixed";
 const multiFields={wall:[["height","Height (m)",.1],["thickness","Thickness (m)",.01],["baseOffset","Base offset (m)",.01]],beam:[["width","Width (m)",.01],["depth","Depth (m)",.01],["elevation","Elevation (m)",.01]],column:[["width","Width (m)",.01],["depth","Depth (m)",.01],["height","Height (m)",.01],["rotation","Rotation (rad)",.01]],slab:[["thickness","Thickness (m)",.01],["elevation","Elevation (m)",.01]],dimension:[["textSizeMm","Text size on paper (mm)",.1]]};
 const safeFields=(multiFields[type]||[]).filter(([key])=>key==="textSizeMm"?list.every(e=>e.type==="dimension"):list.every(e=>Number.isFinite(e[key])));
 const gridSystemId=list[0]?.gridSystemId;
-const isGridSystemSelection=!!gridSystemId&&list.every(e=>e.gridSystemId===gridSystemId);
+const isGridSystemSelection=!!gridSystemId&&list.every(e=>e.type==="gridline"&&e.gridSystemId===gridSystemId&&["vertical","horizontal"].includes(e.gridSystemAxis)&&Number.isInteger(e.gridSystemIndex));
 const gridMembers=isGridSystemSelection?els().filter(e=>e.gridSystemId===gridSystemId):[];
 const getGridSpacing=axis=>{const lines=gridMembers.filter(e=>e.type==="gridline"&&e.gridSystemAxis===axis).sort((a,b)=>a.gridSystemIndex-b.gridSystemIndex);return lines.slice(1).map((line,i)=>(Math.hypot(line.start.x-lines[i].start.x,line.start.y-lines[i].start.y)*1000).toFixed(0)).join(", ")};
 const esc=value=>String(value??"").replaceAll("&","&amp;").replaceAll('"',"&quot;").replaceAll("<","&lt;").replaceAll(">","&gt;");
