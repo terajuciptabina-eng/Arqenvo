@@ -32,7 +32,7 @@ export function formatLengthValue(metres, unitSystem = "metric") {
 }
 
 export function parseLength(value, unitSystem = "metric") {
-  const text = String(value ?? "").trim();
+  const text = String(value ?? "").trim().replaceAll("−","-");
   if (!text) return NaN;
   if (normalizeUnitSystem(unitSystem) === "imperial") {
     const imperial = text.match(/^\s*([+-]?\d+(?:\.\d+)?)\s*(?:ft|feet|′|')?\s*(?:(\d+(?:\.\d+)?)\s*(?:in|inches|″|")?)?\s*$/i);
