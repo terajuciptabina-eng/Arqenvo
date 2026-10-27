@@ -871,7 +871,6 @@ if(tool==="select"&&view==="floor"&&!e.shiftKey){
   $("status").textContent=selected.size>1?"Selected edge · selected connected elements move together":"Selected edge · only this element will change";
   renderProperties();redraw();e.preventDefault();return;
  }
-}
 }if(tool==="wall"){if(!draft.length){draft=[q];wallChainStart=wallGeometryMethod==="continuous"?{x:q.x,y:q.y}:null;wallChainPoints=wallChainStart?[{x:q.x,y:q.y}]:[];wallChainHasSegment=false;floorDrawGesture={pointerId:e.pointerId,tool,startScreen:{x:e.clientX,y:e.clientY},anchor:q,isStart:true,pointerWorld:{x:q.x,y:q.y}};try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{};$("status").textContent=wallGeometryMethod==="rectangle"?"Rectangle start point set — click opposite corner":"Wall start point set — click next point; click the first point to close or press Enter to finish";redraw();return}completeWallGeometry(draft[draft.length-1],q,e);return}
 if(tool==="select"){q=rawPointerWorld;let hit=nearestElement(q);if(tabSelectionIndex>=0){const cycled=tabSelectionCandidates[tabSelectionIndex];if(cycled&&selectionCandidatesAt(q).some(el=>el.id===cycled.id))hit=cycled;else{tabSelectionIndex=-1;tabSelectionCandidates=[]}}
  // Hosted openings are queried first in their saved wall interval. Keep hit testing independent from snap/grid movement.
