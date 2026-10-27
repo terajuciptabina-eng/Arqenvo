@@ -1116,7 +1116,10 @@ function organizeElementSettings(){
  const panels=groups.map((g,i)=>{const d=document.createElement("details");d.className="arq-setting-panel";d.open=i<3;const summary=document.createElement("summary");summary.textContent=g.title;const body=document.createElement("div");body.className="arq-setting-panel-content";d.append(summary,body);return{...g,node:d,body}});
  for(const child of children){
   const label=(child.querySelector("label")?.textContent||child.textContent||"").trim();
-  const group=panels.find(g=>g.match(label))||panels[panels.length-1];
+  // Additional Settings is a fallback only; it must never shadow the later
+  // Identification and Classification groups merely because its matcher is broad.
+  const group=panels.find(g=>g.title!=="Additional Settings"&&g.match(label))
+    ||panels.find(g=>g.title==="Additional Settings");
   group.body.appendChild(child);
  }
  host.replaceChildren(...panels.filter(g=>g.body.childNodes.length).map(g=>g.node));
