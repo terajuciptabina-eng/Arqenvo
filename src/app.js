@@ -1245,7 +1245,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  #arqElementSettingsModal [style*="background:#fff"],#arqElementSettingsModal [style*="background: #fff"],#arqElementSettingsModal [style*="background:#f"],#arqElementSettingsModal [style*="background: #f"]{background:#f8fafb!important}
  #arqElementSettingsModal [style*="border-bottom"],#arqElementSettingsModal [style*="border-top"]{border-color:#dbe3e8!important}
  #arqElementSettingsModal input:focus,#arqElementSettingsModal select:focus,#arqElementSettingsModal textarea:focus{outline:2px solid #6dbfc5!important;outline-offset:1px}
-
+`;
  document.head.appendChild(style);
  const palette=document.createElement("div");palette.id="arqPetPalette";palette.setAttribute("role","toolbar");palette.setAttribute("aria-label","Contextual element actions");document.body.appendChild(palette);
  const icons={
