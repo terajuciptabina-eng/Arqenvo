@@ -483,37 +483,19 @@ function beginConnectedWallEdgeGesture(wall,edge){
 }
 function moveConnectedWallEdge(g,dx,dy){
  const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");if(!wall)return;
- const a={x:g.edgeA.x+dx,y:g.edgeA.y+dy},b={x:g.edgeB.x+dx,y:g.edgeB.y+dy};
- // Set the edited wall from its pointer-down snapshot, avoiding cumulative drift.
- wall.start={x:g.start.x+dx,y:g.start.y+dy};wall.end={x:g.end.x+dx,y:g.end.y+dy};
- const vx=b.x-a.x,vy=b.y-a.y,eps=1e-9;
- const junctions={start:[],end:[]};
- for(const rec of g.neighbors){
+ // Translate the edited edge from its pointer-down snapshot. Shared wall
+ // endpoints follow the same delta; the neighbour's opposite endpoint stays
+ // fixed. Avoid intersecting the translated edge with the neighbour's old axis,
+ // which can leave gaps or detach diagonal wall segments.
+ const movedA={x:g.edgeA.x+dx,y:g.edgeA.y+dy},movedB={x:g.edgeB.x+dx,y:g.edgeB.y+dy};
+ wall.start={x:g.start.x+dx,y:g.start.y+dy};
+ wall.end={x:g.end.x+dx,y:g.end.y+dy};
+ for(const rec of g.neighbors||[]){
   const neighbor=els().find(el=>el.id===rec.id&&el.type==="wall");if(!neighbor)continue;
-  const oldConnected=rec.key==="start"?rec.start:rec.end;
-  const other=rec.key==="start"?rec.end:rec.start;
-  const anchor=rec.connectedTo==="a"?a:b;
-  // Intersect the translated wall axis with the neighbour's original axis.
-  const wx=other.x-oldConnected.x,wy=other.y-oldConnected.y;
-  const den=vx*wy-vy*wx;
-  let point;
-  if(Math.abs(den)>eps){
-   const t=((oldConnected.x-a.x)*wy-(oldConnected.y-a.y)*wx)/den;
-   point={x:a.x+t*vx,y:a.y+t*vy};
-  }else{
-   point={x:anchor.x,y:anchor.y};
-  }
-  // Remember the intersection for the moved wall endpoint as well as its neighbour.
-  const wallEnd=rec.connectedTo==="a"?"start":"end";
-  junctions[wallEnd].push(point);
-  if(rec.key==="start"){neighbor.start={...point};neighbor.end={...rec.end}}
-  else{neighbor.end={...point};neighbor.start={...rec.start}}
+  const point=rec.connectedTo==="a"?movedA:movedB;
+  if(rec.key==="start")neighbor.start={...point};
+  else neighbor.end={...point};
  }
- // Critical: connected endpoints of the dragged wall must meet the recalculated
- // neighbour intersections. Leaving them at the raw pointer translation creates
- // overhanging/undershooting wall ends (as seen in the regression screenshot).
- if(junctions.start.length)wall.start={x:junctions.start.reduce((n,p)=>n+p.x,0)/junctions.start.length,y:junctions.start.reduce((n,p)=>n+p.y,0)/junctions.start.length};
- if(junctions.end.length)wall.end={x:junctions.end.reduce((n,p)=>n+p.x,0)/junctions.end.length,y:junctions.end.reduce((n,p)=>n+p.y,0)/junctions.end.length};
 }
 function elementEditableEdges(el){
  const out=[];
