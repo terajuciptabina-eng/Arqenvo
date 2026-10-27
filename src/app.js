@@ -521,13 +521,16 @@ function elementEditableEdges(el){
 function groupSelected(){const list=chosen();if(list.length<2){$("status").textContent="Select at least two elements to group";return}const id=crypto.randomUUID();hist("Group elements");for(const el of list){el.groupId=id;delete el.gridSystemId;delete el.gridSystemAxis;delete el.gridSystemIndex}selected=new Set(list.map(el=>el.id));scheduleAutoSave();renderProperties();redraw();$("status").textContent=list.length+" elements grouped"}
 function ungroupSelected(){gridlineMoveGesture=null;genericMoveGesture=null;genericNodeMoveGesture=null;genericEdgeMoveGesture=null;openingMoveGesture=null;isPanning=false;panStart=null;const list=chosen();if(!list.length){$("status").textContent="Select grouped elements to ungroup";return}const ids=new Set();for(const el of list){const key=groupKey(el);if(key){for(const member of els())if(groupKey(member)===key)ids.add(member.id)}else ids.add(el.id)}const members=els().filter(el=>ids.has(el.id));if(!members.some(el=>groupKey(el))){$("status").textContent="Selection contains no grouped elements";return}hist("Ungroup elements");for(const el of members){delete el.groupId;delete el.gridSystemId;delete el.gridSystemAxis;delete el.gridSystemIndex}selected=new Set(members.map(el=>el.id));scheduleAutoSave();renderProperties();redraw();$("status").textContent="Group separated into "+members.length+" independently editable elements"}
 function toggleSuspendGroups(){groupsSuspended=!groupsSuspended;const button=document.querySelector('[data-command="suspendGroups"]');if(button){button.classList.toggle("active",groupsSuspended);button.textContent=groupsSuspended?"Resume Groups":"Suspend Groups"}if(!groupsSuspended){const ids=[...selected];selected=new Set();for(const id of ids){const el=els().find(v=>v.id===id);if(el)for(const member of groupMembers(el))selected.add(member.id)}}renderProperties();redraw();$("status").textContent=groupsSuspended?"Suspend Groups enabled · members can be selected individually":"Groups enabled · grouped elements select together"}
-function insertNodeIntoSelectedWall(){
+function insertNodeIntoSelectedWall(requestedPoint=null){
  const list=chosen();
  if(list.length!==1||list[0].type!=="wall"){$("status").textContent="Select one wall edge to insert a node";return}
  const wall=list[0],length=wallLength(wall);
  if(!(length>1e-6))return;
- const midpoint={x:(wall.start.x+wall.end.x)/2,y:(wall.start.y+wall.end.y)/2};
- const firstLength=length/2,secondLength=length-firstLength;
+ const ax=wall.start.x,ay=wall.start.y,dx=wall.end.x-ax,dy=wall.end.y-ay,len2=dx*dx+dy*dy;
+ const t=requestedPoint?Math.max(.02,Math.min(.98,((requestedPoint.x-ax)*dx+(requestedPoint.y-ay)*dy)/len2)):.5;
+ const firstLength=length*t,secondLength=length-firstLength;
+ const midpoint={x:ax+dx*t,y:ay+dy*t};
+ if(firstLength<.01||secondLength<.01){$("status").textContent="Choose a point farther from the wall ends";return}
  const original={...wall,start:{...wall.start},end:{...wall.end},properties:{...(wall.properties||{})},openings:(wall.openings||[]).map(o=>({...o}))};
  const second={...original,id:crypto.randomUUID(),start:{...midpoint},end:{...original.end},properties:{...(original.properties||{})},openings:[]};
  const first={...original,end:{...midpoint},openings:[]};
@@ -551,7 +554,7 @@ function insertNodeIntoSelectedWall(){
  }
  selected=new Set([first.id,second.id]);
  scheduleAutoSave();renderProperties();redraw();
- $("status").textContent="Wall node inserted at midpoint · select the new node to edit";
+ $("status").textContent="Wall node inserted at clicked position · select the new node to edit";
 }
 function stretchSelectedWall(){
  const list=chosen();
@@ -1408,10 +1411,10 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
   candidates.sort((a,b)=>a.dist-b.dist);
   const node=candidates[0]||null;
   let edge=null;
-  if(pointer&&!node)for(const el of list)for(const segment of elementEditableEdges(el)){const dist=pointSegmentDistance(wpos(pointer),segment.a.point,segment.b.point);if(dist<=12/Math.max(1,scale)&&(!edge||dist<edge.dist))edge={el,segment,dist}}
+  if(pointer&&!node)for(const el of list)for(const segment of elementEditableEdges(el)){const world=wpos(pointer),dist=pointSegmentDistance(world,segment.a.point,segment.b.point);if(dist<=12/Math.max(1,scale)&&(!edge||dist<edge.dist)){const a=segment.a.point,b=segment.b.point,dx=b.x-a.x,dy=b.y-a.y,den=dx*dx+dy*dy,t=den?Math.max(0,Math.min(1,((world.x-a.x)*dx+(world.y-a.y)*dy)/den)):0;edge={el,segment,dist,point:{x:a.x+t*dx,y:a.y+t*dy}}}}
   const context=node?"node":edge?"edge":"none";
   if(context==="none")return {key:"",list:[],kind:"none"};
-  return {key:sel+"|"+context+"|"+(node?node.el.id+":"+node.key+":"+node.index:edge.el.id+":"+edge.segment.a.key+":"+edge.segment.a.index),list,kind:context};
+  return {key:sel+"|"+context+"|"+(node?node.el.id+":"+node.key+":"+node.index:edge.el.id+":"+edge.segment.a.key+":"+edge.segment.a.index),list,kind:context,edge};
  };
  const positionPalette=()=>{
   const rect=canvas.getBoundingClientRect(),anchor=mouse&&Number.isFinite(mouse.x)&&Number.isFinite(mouse.y)?{x:rect.left+mouse.x,y:rect.top+mouse.y}:{x:rect.left+rect.width/2,y:rect.top+rect.height/2},w=palette.offsetWidth,h=palette.offsetHeight;
@@ -1439,7 +1442,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    if(index===4){const sep=document.createElement("span");sep.className="pet-separator";palette.append(sep)}
    const button=document.createElement("button");button.type="button";button.dataset.action=action.key;button.innerHTML=icons[action.icon]+'<span>'+action.label+'</span>';button.title=action.label;button.setAttribute("aria-label",action.label);
    button.addEventListener("pointerdown",event=>event.stopPropagation());
-   button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(action.key==="settings"){hide();openElementSettings();return}if(action.key==="stretchWall"){hide();stretchSelectedWall();return}if(action.key==="offsetWall"){hide();offsetSelectedWall();return}if(action.key==="insertWallNode"){hide();insertNodeIntoSelectedWall();return}const command=$(action.key);if(command){hide();command.click();return}$("status").textContent=action.label+" is not available for this selection yet"});
+   button.addEventListener("click",event=>{event.preventDefault();event.stopPropagation();if(action.key==="settings"){hide();openElementSettings();return}if(action.key==="stretchWall"){hide();stretchSelectedWall();return}if(action.key==="offsetWall"){hide();offsetSelectedWall();return}if(action.key==="insertWallNode"){const ctx=currentContext(),edge=ctx.kind==="edge"?ctx.edge:null;hide();insertNodeIntoSelectedWall(edge?.point);return}const command=$(action.key);if(command){hide();command.click();return}$("status").textContent=action.label+" is not available for this selection yet"});
    palette.append(button);
   });
   palette.dataset.context=context.key;palette.dataset.forSelection=selectionKey(list);palette.dataset.kind=context.kind;lastContextKey=context.key;
