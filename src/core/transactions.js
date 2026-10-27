@@ -74,6 +74,20 @@ export class ModelHistory {
     return clone(after);
   }
 
+  /**
+   * Discards the latest committed edit when its prior snapshot matches the
+   * cancelled gesture baseline. It intentionally does not add a redo entry.
+   */
+  discardLast(expectedSnapshot) {
+    const entry = this.#past[this.#past.length - 1];
+    if (!entry) return false;
+    if (expectedSnapshot !== undefined &&
+        JSON.stringify(entry.snapshot) !== JSON.stringify(expectedSnapshot)) return false;
+    this.#past.pop();
+    this.#future = [];
+    return true;
+  }
+
   undo(current) {
     if (!this.canUndo) return null;
     const entry = this.#past.pop();
