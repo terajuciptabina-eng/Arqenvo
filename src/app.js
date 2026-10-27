@@ -499,6 +499,7 @@ function finishElementEditGesture(action="commit"){
   }else if(gesture===openingMoveGesture){
    const el=els().find(v=>v.id===gesture.elementId);if(el){el.offset=gesture.startOffset;const wall=els().find(v=>v.id===gesture.hostWallId&&v.type==="wall"),opening=wall?.openings?.find(o=>o.id===el.id);if(opening)opening.offset=gesture.startOffset}
   }
+  if(gesture.historyStarted&&gesture.modelBefore)modelHistory.discardLast(gesture.modelBefore);
   $("status").textContent="Element edit cancelled";
  }else{
   if(gesture.didMove)scheduleAutoSave();
