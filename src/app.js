@@ -120,11 +120,15 @@ function nearestElement(q){
   const nx=-sdy/slen,ny=sdx/slen,wallPixels=Math.max(1,(Number(host.thickness)||.15)*scale);
   let symbolDistance=Infinity;
   if(el.type==="door"){
-   const g=doorSwingGeometry(a,b,{hingeSide:el.hingeSide,swingDirection:el.swingDirection});
-   const radial=Math.abs(Math.hypot(screenQ.x-g.hinge.x,screenQ.y-g.hinge.y)-g.radius);
-   const angle=Math.atan2(screenQ.y-g.hinge.y,screenQ.x-g.hinge.x);
+   // Door swing direction is authored in model coordinates (Y-up). Build the
+   // leaf there, then transform its endpoints to screen space; constructing
+   // the swing from screen-space endpoints mirrors inside/outside on the Y flip.
+   const g=doorSwingGeometry(aModel,bModel,{hingeSide:el.hingeSide,swingDirection:el.swingDirection});
+   const hinge=spos(g.hinge),openFree=spos(g.openFree);
+   const radial=Math.abs(Math.hypot(q.x-g.hinge.x,q.y-g.hinge.y)-g.radius);
+   const angle=Math.atan2(q.y-g.hinge.y,q.x-g.hinge.x);
    const sweepContains=angleInArc(angle,g.startAngle,g.endAngle,g.anticlockwise);
-   symbolDistance=Math.min(pointSegmentDistance(screenQ,g.hinge,g.openFree),sweepContains?radial:Infinity);
+   symbolDistance=Math.min(pointSegmentDistance(screenQ,hinge,openFree),sweepContains?radial*scale:Infinity);
   }else{
    const offset=wallPixels*.28;
    symbolDistance=Math.min(
@@ -1789,7 +1793,13 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
    const origin=d.dockRect;
-   const returnedToOrigin=!!origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24;
+   const pointerReturnedToOrigin=!!origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24;
+   // During a drag the pointer retains its original grab offset, so it may be
+   // inside the remembered dock slot while the panel rectangle overlaps it.
+   // Check both to make returning a floating Navigator/Toolbox reliably dock.
+   const panelRect=panel.getBoundingClientRect();
+   const panelOverlapsOrigin=!!origin&&panelRect.right>=origin.left-24&&panelRect.left<=origin.right+24&&panelRect.bottom>=origin.top-24&&panelRect.top<=origin.bottom+24;
+   const returnedToOrigin=pointerReturnedToOrigin||panelOverlapsOrigin;
    const originalSide=d.dockSide||d.originSide||state[key].side||(key==='toolbox'?'left':'right');
    // The docked pane occupies a full-height track while floating panes use
    // their own bounded rectangle. If the user releases over the remembered
