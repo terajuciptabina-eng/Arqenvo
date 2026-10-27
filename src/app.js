@@ -486,42 +486,20 @@ function moveConnectedWallEdge(g,dx,dy){
  const wall=els().find(el=>el.id===g.wallId&&el.type==="wall");if(!wall)return;
  const movedStart={x:g.start.x+dx,y:g.start.y+dy};
  const movedEnd={x:g.end.x+dx,y:g.end.y+dy};
- // Move the edited wall from its gesture-start geometry, never from the
- // previous pointer frame. This keeps the transform deterministic.
+ // Apply each pointer frame from the gesture-start geometry.
  wall.start=movedStart;
  wall.end=movedEnd;
- const cross=(a,b)=>a.x*b.y-a.y*b.x;
- const sub=(a,b)=>({x:a.x-b.x,y:a.y-b.y});
- const targetDir=sub(movedEnd,movedStart);
- const originalDir=sub(g.end,g.start);
- const eps=1e-9;
  for(const rec of g.neighbors||[]){
+  // Only explicitly selected neighbouring walls may participate.
   if(!selected.has(rec.id))continue;
   const neighbor=els().find(el=>el.id===rec.id&&el.type==="wall");
   if(!neighbor||!rec.start||!rec.end)continue;
-  // Preserve the neighbour's axis. Recompute the shared corner as the
-  // intersection of its original axis and the translated target-wall axis.
-  // Moving just the shared endpoint by dx/dy bends the neighbour into a V.
-  const neighborDir=sub(rec.end,rec.start);
-  const denominator=cross(targetDir,neighborDir);
-  let junction;
-  if(Math.abs(denominator)>eps){
-   const t=cross(sub(rec.start,movedStart),neighborDir)/denominator;
-   junction={x:movedStart.x+targetDir.x*t,y:movedStart.y+targetDir.y*t};
-  }else{
-   // Parallel/coincident axes have no unique intersection; preserve the
-   // selected neighbour's shape by translating it with the edited endpoint.
-   junction={x:(rec.key==="start"?rec.start:rec.end).x+dx,y:(rec.key==="start"?rec.start:rec.end).y+dy};
-   neighbor.start={x:rec.start.x+dx,y:rec.start.y+dy};
-   neighbor.end={x:rec.end.x+dx,y:rec.end.y+dy};
-   continue;
-  }
-  const originalJunction=rec.key==="start"?rec.start:rec.end;
-  const tx=junction.x-originalJunction.x,ty=junction.y-originalJunction.y;
-  // Translate the whole selected neighbour by the junction delta. Moving
-  // only its shared endpoint would rotate/stretch it and create a kink.
-  neighbor.start={x:rec.start.x+tx,y:rec.start.y+ty};
-  neighbor.end={x:rec.end.x+tx,y:rec.end.y+ty};
+  // Keep the far endpoint fixed and move only the shared endpoint. Translating
+  // the whole neighbour opens a gap at its far end; intersecting axes can also
+  // move the junction away from the edited wall's actual endpoint.
+  const junction=rec.connectedTo==="a"?movedStart:movedEnd;
+  if(rec.key==="start")neighbor.start={x:junction.x,y:junction.y};
+  else neighbor.end={x:junction.x,y:junction.y};
  }
 }
 function elementEditableEdges(el){
