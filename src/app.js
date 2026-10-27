@@ -1339,47 +1339,8 @@ function finishLayoutDrag(){if(!layoutPointerGesture)return;const changed=layout
 c.addEventListener("pointerup",finishLayoutDrag);c.addEventListener("pointercancel",finishLayoutDrag);
 $("gridSystemOpen").addEventListener("click",()=>{if(view!=="floor")setView("floor");initGridPositionEditors();const info=["<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\"/><path d=\"M3 9h18M3 15h18M9 3v18M15 3v18\"/></svg>","Grid System","Configure grid positions, labels, markers and optional structural helpers"];if($("contextToolIcon"))$("contextToolIcon").innerHTML=info[0];if($("contextToolName"))$("contextToolName").textContent=info[1];if($("contextToolHint"))$("contextToolHint").textContent=info[2];$("gridSystemDialog").showModal()});
 $("gridSystemClose").addEventListener("click",()=>$("gridSystemDialog").close());
-// Archicad-style collapsible sections inside Grid System Settings.
-function initGridSettingsSections(){
- const sections=[...gridSystemDialog.querySelectorAll("form>div>section")];
- sections.forEach((section,index)=>{
-  if(section.dataset.collapsibleReady)return;
-  const header=section.firstElementChild;
-  const body=section.children[1];
-  if(!header||!body)return;
-  const title=header.textContent.trim();
-  header.replaceChildren();
-  header.style.cssText+=";display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none;min-height:36px";
-  const chevron=document.createElement("span");
-  chevron.textContent=index===0?"▾":"▸";
-  chevron.setAttribute("aria-hidden","true");
-  chevron.style.cssText="display:inline-block;width:14px;color:#596671;font-size:14px;flex:0 0 14px";
-  const label=document.createElement("span");
-  label.textContent=title;label.style.flex="1";
-  header.append(chevron,label);
-  header.setAttribute("role","button");
-  header.setAttribute("aria-expanded",String(index===0));
-  header.tabIndex=0;
-  const expanded=index===0;
-  body.hidden=!expanded;
-  body.style.display=expanded?"block":"none";
-  const syncHeader=()=>{
-   const open=header.getAttribute("aria-expanded")==="true";
-   body.hidden=!open;
-   body.style.display=open?"block":"none";
-   chevron.textContent=open?"▾":"▸";
-   header.style.borderBottom=open?"1px solid #c6cbd1":"0";
-   header.style.borderRadius=open?"5px 5px 0 0":"5px";
-  };
-  const toggle=()=>{header.setAttribute("aria-expanded",String(header.getAttribute("aria-expanded")!=="true"));syncHeader()};
-  header.addEventListener("click",toggle);
-  header.addEventListener("keydown",event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();toggle()}});
-  syncHeader();
-  section.dataset.collapsibleReady="true";
- });
-}
+
 const gridSystemDialog=$("gridSystemDialog");
-initGridSettingsSections();
 const gridSystemHeader=gridSystemDialog.querySelector("form>header");
 gridSystemDialog.style.position="fixed";
 gridSystemDialog.style.left="50%";
