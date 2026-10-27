@@ -1148,7 +1148,7 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  const style=document.createElement("style");
  style.textContent=`
  #arqPetPalette{position:fixed;z-index:99970;display:none;align-items:center;gap:4px;padding:6px;background:linear-gradient(180deg,#3b4651,#29323b);border:1px solid #56636e;border-radius:9px;box-shadow:0 10px 30px #11182750;color:#e5edf3;max-width:min(94vw,560px);overflow-x:auto;white-space:nowrap;cursor:grab;touch-action:none}
- #arqPetPalette .pet-separator{width:1px;height:30px;background:#52606b;margin:0 3px;flex:none}
+ #arqPetPalette .pet-drag-handle{display:flex;align-items:center;justify-content:center;width:14px;align-self:stretch;flex:none;color:#8396a2;cursor:grab;font-size:17px;touch-action:none} #arqPetPalette .pet-separator{width:1px;height:30px;background:#d3dce2;margin:0 3px;flex:none}
  #arqPetPalette button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:43px;height:46px;padding:4px 5px;border:1px solid transparent;border-radius:6px;background:transparent;color:#e8edf1;font:10px/1.1 Inter,Arial,sans-serif}
  #arqPetPalette button:hover,#arqPetPalette button:focus-visible{background:#4a5a67;border-color:#738493;outline:none}
  #arqPetPalette button svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
@@ -1171,13 +1171,13 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
   {key:"copySelection",label:"Multiply",icon:"multiply",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]},
   {key:"settings",label:"Settings",icon:"settings",types:["wall","slab","zone","column","beam","roof","door","window","gridline","dimension","room"]}
  ];
- const hide=()=>{palette.style.display="none";palette.dataset.userMoved="false"};
+ const hide=()=>{palette.style.display="none";palette.dataset.userMoved="false";palette.dataset.forSelection=""};
  const render=()=>{
   const list=chosen();
   if(!list.length||view!=="floor"||tool!=="select"||elementSettingsModal?.style.display==="flex"){hide();return}
   const types=[...new Set(list.map(el=>el.type))];
   const relevant=actions.filter(a=>types.every(t=>a.types.includes(t)));
-  palette.innerHTML="";
+  palette.innerHTML='<span class="pet-drag-handle" title="Drag palette" aria-label="Drag palette">⠿</span>';
   relevant.forEach((a,index)=>{
    if(index===4){const sep=document.createElement("span");sep.className="pet-separator";palette.append(sep)}
    const b=document.createElement("button");b.type="button";b.innerHTML=icons[a.icon]+'<span>'+a.label+'</span>';b.title=a.label;b.setAttribute("aria-label",a.label);
@@ -1191,7 +1191,8 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
    });
    palette.append(b);
   });
-  if(palette.dataset.userMoved==="true"&&palette.dataset.forSelection===list.map(el=>el.id).sort().join("|"))return;\n  const rect=canvas.getBoundingClientRect(),anchor=mouse&&Number.isFinite(mouse.x)&&Number.isFinite(mouse.y)?{x:rect.left+mouse.x,y:rect.top+mouse.y}:{x:rect.left+rect.width/2,y:rect.top+rect.height/2};
+  if(palette.style.display==="flex"&&palette.dataset.forSelection===list.map(el=>el.id).sort().join("|"))return;
+  const rect=canvas.getBoundingClientRect(),anchor=mouse&&Number.isFinite(mouse.x)&&Number.isFinite(mouse.y)?{x:rect.left+mouse.x,y:rect.top+mouse.y}:{x:rect.left+rect.width/2,y:rect.top+rect.height/2};
   palette.style.display="flex";
   const w=palette.offsetWidth,h=palette.offsetHeight;
   let left=Math.max(6,Math.min(window.innerWidth-w-6,anchor.x+14));
@@ -1215,7 +1216,12 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  #arqElementSettingsModal [style*="background:#fff"],#arqElementSettingsModal [style*="background: #fff"],#arqElementSettingsModal [style*="background:#f"],#arqElementSettingsModal [style*="background: #f"]{background:#f8fafb!important}
  #arqElementSettingsModal [style*="border-bottom"],#arqElementSettingsModal [style*="border-top"]{border-color:#dbe3e8!important}
  #arqElementSettingsModal input:focus,#arqElementSettingsModal select:focus,#arqElementSettingsModal textarea:focus{outline:2px solid #6dbfc5!important;outline-offset:1px}
-`;\n let drag=null;\n palette.addEventListener("pointerdown",e=>{if(e.target.closest("button"))return;const r=palette.getBoundingClientRect();drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:r.left,top:r.top};palette.setPointerCapture?.(e.pointerId);palette.style.cursor="grabbing";e.preventDefault();e.stopPropagation()});\n palette.addEventListener("pointermove",e=>{if(!drag||drag.id!==e.pointerId)return;const left=Math.max(4,Math.min(innerWidth-palette.offsetWidth-4,drag.left+e.clientX-drag.x)),top=Math.max(4,Math.min(innerHeight-palette.offsetHeight-4,drag.top+e.clientY-drag.y));palette.style.left=left+"px";palette.style.top=top+"px";palette.dataset.userMoved="true"});\n const finishDrag=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;palette.style.cursor="grab"};palette.addEventListener("pointerup",finishDrag);palette.addEventListener("pointercancel",finishDrag);\n const info=$("selectionInfo");
+`;
+ let drag=null;
+ palette.addEventListener("pointerdown",e=>{if(e.target.closest("button")||e.target.closest(".pet-drag-handle")===null)return;const r=palette.getBoundingClientRect();drag={id:e.pointerId,x:e.clientX,y:e.clientY,left:r.left,top:r.top};palette.setPointerCapture?.(e.pointerId);palette.style.cursor="grabbing";e.preventDefault();e.stopPropagation()});
+ palette.addEventListener("pointermove",e=>{if(!drag||drag.id!==e.pointerId)return;const left=Math.max(4,Math.min(innerWidth-palette.offsetWidth-4,drag.left+e.clientX-drag.x)),top=Math.max(4,Math.min(innerHeight-palette.offsetHeight-4,drag.top+e.clientY-drag.y));palette.style.left=left+"px";palette.style.top=top+"px";palette.dataset.userMoved="true"});
+ const finishDrag=e=>{if(!drag||drag.id!==e.pointerId)return;drag=null;palette.style.cursor="grab"};palette.addEventListener("pointerup",finishDrag);palette.addEventListener("pointercancel",finishDrag);
+ const info=$("selectionInfo");
  if(info)new MutationObserver(render).observe(info,{childList:true,characterData:true,subtree:true});
  document.addEventListener("pointermove",e=>{
   if(e.target===canvas){const r=canvas.getBoundingClientRect();mouse={x:e.clientX-r.left,y:e.clientY-r.top}}
