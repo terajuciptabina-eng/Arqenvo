@@ -91,6 +91,9 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .context-identity{display:flex;align-items:center;gap:9px;min-width:245px}
 #mobileMagicWand{display:none;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:7px 12px;border:1px solid #8dbfc3;border-radius:5px;background:#d9eef0;color:#145f66;font-weight:700;touch-action:manipulation}
 #mobileMagicWand.active{background:#087e8b;border-color:#087e8b;color:#fff}
+#mobileShiftToggle{display:none;align-items:center;justify-content:center;gap:5px;min-height:38px;padding:7px 12px;border:1px solid #aeb8c0;border-radius:5px;background:#f5f7f8;color:#35414a;font-weight:700;touch-action:manipulation;white-space:nowrap}
+#mobileShiftToggle.active{background:#d9eef0;border-color:#087e8b;color:#145f66;box-shadow:inset 0 0 0 1px #087e8b}
+@media(max-width:1000px){#mobileShiftToggle{display:inline-flex;flex:0 0 auto;font-size:11px;padding:6px 8px;min-height:38px}}
 #mobile3dZoom{display:none;align-items:center;gap:5px}
 #mobile3dZoom button{min-width:38px;min-height:38px;padding:5px 9px;font-weight:700;touch-action:manipulation}
 .context-identity>strong{display:grid;place-items:center;width:32px;height:32px;border:1px solid #a8cbd0;border-radius:4px;background:#d8ecee;color:#176a72;font-size:21px;font-weight:500}
@@ -747,6 +750,7 @@ document.addEventListener("keydown",event=>{
 <div class="context-toolbar" id="contextToolbar" aria-label="Info Box and contextual tool settings">
   <div class="context-identity"><strong id="contextToolIcon">↖</strong><div><b id="contextToolName">Arrow / Select</b><small id="contextToolHint">Select, inspect and edit model elements</small></div></div>
   <button id="mobileMagicWand" type="button" aria-pressed="false" title="Activate Magic Wand for one click">✳ Magic Wand</button>
+  <button id="mobileShiftToggle" type="button" aria-pressed="false" title="Toggle Shift modifier for touch: constrain drawing or lock movement axis">⇧ Shift</button>
   <div id="mobile3dZoom" aria-label="3D touch zoom"><button id="mobile3dZoomOut" type="button" aria-label="Zoom out 3D" title="Zoom out">−</button><span id="mobile3dZoomReadout">100%</span><button id="mobile3dZoomIn" type="button" aria-label="Zoom in 3D" title="Zoom in">＋</button><button id="mobile3dFit" type="button" aria-label="Fit 3D model">Fit</button></div>
   <div class="context-divider"></div>
   <div class="context-control" id="wallHeightControl"><label for="contextHeight">Wall Height</label><div class="context-input"><input id="contextHeight" type="number" min="0.1" step="0.1" value="3.0"><span>m</span></div></div>
