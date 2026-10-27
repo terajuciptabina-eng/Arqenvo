@@ -1340,7 +1340,7 @@ c.addEventListener("pointerup",finishLayoutDrag);c.addEventListener("pointercanc
 $("gridSystemOpen").addEventListener("click",()=>{if(view!=="floor")setView("floor");const info=["<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\"/><path d=\"M3 9h18M3 15h18M9 3v18M15 3v18\"/></svg>","Grid System","Configure grid intervals, axis labels, markers and optional structural helpers"];if($("contextToolIcon"))$("contextToolIcon").innerHTML=info[0];if($("contextToolName"))$("contextToolName").textContent=info[1];if($("contextToolHint"))$("contextToolHint").textContent=info[2];$("gridSystemDialog").showModal()});
 $("gridSystemClose").addEventListener("click",()=>$("gridSystemDialog").close());
 const gridSystemDialog=$("gridSystemDialog");
-const gridSystemHeader=gridSystemDialog.querySelector("form>div:first-child");
+const gridSystemHeader=gridSystemDialog.querySelector("form>header");
 gridSystemDialog.style.position="fixed";
 gridSystemDialog.style.left="50%";
 gridSystemDialog.style.top="50%";
