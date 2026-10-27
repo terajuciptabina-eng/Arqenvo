@@ -701,7 +701,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 <details class="menu-group"><summary>View</summary><div class="menu-pop"><button data-view-command="floor">Floor Plan (F2)</button><button data-view-command="3d">3D Window (F3)</button><button data-command="zoomFit">Fit in Window</button></div></details>
 <details class="menu-group"><summary>Design</summary><div class="menu-pop"><button data-tool-command="select">Arrow / Select</button><button data-tool-command="marquee">Marquee Tool</button><button data-tool-command="wall">Wall Tool</button><button data-tool-command="slab">Slab Tool</button><button data-tool-command="zone">Zone Tool</button><button data-tool-command="column">Column Tool</button><button data-tool-command="beam">Beam Tool</button><button data-tool-command="door">Door Tool</button><button data-tool-command="window">Window Tool</button></div></details>
 <details class="menu-group"><summary>Document</summary><div class="menu-pop"><button data-command="exportSection">Extract Section CSV</button><button data-command="validateModel">Validate Model</button><button data-command="exportSchedule">Export Schedule CSV</button></div></details>
-<details class="menu-group"><summary>Window</summary><div class="menu-pop"><button data-panel-command="toolbox">Toolbox</button><button data-panel-command="navigator">Navigator panel</button><button data-panel-command="inspector">Info Box / Properties</button></div></details>
+<details class="menu-group"><summary>Window</summary><div class="menu-pop"><button data-panel-command="toolbox">Toolbox</button><button data-panel-command="navigator">Navigator panel</button><button data-panel-command="inspector">Info Box / Properties</button><hr><button id="resetWorkspaceLayout" type="button">Reset Workspace Layout</button></div></details>
 <details class="menu-group"><summary>Help</summary><div class="menu-pop help-menu"><strong>ARQENVO BIM Workspace</strong><span>F2 Floor Plan · F3 3D Window</span><span>Space-drag / middle mouse: Pan</span><span>3D left-drag: Orbit · Wheel: Zoom</span><span>Esc: Finish / cancel command</span></div></details>
 </nav>
 <script>
@@ -715,6 +715,18 @@ document.querySelectorAll(".menu-group").forEach(group=>{
   document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
   if(wasOpen){event.preventDefault();group.open=false}
  });
+});
+document.getElementById("resetWorkspaceLayout")?.addEventListener("click",()=>{
+ document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);
+ if(!confirm("Reset Arqenvo workspace panels and UI layout to the first-open defaults? Your project and drawing will not be deleted."))return;
+ try{
+  ["toolbox","navigator","inspector"].forEach(key=>{
+   localStorage.removeItem("arqenvo-palette-"+key);
+   localStorage.removeItem("arqenvo-"+key+"-width");
+   localStorage.removeItem("arqenvo-"+key+"-height");
+  });
+ }catch(error){alert("Could not reset saved UI layout: "+error.message);return}
+ location.reload();
 });
 document.addEventListener("pointerdown",event=>{
  if(!event.target.closest(".menu"))document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);
