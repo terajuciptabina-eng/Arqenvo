@@ -677,7 +677,8 @@ c.addEventListener("pointermove",e=>{const r=c.getBoundingClientRect();if(roomLa
  const g=genericNodeMoveGesture;
  if(Math.hypot(e.clientX-g.startClient.x,e.clientY-g.startClient.y)>3){
   const raw=wpos({x:e.clientX-r.left,y:e.clientY-r.top});let q=snapPoint(raw);
-  if(e.shiftKey||shiftHeld){if(!g.axisLock)g.axisLock=Math.abs(raw.x-g.startPoint.x)>=Math.abs(raw.y-g.startPoint.y)?"x":"y";if(g.axisLock==="x")q={x:q.x,y:g.startPoint.y};else q={x:g.startPoint.x,y:q.y}}else g.axisLock=null;
+  if(e.shiftKey||shiftHeld){if(!g.axisLock)g.axisLock=Math.abs(raw.x-g.startPoint.x)>=Math.abs(raw.y-g.startPoint.y)?"x":"y"}else if(!g.axisLockByKey)g.axisLock=null;
+  if(g.axisLock==="x")q={x:q.x,y:g.startPoint.y};else if(g.axisLock==="y")q={x:g.startPoint.x,y:q.y};
   const dx=q.x-g.startPoint.x,dy=q.y-g.startPoint.y;
   if(Math.hypot(dx,dy)>1e-9){
    const el=els().find(v=>v.id===g.elementId);
@@ -695,7 +696,8 @@ if(genericEdgeMoveGesture&&genericEdgeMoveGesture.pointerId===e.pointerId){
  const g=genericEdgeMoveGesture;
  if(Math.hypot(e.clientX-g.startClient.x,e.clientY-g.startClient.y)>3){
   const current=wpos({x:e.clientX-r.left,y:e.clientY-r.top});let dx=current.x-g.startWorld.x,dy=current.y-g.startWorld.y;
-  if(e.shiftKey||shiftHeld){if(!g.axisLock)g.axisLock=Math.abs(dx)>=Math.abs(dy)?"x":"y";if(g.axisLock==="x")dy=0;else dx=0}else g.axisLock=null;
+  if(e.shiftKey||shiftHeld){if(!g.axisLock)g.axisLock=Math.abs(dx)>=Math.abs(dy)?"x":"y"}else if(!g.axisLockByKey)g.axisLock=null;
+  if(g.axisLock==="x")dy=0;else if(g.axisLock==="y")dx=0;
   if(p.settings?.snap!==false){const step=Math.max(.1,Number($("grid")?.value)||.5);if(!g.axisLock||g.axisLock==="x")dx=Math.round((g.startWorld.x+dx)/step)*step-g.startWorld.x;if(!g.axisLock||g.axisLock==="y")dy=Math.round((g.startWorld.y+dy)/step)*step-g.startWorld.y}
   if(Math.hypot(dx,dy)>1e-9){if(!g.historyStarted){hist("Move connected edge");g.historyStarted=true}applyConnectedNodeMove(g.pointRecords,dx,dy);g.didMove=true;$("status").textContent="Moving edge · connected nodes move together";redraw()}
  }
@@ -972,11 +974,8 @@ window.addEventListener("keydown",e=>{
   e.preventDefault();commitAndDeselect("Enter");return;
  }
  if(pendingGridSystem&&e.key==="Escape"){pendingGridSystem=null;$("status").textContent="Grid System placement cancelled";redraw();e.preventDefault();return}
- if(genericMoveGesture&&view==="floor"&&e.key==="Escape"){e.preventDefault();finishElementEditGesture("cancel");return}
- if((boundaryPointMoveGesture||gridlinePointMoveGesture||wallPointMoveGesture||gridlineMoveGesture||genericMoveGesture||openingMoveGesture)&&view==="floor"&&e.key==="Escape"){e.preventDefault();finishElementEditGesture("cancel");return}
- if(gridlinePointMoveGesture&&view==="floor"&&["x","y"].includes(e.key.toLowerCase())){gridlinePointMoveGesture.axisLock=e.key.toLowerCase();$("status").textContent="Adjusting connected Gridline node · "+gridlinePointMoveGesture.axisLock.toUpperCase()+" axis locked";e.preventDefault();redraw();return}
- if(gridlineMoveGesture&&view==="floor"&&["x","y"].includes(e.key.toLowerCase())){gridlineMoveGesture.axisLock=e.key.toLowerCase();$("status").textContent="Moving Gridline · "+gridlineMoveGesture.axisLock.toUpperCase()+" axis locked";e.preventDefault();redraw();return}
- if(wallPointMoveGesture&&view==="floor"&&["x","y"].includes(e.key.toLowerCase())){wallPointMoveGesture.axisLock=e.key.toLowerCase();$("status").textContent="Moving connected node · "+wallPointMoveGesture.axisLock.toUpperCase()+" axis locked";e.preventDefault();redraw();return}
+ if((activeEditGesture()||releasedTouchEditPending)&&view==="floor"&&e.key==="Escape"){e.preventDefault();finishElementEditGesture("cancel");return}
+ if((genericNodeMoveGesture||genericEdgeMoveGesture||gridlineMoveGesture||genericMoveGesture)&&view==="floor"&&["x","y"].includes(e.key.toLowerCase())){const g=genericNodeMoveGesture||genericEdgeMoveGesture||gridlineMoveGesture||genericMoveGesture;g.axisLock=e.key.toLowerCase();g.axisLockByKey=true;$("status").textContent="Editing geometry · "+g.axisLock.toUpperCase()+" axis locked";e.preventDefault();redraw();return}
  if(e.key==="Shift"&&!shiftHeld){shiftHeld=true;shiftAngleLock=null;if(view==="floor"&&draft.length&&mouse){const cursor=wpos(mouse),anchor=draft[draft.length-1],reference=shiftReferencePoint(cursor,anchor);shiftAngleLock=lockCursorAxis(reference,cursor)}if(draft.length&&view==="floor")redraw()}
  if(e.key==="Tab"&&tool==="select"&&view==="floor"&&!/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName||"")&&mouse){
   const q=wpos(mouse),candidates=selectionCandidatesAt(q);
