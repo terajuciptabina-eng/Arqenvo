@@ -631,7 +631,7 @@ const transform=(e,skipHostedOpening=false)=>{
   const host=els().find(v=>v.id===e.hostWallId&&v.type==="wall");
   if(host){const len=wallLength(host);if(len>1e-8){const center={x:host.start.x+(host.end.x-host.start.x)*(e.offset+e.width/2)/len,y:host.start.y+(host.end.y-host.start.y)*(e.offset+e.width/2)/len},target=point(center),ux=(host.end.x-host.start.x)/len,uy=(host.end.y-host.start.y)/len;e.offset=Math.max(0,Math.min(len-e.width,(target.x-host.start.x)*ux+(target.y-host.start.y)*uy-e.width/2))}}
  }
- if(mode==="rotate"&&Number.isFinite(e.rotation))e.rotation+=angle;if(mode==="mirror"&&Number.isFinite(e.rotation))e.rotation=-e.rotation;
+ if(mode==="rotate"&&Number.isFinite(e.rotation))e.rotation+=angle;if(mode==="mirror"&&Number.isFinite(e.rotation))e.rotation=axisStart&&axisEnd?2*Math.atan2(axisEnd.y-axisStart.y,axisEnd.x-axisStart.x)-e.rotation:-e.rotation;
 }
 hist();
 if(mode==="copy"){
@@ -1126,6 +1126,7 @@ function finishRotatedMarquee(){if(marqueeDraftPoints.length!==3)return false;co
 /* Keep Escape inside the CAD workspace instead of letting Safari handle it as a browser-level command. Cmd+Escape follows the same app action where the platform delivers it to the page. */
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){e.preventDefault()}},true);
 window.addEventListener("keydown",e=>{
+ if(e.key==="Escape"&&transformInteraction){transformInteraction=null;$("status").textContent="Transform cancelled";redraw();e.preventDefault();return}
  if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="a"&&!/INPUT|TEXTAREA|SELECT/.test(e.target?.tagName||"")&&!e.target?.isContentEditable){
   e.preventDefault();
   if(lastMarqueeRect&&view==="floor"){
