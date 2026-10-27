@@ -716,9 +716,49 @@ function finish(){if(tool==="slab"&&draft.length>=3){try{hist();els().push(creat
 c.addEventListener("dblclick",e=>{if(tool==="wall"&&wallGeometryMethod==="continuous"){e.preventDefault();draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;redraw();$("status").textContent="Continuous wall drawing finished";return}finish()});
 const settingsPopup=document.createElement("div");settingsPopup.id="arqContextMenu";settingsPopup.style.cssText="position:fixed;z-index:99999;display:none;min-width:190px;padding:5px;background:var(--panel,#fff);border:1px solid var(--border,#cbd5dc);border-radius:7px;box-shadow:0 8px 28px #0003;color:var(--text,#27323a);font:13px Arial,sans-serif";settingsPopup.innerHTML='<button type="button" data-context-action="settings" style="display:block;width:100%;padding:9px 12px;text-align:left;border:0;background:transparent;color:inherit;cursor:pointer;border-radius:4px">Element Settings <span style="float:right;opacity:.65">↗</span></button>';document.body.appendChild(settingsPopup);
 const elementSettingsModal=document.createElement("div");elementSettingsModal.id="arqElementSettingsModal";elementSettingsModal.style.cssText="position:fixed;inset:0;z-index:99998;display:none;align-items:center;justify-content:center;padding:20px;background:rgba(22,29,35,.38)";elementSettingsModal.innerHTML='<section role="dialog" aria-modal="true" aria-labelledby="arqElementSettingsTitle" style="display:flex;flex-direction:column;width:min(430px,calc(100vw - 24px));height:min(860px,88dvh);max-height:88dvh;background:var(--panel,#f6f7f8);color:var(--text,#26313b);border:1px solid #aeb8c1;border-radius:5px;box-shadow:0 18px 60px #0004;overflow:hidden"><header style="display:flex;align-items:center;gap:12px;padding:12px 16px;background:#e9edf0;border-bottom:1px solid #c5cbd1"><strong id="arqElementSettingsTitle" style="flex:1;font-size:14px">Element Settings</strong><span id="arqElementSettingsType" style="font-size:11px;color:#59656e"></span><button type="button" data-settings-close aria-label="Close Element Settings" style="padding:5px 10px">✕</button></header><div data-settings-body style="display:block;flex:1 1 auto;min-height:0;padding:10px 14px;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain"></div><footer style="display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;border-top:1px solid #c5cbd1;background:#f0f2f4"><button type="button" data-settings-close>Close</button></footer></section>';document.body.appendChild(elementSettingsModal);
-const settingsBody=elementSettingsModal.querySelector("[data-settings-body]");let settingsHostPlaceholder=null,settingsHostParent=null,settingsHostNext=null;
+const settingsBody=elementSettingsModal.querySelector("[data-settings-body]");
+const settingsStyle=document.createElement("style");
+settingsStyle.textContent=`
+#arqElementSettingsModal [role="dialog"]{width:430px!important;max-width:calc(100vw - 24px)!important;height:min(860px,88dvh)!important;max-height:88dvh!important}
+#arqElementSettingsModal [data-settings-body]{padding:12px!important;background:#f4f5f6;overscroll-behavior:contain}
+#arqElementSettingsModal #elementProperties{display:block!important;width:100%!important;min-width:0!important;box-sizing:border-box!important}
+#arqElementSettingsModal #elementProperties .field{display:flex;flex-direction:column;gap:4px;margin:0;padding:9px 10px;border-bottom:1px solid #e0e4e7;min-width:0}
+#arqElementSettingsModal #elementProperties .field label{display:block;margin:0;color:#5d6974;font-size:11px;font-weight:600;line-height:1.35}
+#arqElementSettingsModal #elementProperties .field input,#arqElementSettingsModal #elementProperties .field select{display:block;box-sizing:border-box;width:100%;min-width:0;min-height:32px;padding:6px 8px;border:1px solid #c3cbd2;border-radius:4px;background:#fff;color:#26313b;font:12px Arial,sans-serif}
+#arqElementSettingsModal #elementProperties .field input:focus,#arqElementSettingsModal #elementProperties .field select:focus{outline:2px solid #b9e1e4;border-color:#087e8b}
+#arqElementSettingsModal .arq-setting-panel{margin:0 0 9px;border:1px solid #d0d6dc;border-radius:5px;background:#fff;overflow:hidden}
+#arqElementSettingsModal .arq-setting-panel>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:8px;padding:11px 12px;background:#e9edf0;color:#2d3943;font-size:11px;font-weight:700;letter-spacing:.035em;text-transform:uppercase}
+#arqElementSettingsModal .arq-setting-panel>summary::-webkit-details-marker{display:none}
+#arqElementSettingsModal .arq-setting-panel>summary:before{content:"▸";color:#087e8b;font-size:13px}
+#arqElementSettingsModal .arq-setting-panel[open]>summary:before{content:"▾"}
+#arqElementSettingsModal .arq-setting-panel-content{padding:2px 8px 8px}
+#arqElementSettingsModal #elementProperties>p{margin:8px 2px;color:#66727c;font-size:11px;line-height:1.45}
+#arqElementSettingsModal #elementProperties>button{margin:8px 0;padding:8px 11px;border:1px solid #b9c4cc;border-radius:4px;background:#edf2f4;color:#26313b;font-weight:600;cursor:pointer}
+@media(max-width:520px){#arqElementSettingsModal{padding:8px!important}#arqElementSettingsModal [role="dialog"]{max-width:calc(100vw - 16px)!important;height:92dvh!important;max-height:92dvh!important}}
+`;
+document.head.appendChild(settingsStyle);
+let settingsHostPlaceholder=null,settingsHostParent=null,settingsHostNext=null;
+function organizeElementSettings(){
+ const host=$("elementProperties");if(!host||elementSettingsModal.style.display!=="flex")return;
+ if(host.querySelector(".arq-setting-panel"))return;
+ const children=[...host.children];if(!children.length)return;
+ const groups=[
+  {title:"Identification",match:l=>/element type|zone number|room name|grid axis label/i.test(l)},
+  {title:"Classification & Properties",match:l=>/classification|building material|category/i.test(l)},
+  {title:"Geometry & Positioning",match:l=>/height|thickness|width|depth|elevation|offset|pitch|sill|rotation|position|start point|end point|\b[xy]\b|vertical grid intervals|horizontal grid intervals/i.test(l)},
+  {title:"Display & Annotation",match:l=>/text size|hinge|opening direction|position on host wall/i.test(l)},
+  {title:"Additional Settings",match:()=>true}
+ ];
+ const panels=groups.map((g,i)=>{const d=document.createElement("details");d.className="arq-setting-panel";d.open=i<3;const summary=document.createElement("summary");summary.textContent=g.title;const body=document.createElement("div");body.className="arq-setting-panel-content";d.append(summary,body);return{...g,node:d,body}});
+ for(const child of children){
+  const label=(child.querySelector("label")?.textContent||child.textContent||"").trim();
+  const group=panels.find(g=>g.match(label))||panels[panels.length-1];
+  group.body.appendChild(child);
+ }
+ host.replaceChildren(...panels.filter(g=>g.body.childNodes.length).map(g=>g.node));
+}
 function closeElementSettings(){elementSettingsModal.style.display="none";if(settingsHostPlaceholder?.parentNode){settingsHostPlaceholder.parentNode.insertBefore($("elementProperties"),settingsHostPlaceholder);settingsHostPlaceholder.remove()}else if(settingsHostParent){settingsHostParent.insertBefore($("elementProperties"),settingsHostNext&&settingsHostNext.parentNode===settingsHostParent?settingsHostNext:null)}settingsHostPlaceholder=null;settingsHostParent=null;settingsHostNext=null;renderProperties()}
-function openElementSettings(){const list=chosen();if(!list.length){$("status").textContent="Select an element first";return false}settingsPopup.style.display="none";const host=$("elementProperties");if(!host)return false;settingsHostParent=host.parentNode;settingsHostNext=host.nextSibling;settingsHostPlaceholder=document.createComment("elementProperties original position");settingsHostParent.insertBefore(settingsHostPlaceholder,host);settingsBody.appendChild(host);host.style.width="100%";host.style.minWidth="0";host.style.boxSizing="border-box";renderProperties();elementSettingsModal.querySelector("#arqElementSettingsType").textContent=list.length===1?(list[0].type.charAt(0).toUpperCase()+list[0].type.slice(1)):list.length+" elements selected";elementSettingsModal.style.display="flex";$("status").textContent=list.length===1?"Element Settings":"Settings · "+list.length+" selected elements";return true}
+function openElementSettings(){const list=chosen();if(!list.length){$("status").textContent="Select an element first";return false}settingsPopup.style.display="none";const host=$("elementProperties");if(!host)return false;settingsHostParent=host.parentNode;settingsHostNext=host.nextSibling;settingsHostPlaceholder=document.createComment("elementProperties original position");settingsHostParent.insertBefore(settingsHostPlaceholder,host);settingsBody.appendChild(host);host.style.width="100%";host.style.minWidth="0";host.style.boxSizing="border-box";renderProperties();elementSettingsModal.style.display="flex";organizeElementSettings();elementSettingsModal.querySelector("#arqElementSettingsType").textContent=list.length===1?(list[0].type.charAt(0).toUpperCase()+list[0].type.slice(1)):list.length+" elements selected";elementSettingsModal.style.display="flex";organizeElementSettings();$("status").textContent=list.length===1?"Element Settings":"Settings · "+list.length+" selected elements";return true}
 settingsPopup.querySelector('[data-context-action="settings"]').addEventListener("click",openElementSettings);
 elementSettingsModal.querySelectorAll("[data-settings-close]").forEach(button=>button.addEventListener("click",closeElementSettings));elementSettingsModal.addEventListener("pointerdown",e=>{if(e.target===elementSettingsModal)closeElementSettings()});
 document.addEventListener("pointerdown",e=>{if(!settingsPopup.contains(e.target))settingsPopup.style.display="none"},true);
