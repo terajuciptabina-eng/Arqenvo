@@ -846,7 +846,7 @@ if(tool==="select"&&view==="floor"&&!e.shiftKey){
  if(nodeHits.length){
   const h=nodeHits[0];
   const connectedPoints=captureConnectedNode(h.point,selected.size>1?undefined:h.el.id)
-    .filter(rec=>selected.size>1?selected.has(rec.id):rec.id===h.el.id);
+   .filter(rec=>selected.size>1?selected.has(rec.id):rec.id===h.el.id);
   genericNodeMoveGesture={pointerId:e.pointerId,elementId:h.el.id,key:h.key,index:h.index,role:h.role,startPoint:{...h.point},connectedPoints,startClient:{x:e.clientX,y:e.clientY},didMove:false,historyStarted:false,axisLock:null,modelBefore:structuredClone(p)};
   try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{}
   $("status").textContent=selected.size>1?"Selected node · selected connected elements move together":"Selected node · only this element will change";
@@ -863,8 +863,8 @@ if(tool==="select"&&view==="floor"&&!e.shiftKey){
  if(edgeHits.length){
   const h=edgeHits[0];
   const pointRecords=selected.size>1
-    ?captureConnectedNodes([h.edge.a.point,h.edge.b.point]).filter(rec=>selected.has(rec.id))
-    :[];
+   ?captureConnectedNodes([h.edge.a.point,h.edge.b.point]).filter(rec=>selected.has(rec.id))
+   :[];
   const wallEdge=h.el.type==="wall"?beginConnectedWallEdgeGesture(h.el,h.edge):null;
   genericEdgeMoveGesture={pointerId:e.pointerId,elementId:h.el.id,elementType:h.el.type,edge:{a:{...h.edge.a.point},b:{...h.edge.b.point}},wallEdge,pointRecords,startWorld:{...wpos(screenPoint)},startClient:{x:e.clientX,y:e.clientY},didMove:false,historyStarted:false,axisLock:null,modelBefore:structuredClone(p)};
   try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{}
