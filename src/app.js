@@ -1102,22 +1102,33 @@ settingsStyle.textContent=`
 document.head.appendChild(settingsStyle);
 let settingsHostPlaceholder=null,settingsHostParent=null,settingsHostNext=null;
 function organizeElementSettings(){
- const host=$("elementProperties");if(!host||elementSettingsModal.style.display!=="flex")return;
- if(host.querySelector(".arq-setting-panel"))return;
- const children=[...host.children];if(!children.length)return;
+ const host=$("elementProperties");
+ if(!host||elementSettingsModal.style.display!=="flex")return;
+ // Rebuild groups on every opening/render. Do not early-return on existing panels:
+ // renderProperties() may refresh fields while the modal remains open.
+ const children=[];
+ for(const child of [...host.children]){
+  if(child.matches(".arq-setting-panel")){
+   const body=child.querySelector(".arq-setting-panel-content");
+   if(body)children.push(...body.children);
+  }else children.push(child);
+ }
  const groups=[
-  // Standard order requested for every element's settings, matching an Archicad-style workflow.
-  {title:"Geometry & Positioning",match:l=>/height|thickness|width|depth|length|elevation|offset|pitch|sill|rotation|position|start point|end point|\b[xy]\b|vertical grid intervals|horizontal grid intervals|area|base level|top level/i.test(l)},
-  {title:"Display & Annotation",match:l=>/text size|hinge|opening direction|position on host wall|line type|pen|display|symbol|dimension text|line weight/i.test(l)},
+  {title:"Geometry & Positioning",match:l=>/^(?!.*position on host wall).*?(height|thickness|width|depth|length|elevation|offset|pitch|sill|rotation|position|start point|end point|\b[xy]\b|vertical grid intervals|horizontal grid intervals|area|base level|top level)/i.test(l)},
+  {title:"Display & Annotation",match:l=>/hinge|opening direction|position on host wall|text size|line type|pen|display|symbol|dimension text|line weight|annotation/i.test(l)},
   {title:"Additional Settings",match:()=>true},
-  {title:"Identification",match:l=>/element type|zone number|room name|grid axis label|element id/i.test(l)},
-  {title:"Classification & Properties",match:l=>/classification|building material|category|structure|composite|surface|layer/i.test(l)}
+  {title:"Identification",match:l=>/element type|zone number|room name|grid axis label|element id|identifier|id\b/i.test(l)},
+  {title:"Classification & Properties",match:l=>/classification|building material|category|structure|composite|surface|layer|property/i.test(l)}
  ];
- const panels=groups.map((g,i)=>{const d=document.createElement("details");d.className="arq-setting-panel";d.open=i<3;const summary=document.createElement("summary");summary.textContent=g.title;const body=document.createElement("div");body.className="arq-setting-panel-content";d.append(summary,body);return{...g,node:d,body}});
+ const panels=groups.map((g,i)=>{
+  const node=document.createElement("details");node.className="arq-setting-panel";node.open=i<3;
+  const summary=document.createElement("summary");summary.textContent=g.title;
+  const body=document.createElement("div");body.className="arq-setting-panel-content";
+  node.append(summary,body);return{...g,node,body};
+ });
  for(const child of children){
-  const label=(child.querySelector("label")?.textContent||child.textContent||"").trim();
-  // Additional Settings is a fallback only; it must never shadow the later
-  // Identification and Classification groups merely because its matcher is broad.
+  const label=(child.querySelector("label")?.textContent||child.textContent||"").replace(/\s+/g," ").trim();
+  // Match specific categories before the catch-all Additional Settings group.
   const group=panels.find(g=>g.title!=="Additional Settings"&&g.match(label))
     ||panels.find(g=>g.title==="Additional Settings");
   group.body.appendChild(child);
