@@ -40,6 +40,22 @@ test("deserialization exposes wall-hosted openings as selectable project element
  assert.equal(selectable.storyId,wall.storyId);
  assert.equal(loaded.elements.filter(el=>el.id===door.id).length,1,"Normalization must not duplicate an already top-level opening");
 });
+test("deserialization reconciles standalone door data back into its host wall opening", () => {
+ const p=createProject("Hosted opening reconciliation");
+ const wall=createWall({x:0,y:0},{x:4,y:0},{storyId:p.stories[0].id});
+ const door=addOpening(wall,"door",1,.9,2.1);
+ door.hingeSide="right"; door.swingDirection="outside";
+ p.elements.push(wall,{...door,hostWallId:wall.id,storyId:wall.storyId});
+ const serialized=JSON.parse(serializeProject(p));
+ serialized.elements.find(el=>el.type==="wall").openings=[];
+ const loaded=deserializeProject(JSON.stringify(serialized));
+ const host=loaded.elements.find(el=>el.id===wall.id);
+ const opening=host.openings.find(el=>el.id===door.id);
+ assert.ok(opening,"The host wall must regain the opening from its selectable Door element");
+ assert.equal(opening.hingeSide,"right");
+ assert.equal(opening.swingDirection,"outside");
+ assert.equal(loaded.elements.filter(el=>el.id===door.id).length,2,"Exactly one host-wall record and one selectable record must remain");
+});
 test("element schedule reports quantities by story", () => {
  const p=createProject(); p.elements.push(createWall({x:0,y:0},{x:2,y:0})); const rows=elementSchedule(p); assert.equal(rows[0].story,"Ground Floor"); assert.equal(rows[0].length,2); assert.equal(rows[0].area,6);
 });
