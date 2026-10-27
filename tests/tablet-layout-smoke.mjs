@@ -50,7 +50,7 @@ try{
  assert.equal(JSON.parse(await tablet.evaluate(()=>localStorage.getItem("arqenvo-palette-navigator"))).mode,"float","Navigator header should allow moving to a floating position");
  const navFloatingHeader=await navHeader.boundingBox();
  await tablet.mouse.move(navFloatingHeader.x+15,navFloatingHeader.y+navFloatingHeader.height/2);
- await tablet.mouse.down();await tablet.mouse.move(Math.round(before.nav.x+Math.min(80,before.nav.width/2)),Math.max(35,navFloatingHeader.y+navFloatingHeader.height/2),{steps:8});await tablet.mouse.up();
+ await tablet.mouse.down();await tablet.mouse.move(Math.round(before.nav.x+Math.min(80,before.nav.width/2)),Math.round(before.nav.y+Math.min(80,before.nav.height/2)),{steps:8});await tablet.mouse.up();
  await tablet.waitForFunction(()=>!document.querySelector(".navigator")?.classList.contains("arq-palette-floating"));
  assert.equal(JSON.parse(await tablet.evaluate(()=>localStorage.getItem("arqenvo-palette-navigator"))).mode,"dock","Dropping Navigator back at its dock area should restore its docked layout");
  await tablet.locator("#navigatorToggle").click({force:true});await tablet.waitForFunction(()=>document.querySelector(".work")?.classList.contains("navigator-hidden"));
