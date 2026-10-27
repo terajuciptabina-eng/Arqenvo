@@ -447,6 +447,7 @@ function applyConnectedNodeMove(records,dx,dy){
 function elementEditablePoints(el){
  const out=[],add=(key,index,point,role="node")=>{if(point&&Number.isFinite(point.x)&&Number.isFinite(point.y))out.push({key,index,point,role})};
  if(["wall","beam","gridline","dimension"].includes(el.type)){add("start",null,el.start);add("end",null,el.end)}
+ if(el.type==="dimension"){add("witnessStart",null,el.witnessStart);add("witnessEnd",null,el.witnessEnd)}
  if(el.type==="column")add("position",null,el.position);
  if(Array.isArray(el.boundary))el.boundary.forEach((point,index)=>add("boundary",index,point));
  for(const key of ["points","vertices","nodes"])if(Array.isArray(el[key]))el[key].forEach((point,index)=>add(key,index,point));
@@ -478,14 +479,15 @@ let dx=0,dy=0,angle=0,axis="x";
 if(mode==="move"||mode==="copy"){dx=number(mode==="copy"?"Duplicate offset X (m)":"Move distance X (m)",1);if(dx===null)return;dy=number(mode==="copy"?"Duplicate offset Y (m)":"Move distance Y (m)",0);if(dy===null)return}
 if(mode==="rotate"){angle=number("Rotation angle (degrees)",90);if(angle===null)return;angle=angle*Math.PI/180}
 if(mode==="mirror"){const a=prompt("Mirror axis: type x for horizontal axis or y for vertical axis","y");if(a===null)return;axis=a.toLowerCase();if(!["x","y"].includes(axis)){ $("status").textContent="Mirror axis must be x or y";return}}
-const cx=list.reduce((sum,e)=>sum+(e.position?.x??e.start?.x??e.boundary?.[0]?.x??0),0)/list.length;
-const cy=list.reduce((sum,e)=>sum+(e.position?.y??e.start?.y??e.boundary?.[0]?.y??0),0)/list.length;
+const anchor=e=>{if((e.type==="door"||e.type==="window")&&Number.isFinite(e.offset)&&Number.isFinite(e.width)){const wall=els().find(v=>v.id===e.hostWallId&&v.type==="wall"),len=wall?wallLength(wall):0;if(wall&&len>1e-8)return{x:wall.start.x+(wall.end.x-wall.start.x)*(e.offset+e.width/2)/len,y:wall.start.y+(wall.end.y-wall.start.y)*(e.offset+e.width/2)/len}}return e.position||e.labelPosition||e.center||e.start||e.boundary?.[0]||{x:0,y:0}};
+const cx=list.reduce((sum,e)=>sum+anchor(e).x,0)/list.length;
+const cy=list.reduce((sum,e)=>sum+anchor(e).y,0)/list.length;
 const point=q=>{let x=q.x,y=q.y;if(mode==="move"||mode==="copy"){x+=dx;y+=dy}else if(mode==="rotate"){const a=x-cx,b=y-cy;x=cx+a*Math.cos(angle)-b*Math.sin(angle);y=cy+a*Math.sin(angle)+b*Math.cos(angle)}else if(mode==="mirror"){if(axis==="y")x=2*cx-x;else y=2*cy-y}return{x,y}};
-const transform=e=>{
+const transform=(e,skipHostedOpening=false)=>{
  if(e.start)e.start=point(e.start);if(e.end)e.end=point(e.end);
  for(const key of ["position","center","witnessStart","witnessEnd","labelPosition"])if(e[key])e[key]=point(e[key]);
  for(const key of ["boundary","points","vertices","nodes"])if(Array.isArray(e[key]))e[key]=e[key].map(point);
- if((e.type==="door"||e.type==="window")&&Number.isFinite(e.offset)&&Number.isFinite(e.width)){
+ if(!skipHostedOpening&&(e.type==="door"||e.type==="window")&&Number.isFinite(e.offset)&&Number.isFinite(e.width)){
   const host=els().find(v=>v.id===e.hostWallId&&v.type==="wall");
   if(host){const len=wallLength(host);if(len>1e-8){const center={x:host.start.x+(host.end.x-host.start.x)*(e.offset+e.width/2)/len,y:host.start.y+(host.end.y-host.start.y)*(e.offset+e.width/2)/len},target=point(center),ux=(host.end.x-host.start.x)/len,uy=(host.end.y-host.start.y)/len;e.offset=Math.max(0,Math.min(len-e.width,(target.x-host.start.x)*ux+(target.y-host.start.y)*uy-e.width/2))}}
  }
@@ -495,11 +497,11 @@ hist();
 if(mode==="copy"){
 const originals=[...list],idMap=new Map(originals.map(e=>[e.id,crypto.randomUUID()])),openingIdMap=new Map(),copiedGroupIds=new Map();for(const old of originals){const key=groupKey(old);if(key&&!copiedGroupIds.has(key))copiedGroupIds.set(key,crypto.randomUUID())}
 for(const old of originals)if(old.type==="wall")for(const o of old.openings||[])openingIdMap.set(o.id,crypto.randomUUID());
-const copies=originals.map(old=>{const clone=JSON.parse(JSON.stringify(old));clone.id=idMap.get(old.id);if(clone.type==="wall"&&Array.isArray(clone.openings))clone.openings=clone.openings.map(o=>({...o,id:openingIdMap.get(o.id)||crypto.randomUUID()}));if(clone.hostWallId&&idMap.has(clone.hostWallId))clone.hostWallId=idMap.get(clone.hostWallId);const oldGroup=groupKey(old);if(oldGroup){clone.groupId=copiedGroupIds.get(oldGroup);delete clone.gridSystemId;delete clone.gridSystemAxis;delete clone.gridSystemIndex}transform(clone);return clone});
+const copies=originals.map(old=>{const clone=JSON.parse(JSON.stringify(old));clone.id=idMap.get(old.id);if(clone.type==="wall"&&Array.isArray(clone.openings))clone.openings=clone.openings.map(o=>({...o,id:openingIdMap.get(o.id)||crypto.randomUUID()}));if(clone.hostWallId&&idMap.has(clone.hostWallId))clone.hostWallId=idMap.get(clone.hostWallId);const oldGroup=groupKey(old);if(oldGroup){clone.groupId=copiedGroupIds.get(oldGroup);delete clone.gridSystemId;delete clone.gridSystemAxis;delete clone.gridSystemIndex}transform(clone,!!(old.hostWallId&&idMap.has(old.hostWallId)));return clone});
 const openingCopies=[];
 for(const old of originals){if(old.type!=="wall")continue;for(const child of els().filter(e=>["door","window"].includes(e.type)&&e.hostWallId===old.id&&!originals.some(item=>item.id===e.id))){const clone=JSON.parse(JSON.stringify(child));clone.id=openingIdMap.get(child.id)||crypto.randomUUID();clone.hostWallId=idMap.get(old.id);clone.storyId=old.storyId;openingCopies.push(clone)}}
 p.elements.push(...copies,...openingCopies);for(const copy of [...copies,...openingCopies])if(copy.type==="door"||copy.type==="window"){const host=els().find(v=>v.id===copy.hostWallId&&v.type==="wall"),opening=host?.openings?.find(o=>o.id===copy.id);if(opening){opening.offset=copy.offset;opening.width=copy.width;opening.height=copy.height;opening.sill=copy.sill}}selected=new Set(copies.map(e=>e.id));
-}else{for(const e of list)transform(e);const wallIds=new Set(list.filter(e=>e.type==="wall").map(e=>e.id));for(const e of els())if(["door","window"].includes(e.type)&&(wallIds.has(e.hostWallId)||list.some(v=>v.id===e.id))){const wall=els().find(w=>w.id===e.hostWallId&&w.type==="wall");if(!wall)continue;let opening=wall.openings?.find(o=>o.id===e.id);if(!opening){if(!Array.isArray(wall.openings))wall.openings=[];opening={id:e.id,offset:e.offset,width:e.width,height:e.height,sill:e.sill};wall.openings.push(opening)}opening.offset=e.offset;opening.width=e.width;opening.height=e.height;opening.sill=e.sill;if(wallIds.has(e.hostWallId)){e.offset=opening.offset;e.width=opening.width;e.height=opening.height;e.sill=opening.sill}}}
+}else{for(const e of list)transform(e,list.some(v=>v.id===e.hostWallId));const wallIds=new Set(list.filter(e=>e.type==="wall").map(e=>e.id));for(const e of els())if(["door","window"].includes(e.type)&&(wallIds.has(e.hostWallId)||list.some(v=>v.id===e.id))){const wall=els().find(w=>w.id===e.hostWallId&&w.type==="wall");if(!wall)continue;let opening=wall.openings?.find(o=>o.id===e.id);if(!opening){if(!Array.isArray(wall.openings))wall.openings=[];opening={id:e.id,offset:e.offset,width:e.width,height:e.height,sill:e.sill};wall.openings.push(opening)}opening.offset=e.offset;opening.width=e.width;opening.height=e.height;opening.sill=e.sill;if(wallIds.has(e.hostWallId)){e.offset=opening.offset;e.width=opening.width;e.height=opening.height;e.sill=opening.sill}}}
 scheduleAutoSave();redraw();renderProperties();$("status").textContent=mode==="copy"?"Selected elements duplicated":mode==="move"?"Selected elements moved":mode==="rotate"?"Selected elements rotated":"Selected elements mirrored";
 }
 
@@ -757,7 +759,7 @@ if(tool==="select"&&view==="floor"&&!e.shiftKey){const gridPoints=[];for(const l
 if(tool==="select"&&view==="floor"&&!e.shiftKey){
  const nodeHits=[];
  for(const el of els().filter(v=>selected.has(v.id)&&isLayerVisible(v)&&v.storyId===story().id)){
-  if(["wall","gridline","slab","roof"].includes(el.type))continue;
+  if(["wall","slab","roof"].includes(el.type))continue;
   for(const point of elementEditablePoints(el)){const sp=spos(point.point),dist=Math.hypot(sp.x-screenPoint.x,sp.y-screenPoint.y);if(dist<=14)nodeHits.push({el,...point,dist})}
  }
  nodeHits.sort((a,b)=>a.dist-b.dist);
