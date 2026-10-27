@@ -867,7 +867,7 @@ document.addEventListener("keydown",event=>{
 (function(){
   try{
     var key='arqenvo_visit_day';
-    var day=new Date().toISOString().slice(0,10);
+    var day=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kuala_Lumpur',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
     if(localStorage.getItem(key)===day)return;
     fetch('https://terajuciptabina.vercel.app/api/admin?public=arqenvo-visitor-insights',{method:'POST',mode:'cors',keepalive:true})
       .then(function(response){if(response.ok)localStorage.setItem(key,day);})
