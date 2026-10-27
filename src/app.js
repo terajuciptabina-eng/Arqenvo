@@ -177,7 +177,7 @@ function snapPoint(q,radius){
  };
  const snapSegments=[];
  const near=(a,b)=>Math.max(Math.min(a.x,b.x)-q.x,0,q.x-Math.max(a.x,b.x))<=threshold&&Math.max(Math.min(a.y,b.y)-q.y,0,q.y-Math.max(a.y,b.y))<=threshold;
- const addSegment=(a,b,id)=>{if(a&&b&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&Number.isFinite(b.x)&&Number.isFinite(b.y)&&near(a,b))snapSegments.push({a,b,id})};
+ const addSegment=(a,b,id,force=false)=>{if(a&&b&&Number.isFinite(a.x)&&Number.isFinite(a.y)&&Number.isFinite(b.x)&&Number.isFinite(b.y)&&(force||near(a,b)))snapSegments.push({a,b,id})};
  const seenPoints=new Set();
  const addNode=(point,kind="endpoint")=>{
   if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return;
@@ -196,7 +196,8 @@ function snapPoint(q,radius){
    if(["boundary","points","vertices"].includes(key)&&arr.length>1)for(let i=0;i<arr.length;i++)addSegment(arr[i],arr[(i+1)%arr.length],id);
   }
   if(el.start&&el.end){
-   addSegment(el.start,el.end,id);
+   // Grid-system axes are long construction lines: keep them in the intersection set even when their full bounding box extends beyond the cursor radius.
+   addSegment(el.start,el.end,id,el.type==="gridline"&&!!el.gridSystemId);
    const dx=el.end.x-el.start.x,dy=el.end.y-el.start.y,len2=dx*dx+dy*dy;
    if(len2>1e-9){
     addNode({x:(el.start.x+el.end.x)/2,y:(el.start.y+el.end.y)/2},"midpoint");
@@ -227,7 +228,7 @@ function snapPoint(q,radius){
   const rx=a.b.x-a.a.x,ry=a.b.y-a.a.y,sx=b.b.x-b.a.x,sy=b.b.y-b.a.y,den=rx*sy-ry*sx;
   if(Math.abs(den)<1e-10)continue;
   const qx=b.a.x-a.a.x,qy=b.a.y-a.a.y,t=(qx*sy-qy*sx)/den,u=(qx*ry-qy*rx)/den;
-  if(t>=-1e-8&&t<=1+1e-8&&u>=-1e-8&&u<=1+1e-8)consider({x:a.a.x+t*rx,y:a.a.y+t*ry},"intersection");
+  if(t>=-1e-8&&t<=1+1e-8&&u>=-1e-8&&u<=1+1e-8){const point={x:a.a.x+t*rx,y:a.a.y+t*ry},distance=Math.hypot(q.x-point.x,q.y-point.y);if(distance<=threshold){if(!best||bestKind!=="intersection"||distance<bestDistance){best=point;bestDistance=distance;bestKind="intersection"}}}
  }
  if(view==="floor"&&gridVisible){
   const step=Math.max(.1,Number($("grid")?.value)||.5);
