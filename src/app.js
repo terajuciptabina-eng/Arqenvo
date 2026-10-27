@@ -516,7 +516,12 @@ function moveConnectedWallEdge(g,dx,dy){
    neighbor.end={x:rec.end.x+dx,y:rec.end.y+dy};
    continue;
   }
-  if(rec.key==="start")neighbor.start=junction;else neighbor.end=junction;
+  const originalJunction=rec.key==="start"?rec.start:rec.end;
+  const tx=junction.x-originalJunction.x,ty=junction.y-originalJunction.y;
+  // Translate the whole selected neighbour by the junction delta. Moving
+  // only its shared endpoint would rotate/stretch it and create a kink.
+  neighbor.start={x:rec.start.x+tx,y:rec.start.y+ty};
+  neighbor.end={x:rec.end.x+tx,y:rec.end.y+ty};
  }
 }
 function elementEditableEdges(el){
