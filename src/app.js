@@ -795,19 +795,23 @@ settingsPopup.querySelector('[data-context-action="settings"]').addEventListener
 elementSettingsModal.querySelectorAll("[data-settings-close]").forEach(button=>button.addEventListener("click",closeElementSettings));elementSettingsModal.addEventListener("pointerdown",e=>{if(e.target===elementSettingsModal)closeElementSettings()});
 document.addEventListener("pointerdown",e=>{if(!settingsPopup.contains(e.target))settingsPopup.style.display="none"},true);
 document.addEventListener("keydown",e=>{if(e.key==="Escape"){settingsPopup.style.display="none";if(elementSettingsModal.style.display==="flex")closeElementSettings()}},true);
-// Preserve gridline selection after touch release: iPad Safari can emit pointercancel/contextmenu
-// in a different order during long-press, so resolve the final released position explicitly.
-c.addEventListener("pointerup",e=>{
+c.addEventListener("contextmenu",e=>{e.preventDefault();if(draft.length){finish();return}if(view==="floor"){const rect=c.getBoundingClientRect(),screenPoint={x:e.clientX-rect.left,y:e.clientY-rect.top},q=wpos(screenPoint),candidates=selectionCandidatesAt(q),hit=candidates[0];const gridHit=els().filter(el=>el.type==="gridline"&&isLayerVisible(el)&&el.storyId===story().id).map(el=>({el,d:pointSegmentDistance(screenPoint,spos(el.start),spos(el.end))})).filter(item=>item.d<=18).sort((a,b)=>a.d-b.d)[0]?.el;const resolvedHit=gridHit||hit||nearestElement(q);if(resolvedHit){if(!chosen().some(v=>v.id===resolvedHit.id))selectOnly(resolvedHit.id);else if(resolvedHit.type==="gridline"&&!selected.has(resolvedHit.id))selected.add(resolvedHit.id);renderProperties();redraw()}}if(!chosen().length){settingsPopup.style.display="none";$("status").textContent="No element at this position";return}settingsPopup.style.left=Math.max(6,Math.min(window.innerWidth-220,e.clientX))+"px";settingsPopup.style.top=Math.max(6,Math.min(window.innerHeight-60,e.clientY))+"px";settingsPopup.style.display="block"});
+// Gridline touch selection is finalized after the canvas gesture handlers have run.
+// Safari may dispatch pointercancel rather than pointerup during a long press; resolving
+// only in capture phase lets later edit handlers override the selection before release completes.
+function finalizeTouchGridlineSelection(e){
  if(e.pointerType!=="touch"||view!=="floor")return;
  const rect=c.getBoundingClientRect(),screenPoint={x:e.clientX-rect.left,y:e.clientY-rect.top};
  const gridHit=els().filter(el=>el.type==="gridline"&&isLayerVisible(el)&&el.storyId===story().id)
   .map(el=>({el,d:pointSegmentDistance(screenPoint,spos(el.start),spos(el.end))}))
-  .filter(item=>item.d<=18).sort((a,b)=>a.d-b.d)[0]?.el;
+  .filter(item=>item.d<=22).sort((a,b)=>a.d-b.d)[0]?.el;
  if(!gridHit)return;
  if(!selected.has(gridHit.id))selectOnly(gridHit.id);
- renderProperties();redraw();
-},true);
-c.addEventListener("contextmenu",e=>{e.preventDefault();if(draft.length){finish();return}if(view==="floor"){const rect=c.getBoundingClientRect(),screenPoint={x:e.clientX-rect.left,y:e.clientY-rect.top},q=wpos(screenPoint),candidates=selectionCandidatesAt(q),hit=candidates[0];const gridHit=els().filter(el=>el.type==="gridline"&&isLayerVisible(el)&&el.storyId===story().id).map(el=>({el,d:pointSegmentDistance(screenPoint,spos(el.start),spos(el.end))})).filter(item=>item.d<=18).sort((a,b)=>a.d-b.d)[0]?.el;const resolvedHit=gridHit||hit||nearestElement(q);if(resolvedHit){if(!chosen().some(v=>v.id===resolvedHit.id))selectOnly(resolvedHit.id);else if(resolvedHit.type==="gridline"&&!selected.has(resolvedHit.id))selected.add(resolvedHit.id);renderProperties();redraw()}}if(!chosen().length){settingsPopup.style.display="none";$("status").textContent="No element at this position";return}settingsPopup.style.left=Math.max(6,Math.min(window.innerWidth-220,e.clientX))+"px";settingsPopup.style.top=Math.max(6,Math.min(window.innerHeight-60,e.clientY))+"px";settingsPopup.style.display="block"});
+ else {selected=new Set(groupMembers(gridHit).map(el=>el.id));renderProperties()}
+ redraw();
+}
+c.addEventListener("pointerup",finalizeTouchGridlineSelection);
+c.addEventListener("pointercancel",finalizeTouchGridlineSelection);
 function zoomAt(clientX,clientY,factor){
  const rect=c.getBoundingClientRect(),mx=clientX-rect.left,my=clientY-rect.top;
  if(view==="3d"){const next=Math.max(.2,Math.min(5,camera3d.zoom*factor));if(next!==camera3d.zoom){const anchor=screenToWorld3d({x:mx,y:my},camera3d.targetZ),cyaw=Math.cos(camera3d.yaw),syaw=Math.sin(camera3d.yaw),rx=anchor.x*cyaw-anchor.y*syaw,ry=anchor.x*syaw+anchor.y*cyaw,screenX=mx-c.clientWidth/2-origin.x,screenY=my-c.clientHeight*.58-origin.y,sp=Math.sin(camera3d.pitch),safeSp=Math.max(.12,Math.abs(sp))*(sp<0?-1:1);camera3d.zoom=next;const f=scale*.72*next;camera3d.panX=rx-screenX/f;camera3d.panY=ry-screenY/(f*safeSp)}}
