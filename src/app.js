@@ -1554,8 +1554,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
     drag.moved=true;
     const s=state[key],r=panel.getBoundingClientRect(),wr=work.getBoundingClientRect();
     const minW=key==='toolbox'?220:280,preferredW=key==='toolbox'?280:320,preferredH=key==='toolbox'?480:560;
-    // Preserve the original dock slot before reflow changes the workspace.
-    if(drag.originMode==='dock')s.dockRect=drag.dockRect||{left:r.left,top:r.top,right:r.right,bottom:r.bottom};
+    // Capture the real dock slot exactly once, before the panel/layout reflows.
+    if(d.originMode==='dock')s.dockRect=d.dockRect||{left:r.left,top:r.top,right:r.right,bottom:r.bottom};
     s.mode='float';s.x=r.left-wr.left;s.y=r.top-wr.top;
     s.w=clamp(Math.max(minW,preferredW),minW,Math.max(minW,work.clientWidth-8));
     s.h=clamp(preferredH,220,Math.max(220,work.clientHeight-8));
@@ -1569,12 +1569,12 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(!drag||drag.id!==e.pointerId)return;
    const d=drag;drag=null;remove();
    if(!d.moved)return;
+   const wr=work.getBoundingClientRect(),edge=Math.max(28,Math.min(48,Math.round(Math.min(wr.width,wr.height)*.045)));
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
-   const origin=d.dockRect||(d.originMode==='dock'?d.originRect:null);
-   if(origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24){
-    setMode(key,'dock',d.dockSide||d.originSide||state[key].side||(key==='toolbox'?'left':'right'));return;
-   }
+   const origin=d.dockRect;
+   const returnedToOrigin=!!origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24;
+   if(returnedToOrigin){setMode(key,'dock',d.dockSide||d.originSide||state[key].side||(key==='toolbox'?'left':'right'));return}
    const r=panel.getBoundingClientRect(),s=state[key];
    s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key);saveDims(key);
   };
@@ -1583,9 +1583,9 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(e.pointerType==='mouse'&&e.button!==0)return;
    if(e.target.closest('input,select,a')||e.target.closest('#navigatorToggle')||(key==='toolbox'&&e.target.closest('button')))return;
    const r=panel.getBoundingClientRect();
-   if(state[key].mode==='dock')state[key].dockRect={left:r.left,top:r.top,right:r.right,bottom:r.bottom};
-   const savedDock=state[key].dockRect?{...state[key].dockRect}:null;
-   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},dockRect:savedDock,dockSide:state[key].side};
+   const dockRect=state[key].mode==='dock'?{left:r.left,top:r.top,right:r.right,bottom:r.bottom}:(state[key].dockRect?{...state[key].dockRect}:null);
+   if(state[key].mode==='dock')state[key].dockRect={...dockRect};
+   drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},dockRect,dockSide:state[key].side};
    active=true;
    document.addEventListener('pointermove',move,true);
    document.addEventListener('pointerup',finish,true);
