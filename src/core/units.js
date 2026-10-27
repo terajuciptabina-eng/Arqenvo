@@ -23,10 +23,10 @@ export function formatLengthValue(metres, unitSystem = "metric") {
   const value = Number(metres);
   if (!Number.isFinite(value)) return "";
   if (normalizeUnitSystem(unitSystem) === "imperial") {
-    const totalInches = Math.round(value * INCHES_PER_METRE);
-    const feet = Math.trunc(totalInches / 12);
-    const inches = Math.abs(totalInches % 12);
-    return (feet + inches / 12).toFixed(4).replace(/0+$/, "").replace(/\.$/, "");
+    const totalInches = Math.round(Math.abs(value) * INCHES_PER_METRE);
+    const feet = Math.floor(totalInches / 12);
+    const inches = totalInches % 12;
+    return (value < 0 ? "−" : "") + feet + "' " + inches + '"';
   }
   return String(Number(value.toFixed(3)));
 }
