@@ -1337,7 +1337,7 @@ c.addEventListener("pointerdown",e=>{if(!layoutMode||!layoutSheet())return;const
 c.addEventListener("pointermove",e=>{if(!layoutPointerGesture||!layoutMode)return;const s=layoutSheet(),d=s?.drawings.find(v=>v.id===layoutPointerGesture.id);if(!s||!d)return;const g=layoutPointerGesture,dx=(e.offsetX-g.startX)/g.fit,dy=(e.offsetY-g.startY)/g.fit;if(Math.hypot(dx,dy)<1&&!g.changed)return;g.changed=true;const paper=layoutDimensions(s);if(g.mode==="resize"){let left=g.x,top=g.y,right=g.x+g.width,bottom=g.y+g.height;if(g.handle.includes("w"))left=Math.min(g.x+g.width-10,g.x+dx);if(g.handle.includes("e"))right=Math.max(g.x+10,g.x+g.width+dx);if(g.handle.includes("n"))top=Math.min(g.y+g.height-10,g.y+dy);if(g.handle.includes("s"))bottom=Math.max(g.y+10,g.y+g.height+dy);left=Math.max(0,left);top=Math.max(0,top);right=Math.min(paper.width-5,right);bottom=Math.min(paper.height-5,bottom);d.x=left;d.y=top;d.width=Math.max(10,right-left);d.height=Math.max(10,bottom-top)}else{d.x=Math.max(0,Math.min(paper.width-d.width,g.x+dx));d.y=Math.max(0,Math.min(paper.height-d.height,g.y+dy))}redraw()});
 function finishLayoutDrag(){if(!layoutPointerGesture)return;const changed=layoutPointerGesture.changed;layoutPointerGesture=null;if(changed){renderLayoutInspector();scheduleAutoSave();$("status").textContent="Drawing repositioned"}}
 c.addEventListener("pointerup",finishLayoutDrag);c.addEventListener("pointercancel",finishLayoutDrag);
-$("gridSystemOpen").addEventListener("click",()=>{if(view!=="floor")setView("floor");const info=["<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\"/><path d=\"M3 9h18M3 15h18M9 3v18M15 3v18\"/></svg>","Grid System","Configure grid intervals, axis labels, markers and optional structural helpers"];if($("contextToolIcon"))$("contextToolIcon").innerHTML=info[0];if($("contextToolName"))$("contextToolName").textContent=info[1];if($("contextToolHint"))$("contextToolHint").textContent=info[2];$("gridSystemDialog").showModal()});
+$("gridSystemOpen").addEventListener("click",()=>{if(view!=="floor")setView("floor");initGridPositionEditors();const info=["<svg viewBox=\"0 0 24 24\" aria-hidden=\"true\"><rect x=\"3\" y=\"3\" width=\"18\" height=\"18\"/><path d=\"M3 9h18M3 15h18M9 3v18M15 3v18\"/></svg>","Grid System","Configure grid positions, labels, markers and optional structural helpers"];if($("contextToolIcon"))$("contextToolIcon").innerHTML=info[0];if($("contextToolName"))$("contextToolName").textContent=info[1];if($("contextToolHint"))$("contextToolHint").textContent=info[2];$("gridSystemDialog").showModal()});
 $("gridSystemClose").addEventListener("click",()=>$("gridSystemDialog").close());
 const gridSystemDialog=$("gridSystemDialog");
 const gridSystemHeader=gridSystemDialog.querySelector("form>header");
@@ -1378,8 +1378,65 @@ window.addEventListener("resize",()=>{
  gridSystemDialog.style.top=Math.max(margin,Math.min(window.innerHeight-rect.height-margin,rect.top))+"px";
  gridSystemDialog.style.transform="none";
 });
+
+const gridPositionState={horizontal:[],vertical:[]};
+const gridLetters=n=>{let out="";for(n=Math.max(0,n);n>=0;n=Math.floor(n/26)-1)out=String.fromCharCode(65+n%26)+out;return out};
+function gridDefaultPositions(id){
+ const values=$(id).value.split(",").map(v=>Number(v.trim())).filter(v=>Number.isFinite(v)&&v>0);
+ const out=[{label:id==="gridSystemX"?"A":"1",distance:0}];
+ let total=0;for(const v of values){total+=v;out.push({label:id==="gridSystemX"?gridLetters(out.length):String(out.length+1),distance:total})}
+ return out;
+}
+function renderGridPositionRows(axis){
+ const rows=$(axis==="horizontal"?"gridHorizontalRows":"gridVerticalRows");
+ const items=gridPositionState[axis];rows.replaceChildren();
+ items.forEach((item,index)=>{
+  const row=document.createElement("div");row.style.cssText="display:grid;grid-template-columns:24px minmax(28px,.65fr) minmax(90px,1.35fr);align-items:center;gap:7px;padding:5px 4px;border-bottom:1px solid #edf0f2";
+  const move=document.createElement("span");move.textContent=index===0?"◆":"↕";move.style.cssText="color:#65717d;text-align:center;font-size:11px";
+  const label=document.createElement("input");label.value=item.label;label.setAttribute("aria-label",axis+" grid line label "+(index+1));label.style.cssText="min-width:0;width:100%;padding:6px;border:1px solid #c4cfd7;border-radius:4px;background:#fbfcfd;color:#26313b;font-weight:600";
+  label.addEventListener("change",()=>{const v=label.value.trim();if(v){item.label=v;syncGridPositionSpacing()}else label.value=item.label});
+  const distanceWrap=document.createElement("label");distanceWrap.style.cssText="display:flex;align-items:center;gap:5px;min-width:0;font-size:11px;color:#65717d";
+  const caption=document.createElement("span");caption.textContent="Distance:";caption.style.whiteSpace="nowrap";
+  const distance=document.createElement("input");distance.type="number";distance.min="0";distance.step="1";distance.value=String(Math.round(item.distance));distance.setAttribute("aria-label",axis+" grid line distance in mm");distance.style.cssText="min-width:0;width:100%;padding:6px;border:1px solid #c4cfd7;border-radius:4px;background:"+(index===0?"#eef1f3":"#fbfcfd")+";color:#26313b";distance.disabled=index===0;
+  distance.addEventListener("change",()=>{let next=Math.max(0,Number(distance.value)||0);if(index===0)next=0;const delta=next-item.distance;item.distance=next;if(index<items.length-1&&delta!==0){for(let k=index+1;k<items.length;k++)items[k].distance=Math.max(items[k-1].distance+1,items[k].distance+delta)}items.sort((a,b)=>a.distance-b.distance);renderGridPositionRows(axis);syncGridPositionSpacing()});
+  distanceWrap.append(caption,distance);row.append(move,label,distanceWrap);rows.append(row);
+ });
+ const add=$(axis==="horizontal"?"gridHorizontalAdd":"gridVerticalAdd"),remove=$(axis==="horizontal"?"gridHorizontalRemove":"gridVerticalRemove");
+ add.disabled=items.length>=30;remove.disabled=items.length<=2;
+}
+function syncGridPositionSpacing(){
+ for(const [axis,hiddenId,labelId] of [["horizontal","gridSystemY","gridSystemXLabel"],["vertical","gridSystemX","gridSystemYLabel"]]){
+  const items=gridPositionState[axis];$(hiddenId).value=items.slice(1).map((item,i)=>Math.max(1,item.distance-items[i].distance)).join(", ");
+  $(labelId).value=items[0]?.label||(axis==="horizontal"?"A":"1");
+ }
+}
+function distributeGridPositions(axis){
+ const items=gridPositionState[axis],count=Math.max(2,Math.min(30,Number($(axis==="horizontal"?"gridHorizontalCount":"gridVerticalCount").value)||items.length));
+ if(items.length<2)return;
+ const first=items[0].distance,last=items[items.length-1].distance;
+ const labels=items.map(x=>x.label),next=[];
+ for(let i=0;i<count;i++)next.push({label:labels[i]||(axis==="horizontal"?gridLetters(i):String(i+1)),distance:Math.round(first+(last-first)*i/(count-1))});
+ for(let i=1;i<next.length;i++)if(next[i].distance<=next[i-1].distance)next[i].distance=next[i-1].distance+1;
+ gridPositionState[axis]=next;renderGridPositionRows(axis);syncGridPositionSpacing();
+}
+function initGridPositionEditors(){
+ gridPositionState.horizontal=gridDefaultPositions("gridSystemY");
+ gridPositionState.vertical=gridDefaultPositions("gridSystemX");
+ // Archicad convention: horizontal axes use letters, vertical axes use numbers.
+ gridPositionState.horizontal.forEach((v,i)=>v.label=i===0?"A":gridLetters(i));
+ gridPositionState.vertical.forEach((v,i)=>v.label=String(i+1));
+ renderGridPositionRows("horizontal");renderGridPositionRows("vertical");syncGridPositionSpacing();
+}
+$("gridHorizontalAdd").addEventListener("click",()=>{const a=gridPositionState.horizontal;if(a.length>=30)return;const last=a[a.length-1];a.push({label:gridLetters(a.length),distance:last.distance+Math.max(1000,a.length>1?last.distance-a[a.length-2].distance:4000)});renderGridPositionRows("horizontal");syncGridPositionSpacing()});
+$("gridVerticalAdd").addEventListener("click",()=>{const a=gridPositionState.vertical;if(a.length>=30)return;const last=a[a.length-1];a.push({label:String(a.length+1),distance:last.distance+Math.max(1000,a.length>1?last.distance-a[a.length-2].distance:4000)});renderGridPositionRows("vertical");syncGridPositionSpacing()});
+$("gridHorizontalRemove").addEventListener("click",()=>{if(gridPositionState.horizontal.length<=2)return;gridPositionState.horizontal.pop();renderGridPositionRows("horizontal");syncGridPositionSpacing()});
+$("gridVerticalRemove").addEventListener("click",()=>{if(gridPositionState.vertical.length<=2)return;gridPositionState.vertical.pop();renderGridPositionRows("vertical");syncGridPositionSpacing()});
+for(const axis of ["horizontal","vertical"]){const check=$(axis==="horizontal"?"gridHorizontalDistribute":"gridVerticalDistribute"),count=$(axis==="horizontal"?"gridHorizontalCount":"gridVerticalCount");check.addEventListener("change",()=>{count.disabled=!check.checked;if(check.checked)distributeGridPositions(axis)});count.addEventListener("change",()=>{if(check.checked)distributeGridPositions(axis)})}
+gridSystemDialog.addEventListener("close",()=>{if(!pendingGridSystem)initGridPositionEditors()});
+gridSystemDialog.addEventListener("close",()=>{gridSystemDialog.style.left="50%";gridSystemDialog.style.top="50%";gridSystemDialog.style.transform="translate(-50%,-50%)"});
+
 $("gridSystemCancel").addEventListener("click",()=>$("gridSystemDialog").close());
-$("gridSystemForm").addEventListener("submit",e=>{e.preventDefault();const parseSpacing=id=>$(id).value.split(",").map(v=>Number(v.trim())/1000).filter(v=>Number.isFinite(v));const xSpacing=parseSpacing("gridSystemX"),ySpacing=parseSpacing("gridSystemY");if(!xSpacing.length||!ySpacing.length||xSpacing.length>29||ySpacing.length>29||[...xSpacing,...ySpacing].some(v=>v<=0||v>100)){ $("status").textContent="Enter positive axis spacings in metres (maximum 29 intervals per direction)";return}const xLabel=$("gridSystemXLabel").value.trim()||"A",yLabel=$("gridSystemYLabel").value.trim()||"1";if(!/^[A-Za-z]+$/.test(xLabel)&&!/^[0-9]+$/.test(xLabel)){$("status").textContent="X-axis label must start with letters or numbers";return}if(!/^[A-Za-z]+$/.test(yLabel)&&!/^[0-9]+$/.test(yLabel)){$("status").textContent="Y-axis label must start with letters or numbers";return}pendingGridSystem={xSpacing,ySpacing,xLabel,yLabel,markerRadius:Math.max(4,Math.min(20,Number($("gridSystemMarker").value)||10)),extension:Math.max(0,Math.min(5,(Number($("gridSystemExtension").value)||4000)/1000)),markerSides:{top:$("gridMarkerTop").checked,bottom:$("gridMarkerBottom").checked,left:$("gridMarkerLeft").checked,right:$("gridMarkerRight").checked,start:$("gridMarkerLeft").checked||$("gridMarkerTop").checked,end:$("gridMarkerRight").checked||$("gridMarkerBottom").checked},placeColumns:$("gridSystemColumns").checked,createBeams:$("gridSystemBeams").checked,createDimensions:$("gridSystemDimensions").checked,totalDimension:$("gridSystemTotalDimension").checked,chainDimensionOffset:Math.max(0,Number($("gridSystemChainDimensionOffset").value)||0),totalDimensionOffset:Math.max(0,Number($("gridSystemTotalDimensionOffset").value)||0),startCorner:$("gridSystemStartCorner").value,origin:null};$("gridSystemDialog").close();setTool("select");$("status").textContent="Grid System ready · click origin, then click to define X-axis direction";redraw()});
+$("gridSystemForm").addEventListener("submit",e=>{e.preventDefault();const parseSpacing=id=>$(id).value.split(",").map(v=>Number(v.trim())/1000).filter(v=>Number.isFinite(v));const xSpacing=parseSpacing("gridSystemX"),ySpacing=parseSpacing("gridSystemY");if(!xSpacing.length||!ySpacing.length||xSpacing.length>29||ySpacing.length>29||[...xSpacing,...ySpacing].some(v=>v<=0||v>100)){ $("status").textContent="Enter positive axis spacings in metres (maximum 29 intervals per direction)";return}const xLabel=$("gridSystemXLabel").value.trim()||"A",yLabel=$("gridSystemYLabel").value.trim()||"1";if(!/^[A-Za-z]+$/.test(xLabel)&&!/^[0-9]+$/.test(xLabel)){$("status").textContent="X-axis label must start with letters or numbers";return}if(!/^[A-Za-z]+$/.test(yLabel)&&!/^[0-9]+$/.test(yLabel)){$("status").textContent="Y-axis label must start with letters or numbers";return}pendingGridSystem={xSpacing,ySpacing,xLabel,yLabel,horizontalLabels:gridPositionState.horizontal.map(v=>v.label),verticalLabels:gridPositionState.vertical.map(v=>v.label),markerRadius:Math.max(4,Math.min(20,Number($("gridSystemMarker").value)||10)),extension:Math.max(0,Math.min(5,(Number($("gridSystemExtension").value)||4000)/1000)),markerSides:{top:$("gridMarkerTop").checked,bottom:$("gridMarkerBottom").checked,left:$("gridMarkerLeft").checked,right:$("gridMarkerRight").checked,start:$("gridMarkerLeft").checked||$("gridMarkerTop").checked,end:$("gridMarkerRight").checked||$("gridMarkerBottom").checked},placeColumns:$("gridSystemColumns").checked,createBeams:$("gridSystemBeams").checked,createDimensions:$("gridSystemDimensions").checked,totalDimension:$("gridSystemTotalDimension").checked,chainDimensionOffset:Math.max(0,Number($("gridSystemChainDimensionOffset").value)||0),totalDimensionOffset:Math.max(0,Number($("gridSystemTotalDimensionOffset").value)||0),startCorner:$("gridSystemStartCorner").value,origin:null};$("gridSystemDialog").close();setTool("select");$("status").textContent="Grid System ready · click origin, then click to define X-axis direction";redraw()});
 $("newProjectRibbon").addEventListener("click",()=>$("new").click());
 $("contextHeight").addEventListener("input",e=>{$("height").value=e.target.value});
 $("contextThickness").addEventListener("input",e=>{$("thickness").value=e.target.value});
