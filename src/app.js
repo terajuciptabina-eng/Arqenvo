@@ -1180,11 +1180,11 @@ window.addEventListener("keyup",e=>{if(e.key==="Shift"){shiftHeld=false;shiftAng
  const canvas=$("canvas");if(!canvas)return;
  const style=document.createElement("style");
  style.textContent=`
- #arqPetPalette{background:linear-gradient(180deg,#ffffff,#f1f5f7);border:1px solid #c5d0d8;border-radius:9px;box-shadow:0 8px 24px #24374620;color:#344653;cursor:default}
- #arqPetPalette .pet-drag-handle{cursor:grab;touch-action:none;user-select:none}
+ #arqPetPalette{position:fixed;z-index:99970;display:none;align-items:center;gap:4px;padding:6px;background:linear-gradient(180deg,#ffffff,#f1f5f7);border:1px solid #c5d0d8;border-radius:9px;box-shadow:0 8px 24px #24374620;color:#344653;max-width:min(94vw,560px);overflow-x:auto;white-space:nowrap;cursor:default;touch-action:none}
+ #arqPetPalette .pet-drag-handle{display:flex;align-items:center;justify-content:center;width:14px;align-self:stretch;flex:none;color:#738795;cursor:grab;font-size:17px;touch-action:none;user-select:none}
  #arqPetPalette .pet-separator{background:#d3dce2}
- #arqPetPalette button{color:#455967}
- #arqPetPalette button:hover,#arqPetPalette button:focus-visible{background:#e3f3f4;border-color:#acd8dc;color:#087e8b}
+ #arqPetPalette button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;min-width:43px;height:46px;padding:4px 5px;border:1px solid transparent;border-radius:6px;background:transparent;color:#455967;font:10px/1.1 Inter,Arial,sans-serif;pointer-events:auto;touch-action:manipulation;position:relative;z-index:1}
+ #arqPetPalette button:hover,#arqPetPalette button:focus-visible{background:#e3f3f4;border-color:#acd8dc;color:#087e8b;outline:none}
  #arqPetPalette button{pointer-events:auto;touch-action:manipulation;position:relative;z-index:1}
  #arqElementSettingsModal{background:rgba(31,45,56,.28)!important;color:#273640!important}
  #arqElementSettingsModal>div{background:#f5f7f8!important;color:#273640!important;border:1px solid #cbd5dc!important;box-shadow:0 22px 64px #24374630!important}
