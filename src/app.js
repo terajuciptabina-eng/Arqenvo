@@ -1037,7 +1037,7 @@ document.addEventListener("keydown",e=>{const distance=$("trackerDistance"),angl
 $("wallGeometryMethod").addEventListener("change",e=>{wallGeometryMethod=e.target.value;updateContextUI();redraw();$("status").textContent="Wall geometry method: "+e.target.options[e.target.selectedIndex].text});
 $("height").addEventListener("input",()=>{if(document.activeElement!==$("contextHeight"))$("contextHeight").value=$("height").value});
 $("thickness").addEventListener("input",()=>{if(document.activeElement!==$("contextThickness"))$("contextThickness").value=$("thickness").value});
-$("scaleSelect").addEventListener("change",e=>{drawingScaleDenominator=Number(e.target.value)===18?200:Number(e.target.value)===72?50:100;applyViewportZoom();redraw();updateZoomReadout()});
+$("scaleSelect").addEventListener("change",e=>{drawingScaleDenominator=Math.max(1,Number(e.target.value)||100);applyViewportZoom();redraw();updateZoomReadout()});
 $("gridQuick").addEventListener("change",e=>{$("grid").value=e.target.value;redraw()});
 $("grid").addEventListener("change",syncGridOptions);
 $("snapToggle").addEventListener("click",e=>{p.settings=p.settings||{};p.settings.snap=p.settings.snap===false;const on=p.settings.snap!==false;e.currentTarget.classList.toggle("active",on);e.currentTarget.setAttribute("aria-pressed",String(on));$("status").textContent=on?"Endpoint snapping enabled":"Endpoint snapping disabled"});
