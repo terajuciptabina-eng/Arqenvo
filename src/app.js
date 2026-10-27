@@ -1574,7 +1574,13 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(side){setMode(key,'dock',side);return}
    const origin=d.dockRect;
    const returnedToOrigin=!!origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24;
-   if(returnedToOrigin){setMode(key,'dock',d.dockSide||d.originSide||state[key].side||(key==='toolbox'?'left':'right'));return}
+   const originalSide=d.dockSide||d.originSide||state[key].side||(key==='toolbox'?'left':'right');
+   // The docked pane occupies a full-height track while floating panes use
+   // their own bounded rectangle. If the user releases over the remembered
+   // dock slot (or the original side strip), restore the dock directly.
+   const edgePad=24;
+   const sideStrip=originalSide==='left'?e.clientX<=wr.left+edge+edgePad:originalSide==='right'?e.clientX>=wr.right-edge-edgePad:originalSide==='top'?e.clientY<=wr.top+edge+edgePad:e.clientY>=wr.bottom-edge-edgePad;
+   if(returnedToOrigin||sideStrip){setMode(key,'dock',originalSide);return}
    const r=panel.getBoundingClientRect(),s=state[key];
    s.w=r.width;s.h=r.height;bounds(key);applyGrid();save(key);saveDims(key);
   };
