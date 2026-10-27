@@ -29,7 +29,7 @@ const wpos=q=>({x:(q.x-c.clientWidth/2-origin.x)/scale,y:(c.clientHeight/2+origi
 try{Object.defineProperty(window,"__arqenvoViewport",{configurable:true,get:()=>({origin:{...origin},scale,canvasWidth:c.clientWidth,canvasHeight:c.clientHeight})})}catch{}
 const spos=q=>({x:c.clientWidth/2+origin.x+q.x*scale,y:c.clientHeight/2+origin.y-q.y*scale});
 const baseScaleForDrawing=()=>3600/Math.max(1,drawingScaleDenominator);
-const applyViewportZoom=()=>{scale=Math.max(1,Math.min(180,baseScaleForDrawing()*viewportZoom))};
+const applyViewportZoom=()=>{viewportZoom=Math.max(.05,Math.min(5,180/baseScaleForDrawing(),viewportZoom));scale=Math.max(1,Math.min(180,baseScaleForDrawing()*viewportZoom))};
 const AUTOSAVE_KEY="arqenvo.autosave.v2";
 let autosaveTimer=null;
 // 3D navigation camera: orbit (left-drag), pan (middle/space-drag), zoom (wheel/pinch).
