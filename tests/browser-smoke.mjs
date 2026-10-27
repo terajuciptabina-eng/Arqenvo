@@ -575,6 +575,35 @@ try {
   assert.ok(zoomAfterOut<zoomAfterIn,"Mobile 3D zoom-out should decrease camera zoom");
   await mobilePage.close();
 
+  // Regression: wall edge edits are scoped to explicit selection.
+  const edgePage=await browser.newPage({viewport:{width:1100,height:800}});
+  edgePage.setDefaultTimeout(8000);edgePage.on("pageerror",error=>pageErrors.push(error.message));
+  await edgePage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await edgePage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await edgePage.locator("#snapToggle").click();
+  await edgePage.locator("#gridQuick").selectOption("0.1");
+  await edgePage.locator('[data-tool="wall"]').click();
+  await edgePage.locator("#wallGeometryMethod").selectOption("single");
+  const edgePoint=async(wx,wy)=>{const pt=await edgePage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await edgePage.mouse.click(pt.x,pt.y)};
+  await edgePoint(-3,0);await edgePoint(0,0);await edgePoint(0,0);await edgePoint(0,3);
+  await edgePage.waitForTimeout(850);
+  const originalWalls=await edgePage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="wall").map(e=>({id:e.id,start:e.start,end:e.end})));
+  assert.equal(originalWalls.length,2,"Edge regression fixture must create two walls sharing one endpoint");
+  await edgePage.locator('[data-tool="select"]').click();
+  await edgePoint(-1.5,0);
+  await edgePage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent.includes("selected"));
+  const selectedWallId=await edgePage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="wall")?.id);
+  const neighborBefore=originalWalls.find(w=>w.id!==selectedWallId);
+  const selectedBefore=originalWalls.find(w=>w.id===selectedWallId);
+  const edgeScreen=await edgePage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx:-1.5,wy:0});
+  await edgePage.mouse.move(edgeScreen.x,edgeScreen.y);await edgePage.waitForTimeout(100);
+  await edgePage.mouse.down();await edgePage.mouse.move(edgeScreen.x,edgeScreen.y+32,{steps:5});await edgePage.mouse.up();
+  await edgePage.waitForTimeout(850);
+  const afterSingle=await edgePage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="wall").map(e=>({id:e.id,start:e.start,end:e.end})));
+  assert.deepEqual(afterSingle.find(w=>w.id===neighborBefore.id),neighborBefore,"Single-wall edge editing must not modify an unselected neighbour");
+  assert.notDeepEqual(afterSingle.find(w=>w.id===selectedBefore.id),selectedBefore,"Single-wall edge editing must update the selected wall");
+  await edgePage.close();
+
   // Space temporarily activates Magic Wand and restores the prior tool on release.
   const spacePage=await browser.newPage({viewport:{width:1100,height:800}});
   spacePage.setDefaultTimeout(8000);
