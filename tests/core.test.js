@@ -54,7 +54,7 @@ test("deserialization reconciles standalone door data back into its host wall op
  assert.ok(opening,"The host wall must regain the opening from its selectable Door element");
  assert.equal(opening.hingeSide,"right");
  assert.equal(opening.swingDirection,"outside");
- assert.equal(loaded.elements.filter(el=>el.id===door.id).length,2,"Exactly one host-wall record and one selectable record must remain");
+ assert.equal(loaded.elements.filter(el=>el.id===door.id).length,1,"Exactly one selectable Door element must remain in project.elements");
 });
 test("element schedule reports quantities by story", () => {
  const p=createProject(); p.elements.push(createWall({x:0,y:0},{x:2,y:0})); const rows=elementSchedule(p); assert.equal(rows[0].story,"Ground Floor"); assert.equal(rows[0].length,2); assert.equal(rows[0].area,6);
