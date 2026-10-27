@@ -482,8 +482,15 @@ function beginConnectedWallEdgeGesture(wall,edge){
  return {wallId:wall.id,start:{...wall.start},end:{...wall.end},edgeA:a,edgeB:b,selectedWallEndpoints};
 }
 function moveConnectedWallEdge(g,dx,dy){
- const movedStart={x:g.start.x+dx,y:g.start.y+dy};
- const movedEnd={x:g.end.x+dx,y:g.end.y+dy};
+ // Archicad-style wall-edge drag: constrain the movement to the wall's
+ // perpendicular axis (90 degrees to its baseline), not the raw cursor vector.
+ const vx=g.end.x-g.start.x,vy=g.end.y-g.start.y,len=Math.hypot(vx,vy);
+ if(!(len>1e-8))return;
+ const nx=-vy/len,ny=vx/len;
+ const normalDistance=dx*nx+dy*ny;
+ const moveX=nx*normalDistance,moveY=ny*normalDistance;
+ const movedStart={x:g.start.x+moveX,y:g.start.y+moveY};
+ const movedEnd={x:g.end.x+moveX,y:g.end.y+moveY};
  const same=(a,b)=>!!a&&!!b&&Math.hypot(a.x-b.x,a.y-b.y)<1e-4;
  // Build one coordinate map for the two edited nodes. Every endpoint in the
  // explicit selection that shared either original node receives exactly the
