@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner } from "../src/core/geometry.js";
+import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut } from "../src/core/geometry.js";
 
 test("line intersection returns parameters and point",()=>{
  const hit=lineIntersection({x:0,y:0},{x:1,y:0},{x:2,y:-1},{x:0,y:1});
@@ -156,4 +156,31 @@ test("renderer wall-end resolver handles continuous wall chains; core miter join
  const acuteA={start:{x:-2,y:0},end:{x:0,y:0}};
  const acuteB={start:{x:0,y:0},end:{x:-2,y:.01}};
  assert.equal(wallEndJoin(acuteA,acuteB,.2,.2,{miterLimit:2}).type,"bevel");
+});
+
+
+test("wall cross junction trims the stable secondary wall to host faces",()=>{
+ const horizontal={id:"a",type:"wall",storyId:"story-1",start:{x:-2,y:0},end:{x:2,y:0},thickness:.2};
+ const vertical={id:"b",type:"wall",storyId:"story-1",start:{x:0,y:-2},end:{x:0,y:2},thickness:.2};
+ const cut=wallCrossingCut(horizontal,vertical);
+ assert.ok(cut);
+ assert.equal(cut.hostWall.id,"a");
+ assert.equal(cut.cutWall.id,"b");
+ assert.ok(Math.abs(cut.intersection.x)<1e-8&&Math.abs(cut.intersection.y)<1e-8);
+ assert.ok(Math.abs(cut.start-1.9)<1e-8);
+ assert.ok(Math.abs(cut.end-2.1)<1e-8);
+ const reversed=wallCrossingCut(vertical,horizontal);
+ assert.equal(reversed.hostWall.id,cut.hostWall.id,"input element order must not change host choice");
+ assert.equal(reversed.cutWall.id,cut.cutWall.id);
+});
+
+test("wall cross cuts scale for oblique junctions and ignore endpoint, parallel and cross-story cases",()=>{
+ const host={id:"host",storyId:"s",start:{x:-3,y:0},end:{x:3,y:0},thickness:.3};
+ const oblique={id:"oblique",storyId:"s",start:{x:0,y:-2},end:{x:2,y:2},thickness:.15};
+ const cut=wallCrossingCut(host,oblique);
+ assert.ok(cut);
+ assert.ok(Math.abs(cut.halfSpan-.15/Math.sin(Math.atan(2)))<1e-8);
+ assert.equal(wallCrossingCut(host,{...oblique,start:{x:0,y:0}}),null,"endpoint joins must use endpoint resolver");
+ assert.equal(wallCrossingCut(host,{...oblique,start:{x:0,y:-2},end:{x:6,y:.01}}),null,"near-parallel lines must not create very long cuts");
+ assert.equal(wallCrossingCut(host,{...oblique,storyId:"other"}),null,"different stories must remain independent");
 });
