@@ -147,14 +147,13 @@ test("renderer wall-end resolver joins a T branch to the approached host face",(
  assert.ok(Math.abs(right.point.x+.1)<1e-8);
 });
 
-test("renderer wall-end resolver stays bounded at acute corners and handles continuous wall chains",()=>{
- const acuteA={id:"a",start:{x:-2,y:0},end:{x:0,y:0},thickness:.2};
- const acuteB={id:"b",start:{x:0,y:0},end:{x:-2,y:.01},thickness:.2};
- const acute=resolveWallEndCorner(acuteA,false,1,[{neighbor:acuteB,neighborT:0,closest:{x:0,y:0},isT:false,distance:0,alignment:.005}],{maxMiterRatio:2});
- assert.equal(acute.resolved,false,"overlong acute miter must fall back instead of producing a spike");
+test("renderer wall-end resolver handles continuous wall chains; core miter join bevels extreme angles",()=>{
  const first={id:"first",start:{x:-2,y:0},end:{x:0,y:0},thickness:.2};
  const second={id:"second",start:{x:0,y:0},end:{x:2,y:0},thickness:.2};
  const chain=resolveWallEndCorner(first,false,1,[{neighbor:second,neighborT:0,closest:{x:0,y:0},isT:false,distance:0,alignment:1}]);
  assert.equal(chain.resolved,true);
  assert.ok(Math.abs(chain.point.y-.1)<1e-8);
+ const acuteA={start:{x:-2,y:0},end:{x:0,y:0}};
+ const acuteB={start:{x:0,y:0},end:{x:-2,y:.01}};
+ assert.equal(wallEndJoin(acuteA,acuteB,.2,.2,{miterLimit:2}).type,"bevel");
 });
