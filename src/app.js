@@ -5,7 +5,7 @@ import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, openingOffsetForAnchor, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, findClosedWallLoops, mergeHostedOpeningRecords} from "./core/authoring.js";
 import {ModelHistory, transactModel} from "./core/transactions.js";
-import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide } from "./core/geometry.js";
+import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner } from "./core/geometry.js";
 import {normalizeUnitSystem,formatLength,formatArea} from "./core/units.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set(),groupsSuspended=false;
@@ -361,71 +361,11 @@ function render3DScene(ctx,items,project3d,options={}){
   if(candidates.length)wallEndNeighbors.set(wall.id+":"+(atStart?"start":"end"),candidates);
  }
  const wallEndCorner=(wall,atStart,side)=>{
-  const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy);
-  if(!Number.isFinite(len)||len<1e-8)return atStart?{...wall.start}:{...wall.end};
-  const ux=dx/len,uy=dy/len,joint=atStart?wall.start:wall.end;
-  const inwardRay={x:atStart?ux:-ux,y:atStart?uy:-uy};
-  const outwardRay={x:-inwardRay.x,y:-inwardRay.y};
-  const normal={x:-inwardRay.y,y:inwardRay.x},localSide=side*(atStart?1:-1);
-  const half=(wall.thickness||.15)/2;
-  const fallback={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
-  const candidates=wallEndNeighbors.get(wall.id+":"+(atStart?"start":"end"));
-  if(!candidates?.length)return fallback;
-  const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
-  const cross=(u,v)=>u.x*v.y-u.y*v.x;
-  // Resolve face continuity from the adjacent centre-lines. For endpoint joins,
-  // choose the neighbour's offset face whose normal points to this wall-side.
-  // For T-junctions, the branch must intersect the host face on its approach side.
-  let best=null;
-  for(const info of candidates){
-    const {neighbor,neighborT,closest,isT}=info;
-    const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y;
-    const nlen=Math.hypot(ndx,ndy);
-    if(!Number.isFinite(nlen)||nlen<1e-8)continue;
-    const nux=ndx/nlen,nuy=ndy/nlen,nhalf=(neighbor.thickness||.15)/2;
-    const options=[];
-    if(isT){
-      const hostNormal={x:-nuy,y:nux};
-      const faceSide=wallHostFaceSide(inwardRay,hostNormal);
-      options.push({b:{x:closest.x+hostNormal.x*nhalf*faceSide,y:closest.y+hostNormal.y*nhalf*faceSide},ray:{x:nux,y:nuy},allowBackward:false});
-    }else{
-      const atNeighborStart=neighborT<.5;
-      const nIn={x:atNeighborStart?nux:-nux,y:atNeighborStart?nuy:-nuy};
-      const nOut={x:-nIn.x,y:-nIn.y},nNormal={x:-nIn.y,y:nIn.x};
-      for(const sign of [-1,1]){
-        const b={x:joint.x+nNormal.x*nhalf*sign,y:joint.y+nNormal.y*nhalf*sign};
-        // The offset face must be on the same physical side of the shared
-        // junction, selected by comparing its normal with this wall's offset.
-        const candidateNormal={x:-nIn.y,y:nIn.x};
-        const expectedNormal={x:normal.x*localSide,y:normal.y*localSide};
-        // A shared centre-line corner only joins the offset face with the same
-        // geometric side label. Avoid score-only selection between both faces.
-        const facing=candidateNormal.x*expectedNormal.x+candidateNormal.y*expectedNormal.y;
-        options.push({b,ray:nOut,allowBackward:false,sidePenalty:facing<0.25?1:0});
-      }
-    }
-    for(const option of options){
-      const denominator=cross(outwardRay,option.ray);
-      if(Math.abs(denominator)<1e-8)continue;
-      const delta={x:option.b.x-a.x,y:option.b.y-a.y};
-      const t=cross(delta,option.ray)/denominator;
-      const s=cross(delta,outwardRay)/denominator;
-      if(!Number.isFinite(t)||!Number.isFinite(s)||t < -endpointTolerance)continue;
-      if(!option.allowBackward&&s < -endpointTolerance)continue;
-      const hit={x:a.x+outwardRay.x*t,y:a.y+outwardRay.y*t};
-      const distance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
-      // No unbounded miters: fall back to the local end cap if the offset lines
-      // would form a long spike or if numerical degeneracy made the hit invalid.
-      if(!Number.isFinite(distance)||distance>Math.max(half,nhalf)*8)continue;
-      const score=(option.sidePenalty||0)*100+Math.max(0,t)+info.distance*.01+(isT?-.05:0);
-      if(!best||score<best.score)best={hit,score};
-    }
-  }
-  if(best){
-    wallEndResolvedCorners.add(wall.id+":"+(atStart?"start":"end")+":"+side);
-    return best.hit;
-  }
-  return fallback;
+  const endpoint=atStart?"start":"end";
+  const candidates=wallEndNeighbors.get(wall.id+":"+endpoint)||[];
+  const result=resolveWallEndCorner(wall,atStart,side,candidates,{endpointTolerance,maxMiterRatio:8});
+  if(result.resolved)wallEndResolvedCorners.add(wall.id+":"+endpoint+":"+side);
+  return result.point;
  };
 
 const materialColors={wall:"#d8e0e4",door:"#b88760",glass:"rgba(123,198,214,.46)",frame:"#5f737d",handle:"#aeb8bd",slab:"#c9d4d9",concrete:"#b9c6cd",roof:"#a97b5b"};
