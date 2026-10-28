@@ -259,7 +259,7 @@ export function resolveWallEndCorner(wall, atStart, side, candidates = [], {
       };
       // A T-junction connects to the host face on either side of the
       // branch's endpoint projection; the host line is not a forward ray.
-      options.push({ b, ray: { x: nux, y: nuy }, sidePenalty: 0, tJunction: true });
+      options.push({ b, ray: { x: nux, y: nuy }, sidePenalty: 0, tJunction: true, hostNormal, branchHalf: half, neighborHalf });
     } else {
       const neighborInward = neighborT < 0.5
         ? { x: nux, y: nuy }
@@ -308,7 +308,13 @@ export function resolveWallEndCorner(wall, atStart, side, candidates = [], {
       // At a T-junction the endpoint is projected onto a host face, so the
       // vertex must remain within half the host thickness. For endpoint joins,
       // use the global miter bound and let side-consistency choose the vertex.
-      if (option.tJunction && Math.abs(t) > neighborHalf + endpointTolerance) continue;
+      if (option.tJunction) {
+        const approach = Math.abs(dot2(outwardRay, option.hostNormal));
+        const sideProjection = Math.abs(dot2(normal, option.hostNormal));
+        const maxT = (option.neighborHalf + option.branchHalf * sideProjection) /
+          Math.max(approach, parallelTolerance) + endpointTolerance;
+        if (Math.abs(t) > maxT) continue;
+      }
 
       const score = (option.sidePenalty || 0) * 1e6 +
         hitDistance + Math.abs(t) * 1e-3 + (Number(info.distance) || 0) * 1e-2 +
