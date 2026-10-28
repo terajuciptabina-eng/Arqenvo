@@ -34,3 +34,8 @@ test("3D wall endpoint edge is omitted only when topology identifies a joined en
   assert.match(source, /wallEndNeighbors\.get\(face\.id\+":"\+\(atStart\?"start":"end"\)\)/);
   assert.match(source, /if\(exactSharedCoplanarEdge\|\|edgeCoveredByCoplanarFace\(a,b,face\)\)continue/);
 });
+
+test("3D edge renderer delegates complete coplanar coverage to the geometric predicate", () => {
+  assert.match(source, /segmentCoveredByPolygon2D\(start2,end2,other\.poly\.map\(uv\),\{tolerance:\.001\}\)/);
+  assert.match(source, /wallEndNeighbors\.get\(face\.id\+":"\+\(atStart\?"start":"end"\)\)/);
+});
