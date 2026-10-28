@@ -177,8 +177,9 @@ export function normalizeHostedOpenings(project) {
     if (!wall) continue;
     if (!Array.isArray(wall.openings)) wall.openings = [];
     const index = wall.openings.findIndex(opening => opening?.id === openingElement.id);
+    openingElement.libraryType ??= "single-leaf";
     const openingData = Object.fromEntries(
-      ["id", "type", "offset", "width", "height", "sill", "hingeSide", "swingDirection", "revealSide", "alignment"]
+      ["id", "type", "offset", "width", "height", "sill", "hingeSide", "swingDirection", "libraryType", "revealSide", "alignment"]
         .filter(key => openingElement[key] !== undefined)
         .map(key => [key, openingElement[key]])
     );
