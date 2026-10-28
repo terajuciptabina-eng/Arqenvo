@@ -12,7 +12,7 @@ let gridVisible=true,hiddenLayers=new Set(),groupsSuspended=false;
 const modelHistory=new ModelHistory({limit:80});
 let pendingHistorySnapshot=null,historyCommitQueued=false;
 const escapeHtml=value=>String(value??"").replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;").replaceAll("\\'","&#39;");
-let p=createProject(), tool="select", view="floor", layoutMode=false, activeLayoutId=null, draft=[], floorDrawGesture=null, selected=new Set(), scale=36, drawingScaleDenominator=100, viewportZoom=1, origin={x:0,y:0}, mouse=null, activeStoryId=p.stories[0].id, isPanning=false, panStart=null, spaceHeld=false, wallGeometryMethod="continuous", wallChainStart=null, wallChainPoints=[], wallChainHasSegment=false, trackerDistanceOverride=null, trackerAngleOverride=null, activeSnapPoint=null, openingHingeSide="left", openingSwingDirection="inside", openingAlignment="center", openingLibraryType="single-leaf", pendingOpeningPlacement=null, openingMoveGesture=null;
+let p=createProject(), tool="select", view="floor", layoutMode=false, activeLayoutId=null, draft=[], floorDrawGesture=null, selected=new Set(), scale=36, drawingScaleDenominator=100, viewportZoom=1, origin={x:0,y:0}, mouse=null, activeStoryId=p.stories[0].id, isPanning=false, panStart=null, spaceHeld=false, wallGeometryMethod="continuous", wallChainStart=null, wallChainPoints=[], wallChainHasSegment=false, trackerDistanceOverride=null, trackerAngleOverride=null, activeSnapPoint=null, openingHingeSide="left", openingSwingDirection="inside", openingAlignment="center", openingLibraryType="single-leaf", openingDoorWidth=.9, openingDoorHeight=2.1, openingDoorSill=0, openingWindowWidth=1.2, openingWindowHeight=1.2, openingWindowSill=.9, pendingOpeningPlacement=null, openingMoveGesture=null;
 let gridlineMoveGesture=null, genericMoveGesture=null, genericNodeMoveGesture=null, genericEdgeMoveGesture=null, roomLabelMoveGesture=null, pendingGridSystem=null;
 let spaceMagicWandActive=false,spaceMagicWandReturnTool=null;
 let lastFloorSelectionDebug=null;
@@ -878,14 +878,14 @@ function screenToWorld3d(q,z=story().elevation||0){const yaw=camera3d.yaw,pitch=
 function beginOpeningPlacement(q){
  const candidate=els().filter(w=>w.type==="wall"&&w.storyId===story().id).map(w=>({w,d:pointSegmentDistance(q,w.start,w.end)})).sort((a,b)=>a.d-b.d)[0];
  if(!candidate||candidate.d>.35){$("status").textContent=`Click within 350 mm of a host wall · cursor (${q.x.toFixed(2)}, ${q.y.toFixed(2)}) · nearest ${candidate?candidate.d.toFixed(2)+" m at "+candidate.w.start.x.toFixed(2)+","+candidate.w.start.y.toFixed(2)+" to "+candidate.w.end.x.toFixed(2)+","+candidate.w.end.y.toFixed(2):"no wall on active story"}`;return false}
- const w=candidate.w,width=tool==="door"?.9:1.2,len=wallLength(w),anchor=$("openingAlignment")?.value||openingAlignment||"center",libraryType=$("openingLibraryType")?.value||openingLibraryType||"single-leaf";
+ const w=candidate.w,width=tool==="door"?openingDoorWidth:openingWindowWidth,len=wallLength(w),anchor=$("openingAlignment")?.value||openingAlignment||"center",libraryType=$("openingLibraryType")?.value||openingLibraryType||"single-leaf";
  if(len+1e-8<width){$("status").textContent="Host wall is too short for this "+tool+" ("+width.toFixed(2)+" m required)";return false}
  openingAlignment=anchor;
  const dx=w.end.x-w.start.x,dy=w.end.y-w.start.y,position=((q.x-w.start.x)*dx+(q.y-w.start.y)*dy)/(len||1),anchorPosition=Math.max(0,Math.min(len,position));
  const offset=openingOffsetForAnchor(len,width,anchor,anchorPosition);
  const anchorPoint={x:w.start.x+dx*anchorPosition/(len||1),y:w.start.y+dy*anchorPosition/(len||1)};
  const cross=dx*(q.y-w.start.y)-dy*(q.x-w.start.x),revealSide=cross>=0?"left":"right";
- pendingOpeningPlacement=openingPlacement.begin({wallId:w.id,storyId:w.storyId,type:tool,offset,width,height:tool==="door"?2.1:1.2,sill:tool==="door"?0:.9,hingeSide:openingHingeSide,swingDirection:openingSwingDirection,libraryType,revealSide,anchor,anchorPosition,anchorPoint,cursor:{x:q.x,y:q.y}});
+ pendingOpeningPlacement=openingPlacement.begin({wallId:w.id,storyId:w.storyId,type:tool,offset,width,height:tool==="door"?openingDoorHeight:openingWindowHeight,sill:tool==="door"?openingDoorSill:openingWindowSill,hingeSide:openingHingeSide,swingDirection:openingSwingDirection,libraryType,revealSide,anchor,anchorPosition,anchorPoint,cursor:{x:q.x,y:q.y}});
  $("status").textContent="Move cursor to choose hinge left/right and swing inside/outside · Tab flips reveal side · Enter/tap blank paper places · Esc cancels";
  redraw();return true
 }
@@ -1037,7 +1037,7 @@ if(tool==="select"){q=rawPointerWorld;let hit=nearestElement(q);if(tabSelectionI
  genericMoveGesture={pointerId:e.pointerId,elementIds:starts.map(el=>el.id),startElements:starts,startWorld:{x:q.x,y:q.y},startClient:{x:e.clientX,y:e.clientY},didMove:false,historyStarted:false,axisLock:null,modelBefore:structuredClone(p)};
  try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{};updateEditActions();
  }else if(hit&&hit.type==="gridline"&&!(e.shiftKey||shiftHeld)){gridlineMoveGesture={pointerId:e.pointerId,elementId:hit.id,startWorld:{x:q.x,y:q.y},startClient:{x:e.clientX,y:e.clientY},start:{start:{...hit.start},end:{...hit.end}},groupStarts:groupKey(hit)&&!groupsSuspended?els().filter(v=>groupKey(v)===groupKey(hit)).map(v=>({id:v.id,start:v.start?{...v.start}:null,end:v.end?{...v.end}:null,position:v.position?{...v.position}:null,boundary:v.boundary?v.boundary.map(pt=>({...pt})):null,witnessStart:v.witnessStart?{...v.witnessStart}:null,witnessEnd:v.witnessEnd?{...v.witnessEnd}:null})):null,didMove:false,historyStarted:false,axisLock:null,modelBefore:structuredClone(p)};updateEditActions();try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{};$("status").textContent="Gridline selected · drag the line to move it"}else if(hit&&["door","window"].includes(hit.type)&&!(e.shiftKey||shiftHeld)){selectionBoxGesture=null;openingMoveGesture={pointerId:e.pointerId,elementId:hit.id,hostWallId:hit.hostWallId,startWorld:{x:q.x,y:q.y},startClient:{x:e.clientX,y:e.clientY},startOffset:Number(hit.offset)||0,didMove:false,historyStarted:false,modelBefore:structuredClone(p)};updateEditActions();try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{}}renderProperties();redraw();return}
-if(tool==="magicwand"){createRoofFromMagicWand(q);if(spaceMagicWandActive){const returnTool=spaceMagicWandReturnTool||"select";spaceMagicWandActive=false;spaceMagicWandReturnTool=null;spaceHeld=false;setTool(returnTool);updateZoomReadout()}return}if(tool==="column"){hist();els().push(createColumn(q,{storyId:story().id}));redraw();return}
+if(tool==="magicwand"){createRoofFromMagicWand(q);if(spaceMagicWandActive){const returnTool=spaceMagicWandReturnTool||"select";spaceMagicWandActive=false;spaceMagicWandReturnTool=null;spaceHeld=false;setTool(returnTool);updateZoomReadout()}return}if(tool==="column"){hist();const element=createColumn(q,{storyId:story().id});Object.assign(element,structuredClone(arqenvoCreationDefaults?.column||{}));els().push(element);redraw();return}
 if(tool==="door"||tool==="window"){if(pendingOpeningPlacement){commitPendingOpening();selected.clear();renderProperties();redraw();return}beginOpeningPlacement(q);return}
 if(tool==="slab"||tool==="roof"||tool==="zone"){if(draft.length)q=constrain(draft[draft.length-1],q,e);draft.push(q);$("status").textContent=(tool==="zone"?"Zone":tool==="roof"?"Roof":"Slab")+" boundary point "+draft.length+" set · click next point, then press Enter to finish";redraw();return}
 if(["wall","beam","dimension","gridline"].includes(tool)){if(tool==="dimension"){draft.push({x:q.x,y:q.y});floorDrawGesture=null;$("status").textContent="Dimension point "+draft.length+" set · click more points, then press Enter";redraw();return}if(draft.length){const a=draft[0],length=Math.hypot(q.x-a.x,q.y-a.y);if(length<.01){$("status").textContent="Line too short — choose a farther endpoint";return}if(length>30){$("status").textContent="Drawing cancelled: segment exceeds 30 m";draft=[];redraw();return}hist();if(tool==="wall")els().push(createWall(a,q,{storyId:story().id,height:+$("height").value||3,thickness:+$("thickness").value||.15}));else if(tool==="beam")els().push(createBeam(a,q,{storyId:story().id}));else if(tool==="gridline"){const n=els().filter(v=>v.type==="gridline").length;els().push({id:crypto.randomUUID(),type:"gridline",start:a,end:q,label:String.fromCharCode(65+(n%26)),storyId:story().id})}else els().push({id:crypto.randomUUID(),type:"dimension",start:a,end:q,storyId:story().id});draft=[];floorDrawGesture=null;$("status").textContent=tool.charAt(0).toUpperCase()+tool.slice(1)+" created";renderProperties();redraw();return}floorDrawGesture={pointerId:e.pointerId,tool,startScreen:{x:e.clientX,y:e.clientY},anchor:q,isStart:true,pointerWorld:{x:q.x,y:q.y}};try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{};draft=[q];$("status").textContent=(tool==="wall"?"Wall":tool==="beam"?"Beam":"Dimension")+" start point set — click endpoint or drag";redraw();return}});
@@ -2066,13 +2066,31 @@ function arqenvoPickParameters(sourceOverride=null){
  const source=list[0],allKeys=arqenvoParameterKeys[source.type]||[];
  const geometryKeys=["width","height","depth","thickness","baseOffset","pitch","textSizeMm"],appearanceKeys=["libraryType","buildingMaterial"],placementKeys=["elevation","offset","sill","rotation","hingeSide","swingDirection","alignment","name","number"];
  const keys=arqenvoTransferSet==="geometry"?allKeys.filter(k=>geometryKeys.includes(k)):arqenvoTransferSet==="appearance"?allKeys.filter(k=>appearanceKeys.includes(k)):arqenvoTransferSet==="placement"?allKeys.filter(k=>placementKeys.includes(k)):allKeys;
- arqenvoPickedParameters={type:source.type,values:Object.fromEntries(keys.filter(k=>source[k]!==undefined).map(k=>[k,structuredClone(source[k])])),sourceId:source.id,transferSet:arqenvoTransferSet};
- arqenvenvoInjectMode=true;
+ const values=Object.fromEntries(keys.filter(k=>source[k]!==undefined).map(k=>[k,structuredClone(source[k])]));
+ arqenvoPickedParameters={type:source.type,values,sourceId:source.id,transferSet:arqenvoTransferSet};
+ // Archicad Pick Up loads settings into the active tool so the next new element uses them.
+ if(["wall","slab","column","beam","roof","door","window","dimension","room"].includes(source.type))setTool(source.type);
+ const setInput=(id,key)=>{const node=$(id);if(node&&source[key]!==undefined){node.value=String(source[key]);node.dispatchEvent(new Event("input",{bubbles:true}));node.dispatchEvent(new Event("change",{bubbles:true}))}};
+ if(source.type==="wall"){setInput("height","height");setInput("thickness","thickness")}
+ if(source.type==="door"||source.type==="window"){
+  if(source.type==="door"){if(source.width!==undefined)openingDoorWidth=Number(source.width);if(source.height!==undefined)openingDoorHeight=Number(source.height);if(source.sill!==undefined)openingDoorSill=Number(source.sill)}
+  else {if(source.width!==undefined)openingWindowWidth=Number(source.width);if(source.height!==undefined)openingWindowHeight=Number(source.height);if(source.sill!==undefined)openingWindowSill=Number(source.sill)}
+  if(source.hingeSide!==undefined)openingHingeSide=source.hingeSide;
+  if(source.swingDirection!==undefined)openingSwingDirection=source.swingDirection;
+  if(source.alignment!==undefined)openingAlignment=source.alignment;
+  if(source.libraryType!==undefined)openingLibraryType=source.libraryType;
+  updateContextUI();
+ }
+ if(source.type==="roof"&&source.pitch!==undefined&&$("roofPitch")){$("roofPitch").dataset.current=String(source.pitch);$("roofPitch").value=String(source.pitch)}
+ if(["slab","column","beam","roof"].includes(source.type))arqenvoCreationDefaults={...(arqenvoCreationDefaults||{}),[source.type]:structuredClone(values)};
+ // Keep ordinary drawing clicks available after Pick Up; Inject is modifier-click or the explicit Inject button.
+ arqenvenvoInjectMode=false;
  $("injectParameters").disabled=false;
- $("injectParameters").setAttribute("aria-pressed","true");
- $("injectParameters").classList.add("active");
- c.style.cursor="copy";
- $("status").textContent="Parameters picked from "+source.type+" · click target element(s) to inject · Esc to finish";
+ $("injectParameters").setAttribute("aria-pressed","false");
+ $("injectParameters").classList.remove("active");
+ c.style.cursor="";
+ $("status").textContent="Picked up "+source.type+" settings · next new "+source.type+" uses these defaults · Option+Command-click a same-type element to inject";
+ return true;
 }
 let arqenvenvoInjectMode=false;
 function arqenvoCancelInjectMode(){
