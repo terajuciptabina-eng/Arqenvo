@@ -57,7 +57,8 @@ try{
  await tablet.waitForFunction(()=>document.querySelector(".navigator")?.classList.contains("arq-palette-floating"));
  assert.equal(JSON.parse(await tablet.evaluate(()=>localStorage.getItem("arqenvo-palette-navigator"))).mode,"float","Navigator header should allow moving to a floating position");
  const navFloatingHeader=await navHeader.boundingBox();
- await tablet.mouse.move(navFloatingHeader.x+15,navFloatingHeader.y+navFloatingHeader.height/2);
+ // Start away from the embedded Navigator toggle; it intentionally isn't a drag handle.
+ await tablet.mouse.move(navFloatingHeader.x+Math.min(80,navFloatingHeader.width-12),navFloatingHeader.y+navFloatingHeader.height/2);
  await tablet.mouse.down();await tablet.mouse.move(Math.round(before.nav.x+Math.min(80,before.nav.width/2)),Math.round(before.nav.y+Math.min(80,before.nav.height/2)),{steps:8});await tablet.mouse.up();
  await tablet.waitForFunction(()=>!document.querySelector(".navigator")?.classList.contains("arq-palette-floating")).catch(async error=>{
   const diagnostic=await tablet.evaluate(()=>{const e=document.querySelector(".navigator"),r=e?.getBoundingClientRect(),w=document.querySelector(".work")?.getBoundingClientRect(),saved=JSON.parse(localStorage.getItem("arqenvo-palette-navigator")||"{}");return{classes:e?.className,rect:r?{x:r.x,y:r.y,width:r.width,height:r.height,right:r.right,bottom:r.bottom}:null,work:w?{x:w.x,y:w.y,width:w.width,height:w.height,right:w.right,bottom:w.bottom}:null,saved,header:document.querySelector(".navigator > .section")?.getBoundingClientRect().toJSON()||null}}).catch(e=>({diagnosticError:e.message}));
