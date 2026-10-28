@@ -157,3 +157,20 @@ export function wallEndJoin(wallA, wallB, thicknessA, thicknessB=thicknessA, {mi
   const left=resolveSide(1),right=resolveSide(-1);
   return {junction:joint,left,right,type:left.type==="miter"&&right.type==="miter"?"miter":"bevel"};
 }
+
+/**
+ * Deterministically resolve a wall-end junction from geometrically eligible
+ * same-story candidates. Element order must not decide equal-distance joins.
+ */
+export function selectWallJunctionCandidate(candidates) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+  const score = candidate => {
+    if (!candidate || !Number.isFinite(candidate.distance) || !Number.isFinite(candidate.alignment)) {
+      throw new TypeError("Wall junction candidates need finite distance and alignment values");
+    }
+    return candidate.distance + (candidate.isT ? 0.0025 : 0) +
+      (1 - Math.max(0, Math.min(1, candidate.alignment))) * 0.002;
+  };
+  candidates.forEach(score);
+  return candidates.reduce((best, candidate) => score(candidate) < score(best) ? candidate : best, candidates[0]);
+}
