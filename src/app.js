@@ -2031,3 +2031,98 @@ function drawTransformShadow(){
  x.restore();
 }
 document.addEventListener("pointermove",()=>{if(transformInteraction&&transformInteraction.points.length){drawTransformShadow()}});
+
+
+// Archicad-style parameter transfer: pick one source, then select one or more compatible targets and inject.
+let arqenvoPickedParameters=null;
+const arqenvoParameterKeys={
+ wall:["height","thickness","baseOffset","buildingMaterial"],
+ slab:["thickness","elevation","buildingMaterial"],
+ column:["width","depth","height","rotation","elevation","buildingMaterial"],
+ beam:["width","depth","elevation","buildingMaterial"],
+ roof:["thickness","elevation","offset","pitch","buildingMaterial"],
+ door:["libraryType","width","height","sill","offset","hingeSide","swingDirection","alignment","buildingMaterial"],
+ window:["libraryType","width","height","sill","offset","hingeSide","swingDirection","alignment","buildingMaterial"],
+ dimension:["textSizeMm","buildingMaterial"],
+ room:["name","number","buildingMaterial"]
+};
+function arqenvoPickParameters(){
+ const list=chosen();
+ if(list.length!==1){$("status").textContent="Pick Up: select exactly one source element first";return}
+ const source=list[0],keys=arqenvoParameterKeys[source.type]||[];
+ arqenvoPickedParameters={type:source.type,values:Object.fromEntries(keys.filter(k=>source[k]!==undefined).map(k=>[k,structuredClone(source[k])]))};
+ $("injectParameters").disabled=false;
+ $("status").textContent="Picked "+source.type+" parameters. Select compatible target(s), then click Inject (Alt+V).";
+}
+function arqenvoInjectParameters(){
+ if(!arqenvoPickedParameters){$("status").textContent="Pick Up parameters from a source element first";return}
+ const targets=chosen().filter(e=>e.type===arqenvoPickedParameters.type);
+ if(!targets.length){$("status").textContent="Select target elements of type "+arqenvoPickedParameters.type+" first";return}
+ const sourceValues=arqenvoPickedParameters.values,updates=[];
+ for(const element of targets){
+  const values={...sourceValues};
+  if(["door","window"].includes(element.type)){
+   const wall=els().find(v=>v.id===element.hostWallId&&v.type==="wall");
+   if(!wall){$("status").textContent="Inject stopped: a target opening has no host wall";return}
+   const len=wallLength(wall),width=Number(values.width??element.width);
+   let offset=Number(values.offset??element.offset);
+   if(values.alignment==="left")offset=0;
+   else if(values.alignment==="center")offset=(len-width)/2;
+   else if(values.alignment==="right")offset=len-width;
+   if(!Number.isFinite(width)||width<=0||width>len+1e-8||!Number.isFinite(offset)||offset<0||offset+width>len+1e-8){$("status").textContent="Inject stopped: source opening width/position does not fit every target host wall";return}
+   values.width=width;values.offset=offset;updates.push({element,wall,values});
+  }else updates.push({element,values});
+ }
+ hist("Inject parameters");
+ for(const item of updates){
+  Object.assign(item.element,structuredClone(item.values));
+  if(item.wall){
+   item.element.alignment=item.values.alignment||item.element.alignment||"custom";
+   item.wall.openings=item.wall.openings||[];
+   const hosted=item.wall.openings.find(o=>o.id===item.element.id);
+   if(hosted)Object.assign(hosted,structuredClone(item.element));
+   else item.wall.openings.push(structuredClone(item.element));
+  }
+ }
+ scheduleAutoSave();redraw();renderProperties();
+ $("status").textContent="Injected "+arqenvoPickedParameters.type+" parameters into "+updates.length+" selected element(s)";
+}
+$("pickUpParameters")?.addEventListener("click",arqenvoPickParameters);
+$("injectParameters")?.addEventListener("click",arqenvoInjectParameters);
+document.addEventListener("keydown",event=>{
+ if(/INPUT|TEXTAREA|SELECT/.test(event.target?.tagName||"")||event.target?.isContentEditable)return;
+ if(event.altKey&&event.key.toLowerCase()==="c"){event.preventDefault();arqenvoPickParameters()}
+ if(event.altKey&&event.key.toLowerCase()==="v"){event.preventDefault();arqenvoInjectParameters()}
+});
+function arqenvoSyncMultiOpeningLibrary(){
+ const control=$("multiOpeningLibraryControl"),select=$("multiOpeningLibrary");
+ if(!control||!select)return;
+ const list=chosen(),same=list.length>1&&["door","window"].includes(list[0].type)&&list.every(e=>e.type===list[0].type);
+ control.hidden=!same;control.style.display=same?"flex":"none";
+ if(same){const types=[...new Set(list.map(e=>e.libraryType||"single-leaf"))];select.value=types.length===1?types[0]:""}
+}
+$("multiOpeningLibrary")?.addEventListener("change",()=>{
+ const value=$("multiOpeningLibrary").value,list=chosen();
+ if(!value||list.length<2||!["door","window"].includes(list[0].type)||!list.every(e=>e.type===list[0].type))return;
+ const updates=[];
+ for(const element of list){
+  const wall=els().find(v=>v.id===element.hostWallId&&v.type==="wall");
+  if(!wall){$("status").textContent="Library change stopped: target opening has no host wall";return}
+  const width=Number(element.width),offset=Number(element.offset),len=wallLength(wall);
+  if(!Number.isFinite(width)||width<=0||offset<0||offset+width>len+1e-8){$("status").textContent="Library change stopped: invalid host-wall opening geometry";return}
+  updates.push({element,wall});
+ }
+ hist("Change selected opening library");
+ for(const {element,wall} of updates){
+  element.libraryType=value;
+  wall.openings=wall.openings||[];
+  const hosted=wall.openings.find(o=>o.id===element.id);
+  if(hosted)hosted.libraryType=value;else wall.openings.push(structuredClone(element));
+ }
+ scheduleAutoSave();redraw();renderProperties();
+ $("status").textContent="Library set to "+(value==="double-leaf"?"Double Leaf":"Single Leaf")+" for "+updates.length+" selected "+list[0].type+" elements";
+});
+const arqenvoMultiLibraryObserver=new MutationObserver(arqenvoSyncMultiOpeningLibrary);
+const arqenvoSelectionInfo=$("selectionInfo");
+if(arqenvoSelectionInfo)arqenvoMultiLibraryObserver.observe(arqenvoSelectionInfo,{childList:true,characterData:true,subtree:true});
+arqenvoSyncMultiOpeningLibrary();
