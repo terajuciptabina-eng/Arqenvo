@@ -511,10 +511,16 @@ const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
 // Top faces are independently emitted by each wall prism. At a junction their
 // coplanar footprints overlap or share a boundary, so blindly stroking every
 // top polygon draws false white seams across a continuous wall cap.
-const topFaces=orderedFaces.filter(face=>face.topFace&&face.poly.length>=3);
+const topFacesByElevation=new Map();
+for(const face of orderedFaces){
+ if(face.material!=="wall"||!face.topFace||face.poly.length<3)continue;
+ const elevation=Math.round(face.poly[0].worldZ*1000);
+ if(!topFacesByElevation.has(elevation))topFacesByElevation.set(elevation,[]);
+ topFacesByElevation.get(elevation).push(face);
+}
 const topFaceEdgeCovered=(face,a,b)=>{
  const start={x:a.worldX,y:a.worldY},end={x:b.worldX,y:b.worldY};
- for(const other of topFaces){
+ for(const other of topFacesByElevation.get(Math.round(a.worldZ*1000))||[]){
   if(other===face||Math.abs(other.poly[0].worldZ-a.worldZ)>.001)continue;
   if(segmentCoveredByPolygon2D(start,end,other.poly.map(pt=>({x:pt.worldX,y:pt.worldY})),{tolerance:.001}))return true;
  }
