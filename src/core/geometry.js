@@ -174,5 +174,6 @@ export function selectWallJunctionCandidate(candidates) {
     const transversePenalty = (1 - Math.max(0, Math.min(1, candidate.alignment))) * 0.002;
     return candidate.distance + endpointPenalty + transversePenalty;
   };
+  candidates.forEach(score);
   return candidates.reduce((best, candidate) => score(candidate) < score(best) ? candidate : best, candidates[0]);
 }
