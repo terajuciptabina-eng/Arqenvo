@@ -5,7 +5,7 @@ import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, openingOffsetForAnchor, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, findClosedWallLoops} from "./core/authoring.js";
 import {ModelHistory, transactModel} from "./core/transactions.js";
-import {wallEndJoin, segmentIntersection} from "./core/geometry.js";
+import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate} from "./core/geometry.js";
 import {normalizeUnitSystem,formatLength,formatArea} from "./core/units.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set(),groupsSuspended=false;
@@ -342,10 +342,7 @@ function render3DScene(ctx,items,project3d,options={}){
   // Resolve ambiguous T/cross junctions by preferring the closest candidate,
   // then a true endpoint join, then the most transverse host wall. The old
   // first-nearest-only search depended on element order when distances tied.
-  const neighborInfo=[...candidates].sort((a,b)=>{
-   const score=v=>v.distance+(v.isT ? 0.0025 : 0)+(1-v.alignment)*0.002;
-   return score(a)-score(b);
-  })[0];
+  const neighborInfo=selectWallJunctionCandidate(candidates);
   const {neighbor,neighborT,closest,isT}=neighborInfo;
   const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
   const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nn={x:-nuy,y:nux},nhalf=(neighbor.thickness||.15)/2;
