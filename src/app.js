@@ -508,6 +508,24 @@ else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
 prism(e,footprint,z0,height)
 }
 const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
+// Top faces are independently emitted by each wall prism. At a junction their
+// coplanar footprints overlap or share a boundary, so blindly stroking every
+// top polygon draws false white seams across a continuous wall cap.
+const topFacesByElevation=new Map();
+for(const face of orderedFaces){
+ if(face.material!=="wall"||!face.topFace||face.poly.length<3)continue;
+ const elevation=Math.round(face.poly[0].worldZ*1000);
+ if(!topFacesByElevation.has(elevation))topFacesByElevation.set(elevation,[]);
+ topFacesByElevation.get(elevation).push(face);
+}
+const topFaceEdgeCovered=(face,a,b)=>{
+ const start={x:a.worldX,y:a.worldY},end={x:b.worldX,y:b.worldY};
+ for(const other of topFacesByElevation.get(Math.round(a.worldZ*1000))||[]){
+  if(other===face||Math.abs(other.poly[0].worldZ-a.worldZ)>.001)continue;
+  if(segmentCoveredByPolygon2D(start,end,other.poly.map(pt=>({x:pt.worldX,y:pt.worldY})),{tolerance:.001}))return true;
+ }
+ return false;
+};
 const wallSideEdges=new Map();
 const edgePointKey=pt=>[pt.worldX,pt.worldY,pt.worldZ].map(v=>Number(v).toFixed(6)).join(",");
 const edgeKey=(a,b)=>{const ka=edgePointKey(a),kb=edgePointKey(b);return ka<kb?ka+"|"+kb:kb+"|"+ka};
@@ -559,8 +577,13 @@ for(const face of orderedFaces){
  ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
  ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();
  if(face.material!=="wall"||face.topFace||face.selected){
-  if(face.material==="wall"&&face.topFace&&!face.selected&&face.skipTopEdges?.length){
-   for(let i=0;i<face.poly.length;i++){if(face.skipTopEdges.includes(i))continue;const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  if(face.material==="wall"&&face.topFace&&!face.selected){
+   for(let i=0;i<face.poly.length;i++){
+    if(face.skipTopEdges?.includes(i))continue;
+    const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];
+    if(topFaceEdgeCovered(face,a,b))continue;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+   }
   }else ctx.stroke();
   continue
  }
@@ -571,6 +594,14 @@ for(const face of orderedFaces){
   // not physical edges; opening frames/reveals and resolved junction geometry
   // provide the real boundaries. Keep strokes only at actual source-wall ends.
   const ws=face.wallSegment,side=face.wallSideIndex;
+  if(ws&&(side===0||side===2)&&(i===0||i===2)){
+   const edgeZ=Math.abs(a.worldZ-b.worldZ)<=.001?(a.worldZ+b.worldZ)/2:NaN;
+   const openingBoundary=ws.openings?.some(o=>{
+    const inside=ws.lo>=o.offset-1e-4&&ws.hi<=o.offset+o.width+1e-4;
+    return inside&&(Math.abs(edgeZ-(o.sill||0))<.001||Math.abs(edgeZ-((o.sill||0)+o.height))<.001);
+   });
+   if(openingBoundary)continue;
+  }
   if(ws&&(side===0||side===2)&&(i===1||i===3)){
    const distance=side===0?(i===1?ws.hi:ws.lo):(i===1?ws.lo:ws.hi);
    const endpointTolerance=1e-4;

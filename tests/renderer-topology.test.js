@@ -28,3 +28,17 @@ test("3D edge renderer delegates complete coplanar coverage to the geometric pre
   assert.match(source, /segmentCoveredByPolygon2D\(start2,end2,other\.poly\.map\(uv\),\{tolerance:\.001\}\)/);
   assert.match(source, /wallEndNeighbors\.get\(endpointKey\)\|\|\[\]/);
 });
+
+test("3D wall top-face renderer suppresses only fully covered coplanar cap edges", () => {
+  assert.match(source, /const topFacesByElevation=new Map\(\)/);
+  assert.match(source, /const topFaceEdgeCovered=\(face,a,b\)=>/);
+  assert.match(source, /Math\.abs\(other\.poly\[0\]\.worldZ-a\.worldZ\)>.001/);
+  assert.match(source, /if\(topFaceEdgeCovered\(face,a,b\)\)continue/);
+  assert.match(source, /face\.skipTopEdges\?\.includes\(i\)/);
+});
+
+test("3D wall skin omits horizontal sill and head edges inside hosted openings", () => {
+  assert.match(source, /const openingBoundary=ws\.openings\?\.some\(o=>/);
+  assert.match(source, /ws\.lo>=o\.offset-1e-4&&ws\.hi<=o\.offset\+o\.width\+1e-4/);
+  assert.match(source, /Math\.abs\(edgeZ-\(\(o\.sill\|\|0\)\+o\.height\)\)<\.001/);
+});
