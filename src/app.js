@@ -2051,46 +2051,82 @@ function arqenvoPickParameters(){
  if(list.length!==1){$("status").textContent="Pick Up: select exactly one source element first";return}
  const source=list[0],keys=arqenvoParameterKeys[source.type]||[];
  arqenvoPickedParameters={type:source.type,values:Object.fromEntries(keys.filter(k=>source[k]!==undefined).map(k=>[k,structuredClone(source[k])]))};
+ arqenvenvoInjectMode=true;
  $("injectParameters").disabled=false;
- $("status").textContent="Picked "+source.type+" parameters. Select compatible target(s), then click Inject (Alt+V).";
+ $("injectParameters").setAttribute("aria-pressed","true");
+ $("injectParameters").classList.add("active");
+ c.style.cursor="copy";
+ $("status").textContent="Parameters picked from "+source.type+" · click target element(s) to inject · Esc to finish";
 }
-function arqenvoInjectParameters(){
- if(!arqenvoPickedParameters){$("status").textContent="Pick Up parameters from a source element first";return}
- const targets=chosen().filter(e=>e.type===arqenvoPickedParameters.type);
- if(!targets.length){$("status").textContent="Select target elements of type "+arqenvoPickedParameters.type+" first";return}
- const sourceValues=arqenvoPickedParameters.values,updates=[];
- for(const element of targets){
-  const values={...sourceValues};
-  if(["door","window"].includes(element.type)){
-   const wall=els().find(v=>v.id===element.hostWallId&&v.type==="wall");
-   if(!wall){$("status").textContent="Inject stopped: a target opening has no host wall";return}
-   const len=wallLength(wall),width=Number(values.width??element.width);
-   let offset=Number(values.offset??element.offset);
-   if(values.alignment==="left")offset=0;
-   else if(values.alignment==="center")offset=(len-width)/2;
-   else if(values.alignment==="right")offset=len-width;
-   if(!Number.isFinite(width)||width<=0||width>len+1e-8||!Number.isFinite(offset)||offset<0||offset+width>len+1e-8){$("status").textContent="Inject stopped: source opening width/position does not fit every target host wall";return}
-   values.width=width;values.offset=offset;updates.push({element,wall,values});
-  }else updates.push({element,values});
+let arqenvenvoInjectMode=false;
+function arqenvoCancelInjectMode(){
+ arqenvenvoInjectMode=false;
+ $("injectParameters")?.setAttribute("aria-pressed","false");
+ $("injectParameters")?.classList.remove("active");
+ if(c)c.style.cursor="";
+ $("status").textContent="Inject mode cancelled";
+}
+function arqenvoInjectIntoElement(target){
+ if(!arqenvoPickedParameters){$("status").textContent="Pick Up parameters from a source element first";return false}
+ if(!target||target.type!==arqenvoPickedParameters.type){$("status").textContent="Inject expects a "+arqenvoPickedParameters.type+" target";return false}
+ const values=structuredClone(arqenvoPickedParameters.values);
+ let wall=null;
+ if(["door","window"].includes(target.type)){
+  wall=els().find(v=>v.id===target.hostWallId&&v.type==="wall");
+  if(!wall){$("status").textContent="Inject stopped: target opening has no host wall";return false}
+  const len=wallLength(wall),width=Number(values.width??target.width);
+  let offset=Number(values.offset??target.offset);
+  if(values.alignment==="left")offset=0;
+  else if(values.alignment==="center")offset=(len-width)/2;
+  else if(values.alignment==="right")offset=len-width;
+  if(!Number.isFinite(width)||width<=0||width>len+1e-8||!Number.isFinite(offset)||offset<0||offset+width>len+1e-8){$("status").textContent="Inject stopped: source opening width/position does not fit this host wall";return false}
+  values.width=width;values.offset=offset;
  }
  hist("Inject parameters");
- for(const item of updates){
-  Object.assign(item.element,structuredClone(item.values));
-  if(item.wall){
-   item.element.alignment=item.values.alignment||item.element.alignment||"custom";
-   item.wall.openings=item.wall.openings||[];
-   const hosted=item.wall.openings.find(o=>o.id===item.element.id);
-   if(hosted)Object.assign(hosted,structuredClone(item.element));
-   else item.wall.openings.push(structuredClone(item.element));
-  }
+ Object.assign(target,values);
+ if(wall){
+  target.alignment=values.alignment||target.alignment||"custom";
+  wall.openings=wall.openings||[];
+  const hosted=wall.openings.find(o=>o.id===target.id);
+  if(hosted)Object.assign(hosted,structuredClone(target));
+  else wall.openings.push(structuredClone(target));
  }
  scheduleAutoSave();redraw();renderProperties();
- $("status").textContent="Injected "+arqenvoPickedParameters.type+" parameters into "+updates.length+" selected element(s)";
+ $("status").textContent="Injected parameters into "+target.type+" · click another compatible element or press Esc";
+ return true;
+}
+function arqenvoInjectParameters(){
+ if(!arqenvoPickedParameters){$("status").textContent="Pick Up a source element first";return}
+ arqenvenvoInjectMode=true;
+ $("injectParameters").setAttribute("aria-pressed","true");
+ $("injectParameters").classList.add("active");
+ c.style.cursor="copy";
+ $("status").textContent="Inject mode active · click target element(s) · Esc to finish";
 }
 $("pickUpParameters")?.addEventListener("click",arqenvoPickParameters);
 $("injectParameters")?.addEventListener("click",arqenvoInjectParameters);
+// Capture before normal Select-tool handling so an Inject click edits its target directly without selecting it first.
+c.addEventListener("pointerdown",event=>{
+ if(!arqenvenvoInjectMode||event.button!==0||layoutMode)return;
+ if(event.target!==c)return;
+ const rect=c.getBoundingClientRect(),screenPoint={x:event.clientX-rect.left,y:event.clientY-rect.top};
+ let target=null;
+ if(view==="floor"){
+  target=nearestElement(wpos(screenPoint));
+ }else if(view==="3d"){
+  const openingIds=new Set(els().filter(el=>el.type==="door"||el.type==="window").map(el=>el.id));
+  const hit=hitPolys3d.filter(item=>openingIds.has(item.id)).slice().reverse().find(item=>pointInPolygon(screenPoint,item.poly))
+   ||hitPolys3d.slice().reverse().find(item=>pointInPolygon(screenPoint,item.poly));
+  if(hit)target=els().find(el=>el.id===hit.id)||null;
+ }
+ if(!target){$("status").textContent="Inject mode · click a compatible "+arqenvoPickedParameters?.type+" element";event.preventDefault();event.stopImmediatePropagation();return}
+ if(target.type!==arqenvoPickedParameters?.type){$("status").textContent="Inject expects "+arqenvoPickedParameters?.type+"; clicked "+target.type;event.preventDefault();event.stopImmediatePropagation();return}
+ event.preventDefault();event.stopImmediatePropagation();
+ arqenvoInjectIntoElement(target);
+},true);
 document.addEventListener("keydown",event=>{
  if(/INPUT|TEXTAREA|SELECT/.test(event.target?.tagName||"")||event.target?.isContentEditable)return;
+ if(event.key==="Escape"&&arqenvenvoInjectMode){event.preventDefault();event.stopPropagation();arqenvoCancelInjectMode();return}
  if(event.altKey&&event.key.toLowerCase()==="c"){event.preventDefault();arqenvoPickParameters()}
  if(event.altKey&&event.key.toLowerCase()==="v"){event.preventDefault();arqenvoInjectParameters()}
 });
