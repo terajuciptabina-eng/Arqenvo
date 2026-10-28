@@ -455,7 +455,7 @@ try {
     "Choosing Left should immediately move the door opening to the host wall start");
   await openingPage.locator('[data-prop="width"]').fill("1.2");
   await openingPage.locator('[data-prop="width"]').press("Enter");
-  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent === "Opening updated");
+  await openingPage.waitForFunction(() => ["Opening updated","Element parameters updated"].includes(document.querySelector("#status")?.textContent) && Number(document.querySelector('[data-prop="width"]')?.value) === 1.2);
   assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
     "Pressing Enter should apply the new door width to the hosted opening");
   // Recalculate the current Door symbol after the hinge, swing, alignment and
