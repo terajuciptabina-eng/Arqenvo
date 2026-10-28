@@ -754,11 +754,11 @@ try {
   const roofCenterPoint=await roofPage.evaluate(()=>{const c=document.querySelector("#canvas"),b=c.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:b.left+c.clientWidth/2+(t?.origin.x||0),y:b.top+c.clientHeight/2+(t?.origin.y||0)}});
   await roofPage.mouse.click(roofCenterPoint.x,roofCenterPoint.y);
   await roofPage.waitForFunction(()=>document.querySelector('#elementProperties input[readonly]')?.value?.toLowerCase().includes("roof"));
-  await roofPage.locator('#elementProperties [data-prop="pitch"]').fill("25");
-  await roofPage.locator('#elementProperties [data-prop="elevation"]').fill("3.4");
-  await roofPage.locator('#elementProperties [data-prop="offset"]').fill("2.75");
-  await roofPage.locator('#elementProperties [data-prop="thickness"]').fill("0.22");
-  await roofPage.locator("#applyProps").click();
+  for(const [name,value] of [["pitch","25"],["elevation","3.4"],["offset","2.75"],["thickness","0.22"]]){
+    const input=roofPage.locator('#elementProperties [data-prop="'+name+'"]');
+    await input.fill(value);
+    await input.press("Enter");
+  }
   await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return r?.pitch===25&&r?.elevation===3.4&&r?.offset===2.75&&r?.thickness===.22});
   // Verify the same offset changes the 3D roof base elevation.
   await roofPage.locator("#threeTab").click();
