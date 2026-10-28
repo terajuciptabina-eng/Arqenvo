@@ -531,7 +531,10 @@ const canonicalPlane=face=>{
  const normal={x:n.x*sign,y:n.y*sign,z:n.z*sign},p=face.poly[0];
  const d=normal.x*p.x+normal.y*p.y+normal.z*(p.depth||0);
  const normalKey=[normal.x,normal.y,normal.z].map(v=>Math.round(v*100)).join(",");
- return {normal,d,key:normalKey+":"+Math.round(d)};
+ // Bucket by orientation only. Plane offsets are compared with a tolerance
+ // below; quantizing d in the key can split two coplanar faces at rounding
+ // boundaries and leave the internal seam visible.
+ return {normal,d,key:normalKey};
 };
 const facePlaneKeys=new Map();
 for(const face of wallFaceNormals.keys()){
