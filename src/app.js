@@ -2034,7 +2034,7 @@ document.addEventListener("pointermove",()=>{if(transformInteraction&&transformI
 
 
 // Archicad-style parameter transfer: pick one source, then select one or more compatible targets and inject.
-let arqenvoPickedParameters=null, arqenvoPickMode=false;
+let arqenvoPickedParameters=null, arqenvoPickMode=false, arqenvoTransferSet="all";
 const arqenvoParameterKeys={
  wall:["height","thickness","baseOffset","buildingMaterial"],
  slab:["thickness","elevation","buildingMaterial"],
@@ -2049,7 +2049,9 @@ const arqenvoParameterKeys={
 function arqenvoPickParameters(sourceOverride=null){
  const list=sourceOverride?[sourceOverride]:chosen();
  if(list.length!==1){$("status").textContent="Pick Up: click a source element or select exactly one";return false}
- const source=list[0],keys=arqenvoParameterKeys[source.type]||[];
+ const source=list[0],allKeys=arqenvoParameterKeys[source.type]||[];
+ const geometryKeys=["width","height","depth","thickness","baseOffset","pitch","textSizeMm"],appearanceKeys=["libraryType","buildingMaterial"],placementKeys=["elevation","offset","sill","rotation","hingeSide","swingDirection","alignment","name","number"];
+ const keys=arqenvoTransferSet==="geometry"?allKeys.filter(k=>geometryKeys.includes(k)):arqenvoTransferSet==="appearance"?allKeys.filter(k=>appearanceKeys.includes(k)):arqenvoTransferSet==="placement"?allKeys.filter(k=>placementKeys.includes(k)):allKeys;
  arqenvoPickedParameters={type:source.type,values:Object.fromEntries(keys.filter(k=>source[k]!==undefined).map(k=>[k,structuredClone(source[k])])),sourceId:source.id,transferSet:arqenvoTransferSet};
  arqenvenvoInjectMode=true;
  $("injectParameters").disabled=false;
