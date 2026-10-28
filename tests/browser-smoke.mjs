@@ -525,7 +525,7 @@ try {
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
   // Window sash lines are offset from the host wall centreline in the rendered plan.
   await modelPoint(2.6, wallY + 0.075);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·")).catch(async error=>{const diag=await openingPage.evaluate(()=>({hitDebug:window.__arqenvoDebug?.getLastFloorSelectionDebug?.(),selection:document.querySelector("#selectionInfo")?.textContent,status:document.querySelector("#status")?.textContent,properties:document.querySelector("#elementProperties")?.textContent?.slice(0,220),tool:document.querySelector("#toolName")?.value}));throw new Error("Click on Window sash did not select Window; "+JSON.stringify(diag)+"; "+error.message)});
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /window ·/i,
     "Clicking a visible window sash should select Window rather than its host wall");
   await modelPoint(2.6, wallY);
