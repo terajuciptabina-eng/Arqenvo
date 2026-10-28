@@ -500,12 +500,25 @@ const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
 const wallSideEdges=new Map();
 const edgePointKey=pt=>[pt.x,pt.y,pt.depth].map(v=>Number(v).toFixed(3)).join(",");
 const edgeKey=(a,b)=>{const ka=edgePointKey(a),kb=edgePointKey(b);return ka<kb?ka+"|"+kb:kb+"|"+ka};
+// Keep face incidence, not just a Set of element IDs: several split faces from
+// one wall can share an edge. Only suppress the seam when those faces are
+// coplanar; preserve genuine jamb/reveal and corner edges.
+const faceNormal=face=>{
+ const a=face.poly[0],b=face.poly[1],c=face.poly[2];
+ const ux=b.x-a.x,uy=b.y-a.y,uz=(b.depth||0)-(a.depth||0);
+ const vx=c.x-a.x,vy=c.y-a.y,vz=(c.depth||0)-(a.depth||0);
+ const n={x:uy*vz-uz*vy,y:uz*vx-ux*vz,z:ux*vy-uy*vx};
+ const length=Math.hypot(n.x,n.y,n.z)||1;
+ return {x:n.x/length,y:n.y/length,z:n.z/length};
+};
+const wallFaceNormals=new Map();
 for(const face of orderedFaces){
  if(face.material!=="wall"||face.topFace)continue;
+ const normal=faceNormal(face);wallFaceNormals.set(face,normal);
  for(let i=0;i<face.poly.length;i++){
   const key=edgeKey(face.poly[i],face.poly[(i+1)%face.poly.length]);
-  if(!wallSideEdges.has(key))wallSideEdges.set(key,new Set());
-  wallSideEdges.get(key).add(face.id);
+  if(!wallSideEdges.has(key))wallSideEdges.set(key,[]);
+  wallSideEdges.get(key).push(face);
  }
 }
 for(const face of orderedFaces){
@@ -522,8 +535,14 @@ for(const face of orderedFaces){
   continue
  }
  for(let i=0;i<face.poly.length;i++){
-  const a=face.poly[i],b=face.poly[(i+1)%face.poly.length],owners=wallSideEdges.get(edgeKey(a,b));
-  if(owners&&owners.size>1&&owners.has(face.id))continue;
+  const a=face.poly[i],b=face.poly[(i+1)%face.poly.length],owners=wallSideEdges.get(edgeKey(a,b))||[];
+  const normal=wallFaceNormals.get(face);
+  const sharedCoplanarEdge=owners.some(other=>{
+   if(other===face||other.id!==face.id)return false;
+   const otherNormal=wallFaceNormals.get(other);
+   return otherNormal&&normal&&Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)>.999;
+  });
+  if(sharedCoplanarEdge)continue;
   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
  }
 }
