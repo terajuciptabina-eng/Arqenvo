@@ -2034,7 +2034,7 @@ document.addEventListener("pointermove",()=>{if(transformInteraction&&transformI
 
 
 // Archicad-style parameter transfer: pick one source, then select one or more compatible targets and inject.
-let arqenvoPickedParameters=null;
+let arqenvoPickedParameters=null, arqenvoPickMode=false;
 const arqenvoParameterKeys={
  wall:["height","thickness","baseOffset","buildingMaterial"],
  slab:["thickness","elevation","buildingMaterial"],
