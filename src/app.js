@@ -3,7 +3,7 @@ import {detectRooms as detectClosedRooms} from "./core/rooms.js";
 import {serializeScheduleCsv} from "./core/csv.js";
 import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
-import {createOpeningPlacement, openingOffsetForAnchor, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, findClosedWallLoops, mergeHostedOpeningRecords} from "./core/authoring.js";
+import {createOpeningPlacement, openingOffsetForAnchor, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, findClosedWallLoops, mergeHostedOpeningRecords} from "./core/authoring.js";
 import {ModelHistory, transactModel} from "./core/transactions.js";
 import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide } from "./core/geometry.js";
 import {normalizeUnitSystem,formatLength,formatArea} from "./core/units.js";
@@ -432,13 +432,13 @@ for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","do
   prism(e,wallRect(right,frameWidth,wallDepth),baseZ,Math.max(.04,g.height),"frame");
   prism(e,wallRect(at(offset+width/2),Math.max(.04,width-frameWidth),wallDepth),headZ,frameWidth,"frame");
   if((e.libraryType||"single-leaf")==="double-leaf"){
-   const half=width/2,first=hostedOpening3dGeometry(host,{...e,width:half,hingeSide:"left"}),second=hostedOpening3dGeometry(host,{...e,offset:e.offset+half,width:half,hingeSide:"right"});
+   const half=width/2,first=hostedDoorLeaf3dGeometry(host,{...e,width:half,hingeSide:"left"}),second=hostedDoorLeaf3dGeometry(host,{...e,offset:e.offset+half,width:half,hingeSide:"right"});
    prism(e,first.boundary,baseZ,first.height,"door");prism(e,second.boundary,baseZ,second.height,"door");
   }else{
-   prism(e,g.boundary,baseZ,g.height,"door");
-   const hinge=e.hingeSide==="right"?right:left,side=e.swingDirection==="outside"?-1:1,free={x:hinge.x+nx*side*width,y:hinge.y+ny*side*width},tx=nx*side,ty=ny*side;
-   const handleCenter={x:hinge.x+tx*Math.max(.08,width-.12)+ux*.055,y:hinge.y+ty*Math.max(.08,width-.12)+uy*.055},handleLength=.035,handleDepth=.018;
-   const handleFoot=[{x:handleCenter.x-tx*handleLength/2-ux*handleDepth/2,y:handleCenter.y-ty*handleLength/2-uy*handleDepth/2},{x:handleCenter.x+tx*handleLength/2-ux*handleDepth/2,y:handleCenter.y+ty*handleLength/2-uy*handleDepth/2},{x:handleCenter.x+tx*handleLength/2+ux*handleDepth/2,y:handleCenter.y+ty*handleLength/2+uy*handleDepth/2},{x:handleCenter.x-tx*handleLength/2+ux*handleDepth/2,y:handleCenter.y-ty*handleLength/2+uy*handleDepth/2}];
+   const leaf=hostedDoorLeaf3dGeometry(host,e,{frameWidth});
+   prism(e,leaf.boundary,baseZ,leaf.height,"door");
+   const handleDistance=offset+width*.78,handleCenter={x:host.start.x+ux*handleDistance+nx*wallDepth*.48,y:host.start.y+uy*handleDistance+ny*wallDepth*.48},handleLength=.035,handleDepth=.018;
+   const handleFoot=[{x:handleCenter.x-ux*handleLength/2-nx*handleDepth/2,y:handleCenter.y-uy*handleLength/2-ny*handleDepth/2},{x:handleCenter.x+ux*handleLength/2-nx*handleDepth/2,y:handleCenter.y+uy*handleLength/2-ny*handleDepth/2},{x:handleCenter.x+ux*handleLength/2+nx*handleDepth/2,y:handleCenter.y+uy*handleLength/2+ny*handleDepth/2},{x:handleCenter.x-ux*handleLength/2+nx*handleDepth/2,y:handleCenter.y-uy*handleLength/2+ny*handleDepth/2}];
    const handleZ=baseZ+Math.min(g.height*.58,1.0);
    prism(e,handleFoot,handleZ,.045,"handle");
   }

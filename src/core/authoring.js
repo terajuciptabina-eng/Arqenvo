@@ -107,6 +107,33 @@ export function doorSwingGeometry(p1, p2, { hingeSide = "left", swingDirection =
  * Door leaf is shown in its selected open position; a window is a thin pane
  * centred in the host wall thickness.
  */
+/**
+ * Closed door leaf for 3D model rendering.
+ * The plan swing arc is an annotation; it must not rotate the physical leaf
+ * out of the wall plane in the 3D model unless an explicit open angle exists.
+ */
+export function hostedDoorLeaf3dGeometry(wall, opening, { leafThickness = 0.035, frameWidth = 0.065 } = {}) {
+  // Reuse host/opening validation and the canonical along-wall placement.
+  const hosted = hostedOpening3dGeometry(wall, { ...opening, type: "door" }, { leafThickness });
+  if (!Number.isFinite(frameWidth) || frameWidth < 0) throw new RangeError("Door frame width must be non-negative");
+  const dx = wall.end.x - wall.start.x, dy = wall.end.y - wall.start.y;
+  const length = Math.hypot(dx, dy), ux = dx / length, uy = dy / length;
+  const nx = -uy, ny = ux;
+  const inset = Math.min(frameWidth, Math.max(0, (opening.width - 0.02) / 2));
+  const startDistance = opening.offset + inset, endDistance = opening.offset + opening.width - inset;
+  const start = { x: wall.start.x + ux * startDistance, y: wall.start.y + uy * startDistance };
+  const finish = { x: wall.start.x + ux * endDistance, y: wall.start.y + uy * endDistance };
+  const depth = Math.max(0.02, Math.min(leafThickness, (wall.thickness || 0.15) * 0.45));
+  const half = depth / 2;
+  const boundary = [
+    { x: start.x + nx * half, y: start.y + ny * half },
+    { x: finish.x + nx * half, y: finish.y + ny * half },
+    { x: finish.x - nx * half, y: finish.y - ny * half },
+    { x: start.x - nx * half, y: start.y - ny * half },
+  ];
+  return { ...hosted, boundary, thickness: depth, isClosedLeaf: true };
+}
+
 export function hostedOpening3dGeometry(wall, opening, { leafThickness = 0.035, paneThickness = 0.025 } = {}) {
   if (!wall?.start || !wall?.end || !opening) throw new TypeError("A host wall and opening are required");
   const dx = wall.end.x - wall.start.x, dy = wall.end.y - wall.start.y;

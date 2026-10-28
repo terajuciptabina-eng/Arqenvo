@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoof } from "../src/core/model.js";
-import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, openingPlacementDirection, findClosedWallLoops, mergeHostedOpeningRecords } from "../src/core/authoring.js";
+import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, openingPlacementDirection, findClosedWallLoops, mergeHostedOpeningRecords } from "../src/core/authoring.js";
 
 test("door swing geometry pivots at the hinge and uses opening width as radius", () => {
   const g = doorSwingGeometry({x:10,y:20},{x:11,y:20},{hingeSide:"left",swingDirection:"inside"});
@@ -116,4 +116,18 @@ test("authoritative hosted openings replace stale cached wall opening geometry",
  assert.equal(merged.length,2);
  assert.deepEqual(merged.filter(o=>o.id==="d1"),hosted);
  assert.deepEqual(merged.find(o=>o.id==="legacy"),cached[1]);
+});
+
+
+test("3D door leaf remains closed in the host wall plane while plan swing stays separate",()=>{
+ const wall={start:{x:0,y:0},end:{x:4,y:0},thickness:.15};
+ const door={type:"door",offset:1,width:.9,height:2.1,sill:0,hingeSide:"left",swingDirection:"inside"};
+ const leaf=hostedDoorLeaf3dGeometry(wall,door);
+ assert.equal(leaf.isClosedLeaf,true);
+ assert.ok(leaf.boundary.every(p=>Math.abs(p.y)<=.02),"closed leaf must stay within the host wall thickness");
+ assert.ok(Math.min(...leaf.boundary.map(p=>p.x))>=door.offset);
+ assert.ok(Math.max(...leaf.boundary.map(p=>p.x))<=door.offset+door.width);
+ const rotatedWall={start:{x:1,y:2},end:{x:1,y:6},thickness:.2};
+ const rotated=hostedDoorLeaf3dGeometry(rotatedWall,door);
+ assert.ok(rotated.boundary.every(p=>p.x>=.95&&p.x<=1.05),"rotated host leaf remains in wall plane");
 });
