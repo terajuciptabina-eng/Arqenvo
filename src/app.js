@@ -2129,8 +2129,8 @@ c.addEventListener("pointerdown",event=>{
 },true);
 document.addEventListener("keydown",event=>{
  if(/INPUT|TEXTAREA|SELECT/.test(event.target?.tagName||"")||event.target?.isContentEditable)return;
- if(event.key==="Escape"&&arqenvenvoInjectMode){event.preventDefault();event.stopPropagation();arqenvoCancelInjectMode();return}
- if(event.altKey&&event.key.toLowerCase()==="c"){event.preventDefault();arqenvoPickParameters()}
+ if(event.key==="Escape"&&(arqenvenvoInjectMode||arqenvoPickMode)){event.preventDefault();event.stopPropagation();arqenvoPickMode=false;$("pickUpParameters")?.classList.remove("active");arqenvoCancelInjectMode();return}
+ if(event.altKey&&event.key.toLowerCase()==="c"){event.preventDefault();arqenvoPickMode=true;arqenvenvoInjectMode=false;$("pickUpParameters")?.classList.add("active");$("status").textContent="Pick Up mode · click a source element"}
  if(event.altKey&&event.key.toLowerCase()==="v"){event.preventDefault();arqenvoInjectParameters()}
 });
 function arqenvoSyncMultiOpeningLibrary(){
