@@ -2005,7 +2005,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
   for(const key of Object.keys(panels)){const s=state[key],p=panels[key];if(s.mode==='float'){p.classList.add('arq-palette-floating');applyFloatBounds(key)}else{clearFloatStyles(p);if(s.side!==(key==='toolbox'?'left':'right'))work.classList.add('dock-'+key+'-'+s.side)}positionDockGrip(key)}
   work.classList.toggle('toolbox-expanded',coarse()&&(dims.toolbox.w>72||state.toolbox.mode==='float'));
  }
- function setMode(key,mode,side,x,y){const s=state[key],p=panels[key];if(mode==='dock'&&s.mode==='float'){const dockRect=s.dockRect,r=p.getBoundingClientRect();if(dockRect&&Number.isFinite(dockRect.right-dockRect.left)&&dockRect.right>dockRect.left){s.w=dockRect.right-dockRect.left;s.h=dockRect.bottom-dockRect.top}else if(r.width>0&&r.height>0){s.w=r.width;s.h=r.height}dims[key].w=s.w;dims[key].h=s.h;saveDims(key)}s.mode=mode;if(side)s.side=side;if(Number.isFinite(x))s.x=x;if(Number.isFinite(y))s.y=y;if(mode==='float')bounds(key);else{dims[key].w=s.w;dims[key].h=s.h}applyGrid();save(key);saveDims(key)}
+ const dockOrigins={};
+ function setMode(key,mode,side,x,y){const s=state[key],p=panels[key];if(mode==='dock'&&s.mode==='float'){const dockRect=s.dockRect||dockOrigins[key],r=p.getBoundingClientRect();if(dockRect&&Number.isFinite(dockRect.right-dockRect.left)&&dockRect.right>dockRect.left){s.w=dockRect.right-dockRect.left;s.h=dockRect.bottom-dockRect.top}else if(r.width>0&&r.height>0){s.w=r.width;s.h=r.height}dims[key].w=s.w;dims[key].h=s.h;saveDims(key)}s.mode=mode;if(side)s.side=side;if(Number.isFinite(x))s.x=x;if(Number.isFinite(y))s.y=y;if(mode==='float')bounds(key);else{dims[key].w=s.w;dims[key].h=s.h}applyGrid();save(key);saveDims(key)}
  function dockSideAt(clientX,clientY,key){const r=work.getBoundingClientRect(),x=clientX-r.left,y=clientY-r.top,edge=Math.max(28,Math.min(48,Math.round(Math.min(r.width,r.height)*.045)));if(y<=edge)return'top';if(y>=r.height-edge)return'bottom';if(x<=edge)return'left';if(x>=r.width-edge)return'right';return null}
  function addDrag(key,panel,handle){
   if(!handle)return;
@@ -2039,7 +2040,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    const wr=work.getBoundingClientRect(),edge=Math.max(28,Math.min(48,Math.round(Math.min(wr.width,wr.height)*.045)));
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
-   const origin=d.dockRect,edgePad=24,dockReturnTolerance=8;
+   const origin=d.dockRect||dockOrigins[key]||state[key].dockRect,edgePad=24,dockReturnTolerance=8;
    const pointerReturnedToOrigin=!!origin&&e.clientX>=origin.left-dockReturnTolerance&&e.clientX<=origin.right+dockReturnTolerance&&e.clientY>=origin.top-dockReturnTolerance&&e.clientY<=origin.bottom+dockReturnTolerance;
    // During a drag the pointer retains its original grab offset, so it may be
    // inside the remembered dock slot while the panel rectangle overlaps it.
@@ -2066,8 +2067,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    if(e.pointerType==='mouse'&&e.button!==0)return;
    if(e.target.closest('input,select,a')||e.target.closest('#navigatorToggle')||(key==='toolbox'&&e.target.closest('button')))return;
    const r=panel.getBoundingClientRect();
-   const dockRect=state[key].mode==='dock'?{left:r.left,top:r.top,right:r.right,bottom:r.bottom}:(state[key].dockRect?{...state[key].dockRect}:null);
-   if(state[key].mode==='dock')state[key].dockRect={...dockRect};
+   const dockRect=state[key].mode==='dock'?{left:r.left,top:r.top,right:r.right,bottom:r.bottom}:(state[key].dockRect?{...state[key].dockRect}:dockOrigins[key]?{...dockOrigins[key]}:null);
+   if(state[key].mode==='dock'){state[key].dockRect={...dockRect};dockOrigins[key]={...dockRect}}
    drag={id:e.pointerId,sx:e.clientX,sy:e.clientY,ox:e.clientX-r.left,oy:e.clientY-r.top,moved:false,originMode:state[key].mode,originSide:state[key].side,originRect:{left:r.left,top:r.top,right:r.right,bottom:r.bottom},dockRect,dockSide:state[key].side};
    active=true;
    document.addEventListener('pointermove',move,true);
