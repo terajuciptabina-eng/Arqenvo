@@ -5,7 +5,7 @@ import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, openingOffsetForAnchor, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, findClosedWallLoops, mergeHostedOpeningRecords} from "./core/authoring.js";
 import {ModelHistory, transactModel} from "./core/transactions.js";
-import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut } from "./core/geometry.js";
+import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut, segmentCoveredByPolygon2D } from "./core/geometry.js";
 import {normalizeUnitSystem,formatLength,formatArea} from "./core/units.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set(),groupsSuspended=false;
@@ -308,54 +308,84 @@ function drawWallJunctions(){
  }
 }
 let wallTopologyCacheKey=null,wallTopologyCache=null;
-function render3DScene(ctx,items,project3d,options={}) {
+function render3DScene(ctx,items,project3d,options={}){
  const faces3d=[];
  const wallById=new Map(items.filter(v=>v.type==="wall").map(v=>[v.id,v]));
  const storyElevationById=new Map(p.stories.map(v=>[v.id,v.elevation||0]));
  const endpointTolerance=.025;
- const wallEndResolvedCorners=new Set(),wallCrossingResolvedCorners=new Set(),wallCrossingCornerCache=new Map();
+ const wallEndResolvedCorners=new Set();
+ const wallCrossingResolvedCorners=new Set();
+ const wallCrossingCornerCache=new Map();
  const visibleWalls=items.filter(v=>v.type==="wall"&&isLayerVisible(v));
  const cross2=(a,b)=>a.x*b.y-a.y*b.x;
  const wallCellSize=4;
- const wallTopologyKey=visibleWalls.slice().sort((a,b)=>String(a.id).localeCompare(String(b.id))).map(w=>[w.id,w.storyId,w.start.x,w.start.y,w.end.x,w.end.y,Number(w.thickness)||.15].join(":")).join("|");
+ const wallTopologyKey=visibleWalls.slice().sort((a,b)=>String(a.id).localeCompare(String(b.id))).map(w=>
+  [w.id,w.storyId,w.start.x,w.start.y,w.end.x,w.end.y,Number(w.thickness)||.15].join(":")
+ ).join("|");
  let wallEndNeighbors,wallCrossingCutsByWall;
- if(wallTopologyCache&&wallTopologyCache.key===wallTopologyKey) {
-  wallEndNeighbors=wallTopologyCache.wallEndNeighbors;wallCrossingCutsByWall=wallTopologyCache.wallCrossingCutsByWall;
- } else {
-  wallEndNeighbors=new Map();wallCrossingCutsByWall=new Map();
+ if(wallTopologyCache&&wallTopologyCache.key===wallTopologyKey){
+  wallEndNeighbors=wallTopologyCache.wallEndNeighbors;
+  wallCrossingCutsByWall=wallTopologyCache.wallCrossingCutsByWall;
+ }else{
+  wallEndNeighbors=new Map();
+  wallCrossingCutsByWall=new Map();
   const maxWallHalfThickness=visibleWalls.reduce((max,w)=>Math.max(max,(Number(w.thickness)||.15)/2),0);
-  const wallBuckets=new Map(),wallBucketKey=(storyId,cx,cy)=>storyId+":"+cx+":"+cy;
-  for(const candidate of visibleWalls) {
+  const wallBuckets=new Map();
+  const wallBucketKey=(storyId,cx,cy)=>storyId+":"+cx+":"+cy;
+  for(const candidate of visibleWalls){
    const margin=maxWallHalfThickness+endpointTolerance;
-   const minX=Math.floor((Math.min(candidate.start.x,candidate.end.x)-margin)/wallCellSize),maxX=Math.floor((Math.max(candidate.start.x,candidate.end.x)+margin)/wallCellSize);
-   const minY=Math.floor((Math.min(candidate.start.y,candidate.end.y)-margin)/wallCellSize),maxY=Math.floor((Math.max(candidate.start.y,candidate.end.y)+margin)/wallCellSize);
-   for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++) {
-    const key=wallBucketKey(candidate.storyId,cx,cy);if(!wallBuckets.has(key))wallBuckets.set(key,[]);wallBuckets.get(key).push(candidate);
+   const minX=Math.floor((Math.min(candidate.start.x,candidate.end.x)-margin)/wallCellSize);
+   const maxX=Math.floor((Math.max(candidate.start.x,candidate.end.x)+margin)/wallCellSize);
+   const minY=Math.floor((Math.min(candidate.start.y,candidate.end.y)-margin)/wallCellSize);
+   const maxY=Math.floor((Math.max(candidate.start.y,candidate.end.y)+margin)/wallCellSize);
+   for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++){
+    const key=wallBucketKey(candidate.storyId,cx,cy);
+    if(!wallBuckets.has(key))wallBuckets.set(key,[]);
+    wallBuckets.get(key).push(candidate);
    }
   }
   const wallOrder=new Map(visibleWalls.map((wall,index)=>[wall.id,index]));
   const candidatesForWall=wall=>{
    const margin=maxWallHalfThickness+endpointTolerance,nearby=new Set();
-   const minX=Math.floor((Math.min(wall.start.x,wall.end.x)-margin)/wallCellSize),maxX=Math.floor((Math.max(wall.start.x,wall.end.x)+margin)/wallCellSize);
-   const minY=Math.floor((Math.min(wall.start.y,wall.end.y)-margin)/wallCellSize),maxY=Math.floor((Math.max(wall.start.y,wall.end.y)+margin)/wallCellSize);
-   for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++)for(const candidate of wallBuckets.get(wallBucketKey(wall.storyId,cx,cy))||[])nearby.add(candidate);
+   const minX=Math.floor((Math.min(wall.start.x,wall.end.x)-margin)/wallCellSize);
+   const maxX=Math.floor((Math.max(wall.start.x,wall.end.x)+margin)/wallCellSize);
+   const minY=Math.floor((Math.min(wall.start.y,wall.end.y)-margin)/wallCellSize);
+   const maxY=Math.floor((Math.max(wall.start.y,wall.end.y)+margin)/wallCellSize);
+   for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++){
+    for(const candidate of wallBuckets.get(wallBucketKey(wall.storyId,cx,cy))||[])nearby.add(candidate);
+   }
    return nearby;
   };
-  for(const wall of visibleWalls)for(const candidate of candidatesForWall(wall)) {
-   if(candidate.id===wall.id||candidate.storyId!==wall.storyId||wallOrder.get(wall.id)>=wallOrder.get(candidate.id))continue;
-   const cut=wallCrossingCut(wall,candidate,{tolerance:endpointTolerance,minSineAngle:.05});if(!cut)continue;
-   const sec=cut.cutWall;if(!wallCrossingCutsByWall.has(sec.id))wallCrossingCutsByWall.set(sec.id,[]);
-   wallCrossingCutsByWall.get(sec.id).push({start:cut.start,end:cut.end,centerDistance:cut.centerDistance,hostWall:cut.hostWall,intersection:cut.intersection,halfSpan:cut.halfSpan,sineAngle:cut.sineAngle});
+  // Endpoint joins cover L/T junctions. Proper interior segment crossings are
+  // separately given a deterministic host and a finite cut interval.
+  for(const wall of visibleWalls){
+   for(const candidate of candidatesForWall(wall)){
+    if(candidate.id===wall.id||candidate.storyId!==wall.storyId||
+       wallOrder.get(wall.id)>=wallOrder.get(candidate.id))continue;
+    const cut=wallCrossingCut(wall,candidate,{tolerance:endpointTolerance,minSineAngle:.05});
+    if(!cut)continue;
+    const sec=cut.cutWall;
+    if(!wallCrossingCutsByWall.has(sec.id))wallCrossingCutsByWall.set(sec.id,[]);
+    wallCrossingCutsByWall.get(sec.id).push({
+     start:cut.start,end:cut.end,centerDistance:cut.centerDistance,
+     hostWall:cut.hostWall,intersection:cut.intersection,halfSpan:cut.halfSpan,
+     sineAngle:cut.sineAngle
+    });
+   }
   }
-  for(const wall of visibleWalls)for(const atStart of [true,false]) {
+  // Build the local endpoint candidate index only once per stable wall geometry.
+  for(const wall of visibleWalls)for(const atStart of [true,false]){
    const joint=atStart?wall.start:wall.end,candidates=[];
    const bucket=wallBuckets.get(wallBucketKey(wall.storyId,Math.floor(joint.x/wallCellSize),Math.floor(joint.y/wallCellSize)))||[];
-   for(const candidate of bucket) {
+   for(const candidate of bucket){
     if(candidate.id===wall.id||candidate.storyId!==wall.storyId)continue;
-    const vx=candidate.end.x-candidate.start.x,vy=candidate.end.y-candidate.start.y,l2=vx*vx+vy*vy;if(l2<1e-10)continue;
-    const tRaw=((joint.x-candidate.start.x)*vx+(joint.y-candidate.start.y)*vy)/l2,t=Math.max(0,Math.min(1,tRaw)),q={x:candidate.start.x+vx*t,y:candidate.start.y+vy*t};
-    const distance=Math.hypot(q.x-joint.x,q.y-joint.y),tolerance=(candidate.thickness||.15)/2+endpointTolerance;
-    if(distance<=tolerance) {
+    const vx=candidate.end.x-candidate.start.x,vy=candidate.end.y-candidate.start.y,l2=vx*vx+vy*vy;
+    if(l2<1e-10)continue;
+    const tRaw=((joint.x-candidate.start.x)*vx+(joint.y-candidate.start.y)*vy)/l2;
+    const t=Math.max(0,Math.min(1,tRaw)),q={x:candidate.start.x+vx*t,y:candidate.start.y+vy*t};
+    const distance=Math.hypot(q.x-joint.x,q.y-joint.y);
+    const tolerance=(candidate.thickness||.15)/2+endpointTolerance;
+    if(distance<=tolerance){
      const nlen=Math.sqrt(l2),wallLen=Math.hypot(wall.end.x-wall.start.x,wall.end.y-wall.start.y)||1;
      const alignment=Math.abs(cross2({x:wall.end.x-wall.start.x,y:wall.end.y-wall.start.y},{x:vx,y:vy}))/(wallLen*nlen||1);
      candidates.push({neighbor:candidate,neighborT:t,closest:q,isT:t>.025&&t<.975,distance,alignment});
@@ -367,204 +397,222 @@ function render3DScene(ctx,items,project3d,options={}) {
   wallTopologyCache={key:wallTopologyKey,wallEndNeighbors,wallCrossingCutsByWall};
  }
  const hostedOpeningsByWall=new Map();
- for(const opening of items)if((opening.type==="door"||opening.type==="window")&&opening.hostWallId) {
+ for(const opening of items){
+  if((opening.type!=="door"&&opening.type!=="window")||!opening.hostWallId)continue;
   if(!hostedOpeningsByWall.has(opening.hostWallId))hostedOpeningsByWall.set(opening.hostWallId,[]);
   hostedOpeningsByWall.get(opening.hostWallId).push(opening);
  }
- const wallEndCorner=(wall,atStart,side)=>{
-  const endpoint=atStart?"start":"end",candidates=wallEndNeighbors.get(wall.id+":"+endpoint)||[];
+  const wallEndCorner=(wall,atStart,side)=>{
+  const endpoint=atStart?"start":"end";
+  const candidates=wallEndNeighbors.get(wall.id+":"+endpoint)||[];
   const result=resolveWallEndCorner(wall,atStart,side,candidates,{endpointTolerance,maxMiterRatio:8});
   if(result.resolved)wallEndResolvedCorners.add(wall.id+":"+endpoint+":"+side);
   return result.point;
  };
- const materialColors={wall:"#d8e0e4",door:"#b88760",glass:"rgba(123,198,214,.46)",frame:"#5f737d",handle:"#aeb8bd",slab:"#c9d4d9",concrete:"#b9c6cd",roof:"#a97b5b"};
- const shadeHex=(hex,amount)=>{const value=parseInt(hex.slice(1),16),r=value>>16,g=(value>>8)&255,b=value&255,adjust=c=>Math.max(0,Math.min(255,Math.round(c+(amount>=0?(255-c)*amount:c*amount))));return "#"+[adjust(r),adjust(g),adjust(b)].map(c=>c.toString(16).padStart(2,"0")).join("")};
- const prism=(e,footprint,z0,height,material,geometryOptions={})=>{
-  if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;
-  const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height)),chosenElement=!!options.interactive&&selected.has(e.id),surface=material||({wall:"wall",door:"door",window:"glass",slab:"slab",column:"concrete",beam:"concrete",roof:"roof"}[e.type]||"wall");
-  for(let i=0;i<base.length;i++) {
-   if(geometryOptions.skipSides?.includes(i))continue;
-   const j=(i+1)%base.length,poly=[base[i],base[j],top[j],top[i]],shade=i%2?-.035:-.13;
-   faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:surface,shade,selected:chosenElement,...(geometryOptions.wallSegment?{wallSegment:geometryOptions.wallSegment,wallSideIndex:i}:{})});
-  }
-  faces3d.push({id:e.id,poly:top,depth:top.reduce((sum,pt)=>sum+pt.depth,0)/top.length,material:surface,shade:.13,selected:chosenElement,topFace:true,skipTopEdges:geometryOptions.skipTopEdges||[]});
- };
- for(const e of items) {
-  if(!isLayerVisible(e)||!["wall","beam","column","slab","door","window","roof"].includes(e.type))continue;
-  const storyElevation=storyElevationById.get(e.storyId)||0;
-  if(e.type==="roof") {
-   const center={x:e.boundary.reduce((s,v)=>s+v.x,0)/e.boundary.length,y:e.boundary.reduce((s,v)=>s+v.y,0)/e.boundary.length},radius=Math.min(...e.boundary.map(v=>Math.hypot(v.x-center.x,v.y-center.y))),baseZ=storyElevation+(e.elevation||0)+(e.offset||0),rise=Math.tan((e.pitch||30)*Math.PI/180)*radius,base=e.boundary.map(v=>project3d(v,baseZ)),inner=e.boundary.map(v=>project3d(v,baseZ-(e.thickness||.18))),peak=project3d(center,baseZ+rise),chosenElement=!!options.interactive&&selected.has(e.id);
-   for(let i=0;i<base.length;i++){const j=(i+1)%base.length,poly=[base[i],base[j],peak];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:"roof",shade:.1,selected:chosenElement,topFace:true});faces3d.push({id:e.id,poly:[base[j],base[i],inner[i],inner[j]],depth:(base[i].depth+base[j].depth)/2,material:"roof",shade:-.22,selected:chosenElement})}
-   continue;
-  }
-  if(e.type==="door"||e.type==="window") {
-   const host=wallById.get(e.hostWallId);if(!host)continue;
-   const g=hostedOpening3dGeometry(host,e),baseZ=storyElevation+(host.baseOffset||0)+g.zOffset;
-   if(e.type==="window") {
-    const frame=.045,depth=(g.thickness||.025)*1.8,dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy)||1,nx=-dy/len*depth/2,ny=dx/len*depth/2,offset=e.offset||0,width=e.width||0;
-    const a={x:host.start.x+dx*offset/len,y:host.start.y+dy*offset/len},b={x:host.start.x+dx*(offset+width)/len,y:host.start.y+dy*(offset+width)/len},zBottom=baseZ,zTop=baseZ+g.height;
-    const frameRects=[[{x:a.x,y:a.y},{x:b.x,y:b.y},0,frame],[{x:a.x,y:a.y},{x:b.x,y:b.y},g.height-frame,g.height]];
-    for(const [u,v,lo,hi] of frameRects){const poly=[{x:u.x+nx,y:u.y+ny},{x:v.x+nx,y:v.y+ny},{x:v.x-nx,y:v.y-ny},{x:u.x-nx,y:u.y-ny}];prism(e,poly,zBottom+lo,Math.max(.015,hi-lo),"frame")}
-    const jambs=[a,b];
-    for(const jamb of jambs){const poly=[{x:jamb.x+nx,y:jamb.y+ny},{x:jamb.x+nx+dx/len*frame,y:jamb.y+ny+dy/len*frame},{x:jamb.x-nx+dx/len*frame,y:jamb.y-ny+dy/len*frame},{x:jamb.x-nx,y:jamb.y-ny}];prism(e,poly,zBottom,g.height,"frame")}
-    if((e.libraryType||"single-leaf")==="double-leaf") {
-     const half=e.width/2,first=hostedOpening3dGeometry(host,{...e,width:half}),second=hostedOpening3dGeometry(host,{...e,offset:e.offset+half,width:half}),mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},mullion=[{x:mid.x+nx,y:mid.y+ny},{x:mid.x+dx/len*frame+nx,y:mid.y+dy/len*frame+ny},{x:mid.x+dx/len*frame-nx,y:mid.y+dy/len*frame-ny},{x:mid.x-nx,y:mid.y-ny}];
-     prism(e,first.boundary,baseZ,first.height);prism(e,second.boundary,baseZ,second.height);prism(e,mullion,zBottom,Math.max(.015,g.height));
-    } else prism(e,g.boundary,baseZ,g.height,"glass");
-   } else {
-    const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len,nx=-uy,ny=ux,wallDepth=Math.max(.07,(host.thickness||.15)*.72),frameWidth=.065,offset=Number(e.offset)||0,width=Number(e.width)||0;
-    const at=distance=>({x:host.start.x+ux*distance,y:host.start.y+uy*distance});
-    const wallRect=(center,along,depth)=>[{x:center.x-ux*along/2-nx*depth/2,y:center.y-uy*along/2-ny*depth/2},{x:center.x+ux*along/2-nx*depth/2,y:center.y+uy*along/2-ny*depth/2},{x:center.x+ux*along/2+nx*depth/2,y:center.y+uy*along/2+ny*depth/2},{x:center.x-ux*along/2+nx*depth/2,y:center.y-uy*along/2+ny*depth/2}];
-    const left=at(offset+frameWidth/2),right=at(offset+width-frameWidth/2),headZ=baseZ+Math.max(0,g.height-frameWidth);
-    prism(e,wallRect(left,frameWidth,wallDepth),baseZ,Math.max(.04,g.height),"frame");prism(e,wallRect(right,frameWidth,wallDepth),baseZ,Math.max(.04,g.height),"frame");prism(e,wallRect(at(offset+width/2),Math.max(.04,width-frameWidth),wallDepth),headZ,frameWidth,"frame");
-    if((e.libraryType||"single-leaf")==="double-leaf") {
-     const half=width/2,first=hostedDoorLeaf3dGeometry(host,{...e,width:half,hingeSide:"left"}),second=hostedDoorLeaf3dGeometry(host,{...e,offset:e.offset+half,width:half,hingeSide:"right"});prism(e,first.boundary,baseZ,first.height,"door");prism(e,second.boundary,baseZ,second.height,"door");
-    } else {
-     const leaf=hostedDoorLeaf3dGeometry(host,e,{frameWidth});prism(e,leaf.boundary,baseZ,leaf.height,"door");
-     const handleDistance=offset+width*.78,handleCenter={x:host.start.x+ux*handleDistance+nx*wallDepth*.48,y:host.start.y+uy*handleDistance+ny*wallDepth*.48},handleLength=.035,handleDepth=.018,handleFoot=[{x:handleCenter.x-ux*handleLength/2-nx*handleDepth/2,y:handleCenter.y-uy*handleLength/2-ny*handleDepth/2},{x:handleCenter.x+ux*handleLength/2-nx*handleDepth/2,y:handleCenter.y+uy*handleLength/2-ny*handleDepth/2},{x:handleCenter.x+ux*handleLength/2+nx*handleDepth/2,y:handleCenter.y+uy*handleLength/2+ny*handleDepth/2},{x:handleCenter.x-ux*handleLength/2+nx*handleDepth/2,y:handleCenter.y-uy*handleLength/2+ny*handleDepth/2}];
-     prism(e,handleFoot,baseZ+Math.min(g.height*.58,1.0),.045,"handle");
-    }
-   }
-   continue;
-  }
-  let footprint=[],z0=storyElevation,height=0;
-  if(e.type==="wall") {
-   const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;
-   const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=mergeHostedOpeningRecords(e.openings,hostedOpeningsByWall.get(e.id)||[]),junctionCuts=wallCrossingCutsByWall.get(e.id)||[],cuts=[0,len];
-   for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}
-   for(const cut of junctionCuts)cuts.push(cut.start,cut.end);
-   const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];
-   for(let i=0;i<positions.length-1;i++) {
-    const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;
-    const mid=(lo+hi)/2;if(junctionCuts.some(cut=>mid>cut.start-1e-7&&mid<cut.end+1e-7))continue;
-    const holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]),merged=[];
-    for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}
-    const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);
-    const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len});
-    const crossingCornerKey=(distance,side)=>e.id+":"+Number(distance.toFixed(6))+":"+side;
-    const crossingCorner=(cut,boundary,side)=>{
-     const targetDistance=boundary==="start"?cut.start:cut.end,key=crossingCornerKey(targetDistance,side),cached=wallCrossingCornerCache.get(key);if(cached)return cached.point;
-     const point=at(targetDistance),atStart=boundary==="end",virtualWall=boundary==="start"?{...e,start:e.start,end:point}:{...e,start:point,end:e.end},host=cut.hostWall,hdx=host.end.x-host.start.x,hdy=host.end.y-host.start.y,h2=hdx*hdx+hdy*hdy,hostLen=Math.sqrt(h2);
-     if(hostLen<1e-8){const fallback={x:point.x+nx*side,y:point.y+ny*side};wallCrossingCornerCache.set(key,{point:fallback,resolved:false});return fallback}
-     const rawT=((point.x-host.start.x)*hdx+(point.y-host.start.y)*hdy)/h2,param=Math.max(0,Math.min(1,rawT)),closest={x:host.start.x+hdx*param,y:host.start.y+hdy*param},alignment=Math.abs(cross2({x:dx,y:dy},{x:hdx,y:hdy}))/(len*hostLen||1),candidate={neighbor:host,neighborT:param,closest,isT:true,distance:Math.hypot(point.x-closest.x,point.y-closest.y),alignment};
-     const resolved=resolveWallEndCorner(virtualWall,atStart,side,[candidate],{endpointTolerance,maxMiterRatio:8});if(resolved.resolved)wallCrossingResolvedCorners.add(key);wallCrossingCornerCache.set(key,{point:resolved.point,resolved:resolved.resolved});return resolved.point;
-    };
-    const cornerAt=(distance,side)=>{
-     if(distance<=endpointTolerance)return wallEndCorner(e,true,side);
-     if(len-distance<=endpointTolerance)return wallEndCorner(e,false,side);
-     for(const cut of junctionCuts){if(Math.abs(distance-cut.start)<1e-5)return crossingCorner(cut,"start",side);if(Math.abs(distance-cut.end)<1e-5)return crossingCorner(cut,"end",side)}
-     const q=at(distance);return{x:q.x+nx*side,y:q.y+ny*side};
-    };
-    const openingBoundaries=new Set(openings.flatMap(o=>[Number(o.offset)||0,(Number(o.offset)||0)+(Number(o.width)||0)].map(v=>Number(v.toFixed(6)))));
-    for(const [low,high] of solids) {
-     const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)],skipSides=[],skipTopEdges=[];
-     if(openingBoundaries.has(Number(lo.toFixed(6)))){skipSides.push(3);skipTopEdges.push(3)}
-     if(openingBoundaries.has(Number(hi.toFixed(6)))){skipSides.push(1);skipTopEdges.push(1)}
-     if(lo<=endpointTolerance&&wallEndResolvedCorners.has(e.id+":start:1")&&wallEndResolvedCorners.has(e.id+":start:-1")){skipSides.push(3);skipTopEdges.push(3)}
-     if(hi>=len-endpointTolerance&&wallEndResolvedCorners.has(e.id+":end:1")&&wallEndResolvedCorners.has(e.id+":end:-1")){skipSides.push(1);skipTopEdges.push(1)}
-     const startCut=junctionCuts.find(cut=>Math.abs(lo-cut.end)<1e-5),endCut=junctionCuts.find(cut=>Math.abs(hi-cut.start)<1e-5);
-     if(startCut){skipSides.push(3);skipTopEdges.push(3)}
-     if(endCut){skipSides.push(1);skipTopEdges.push(1)}
-     prism(e,poly,base+low,high-low,undefined,{skipSides,skipTopEdges,wallSegment:{lo,hi,length:len,zLow:low,zHigh:high,openings:openings.map(o=>({offset:Number(o.offset)||0,width:Number(o.width)||0,sill:Number(o.sill)||0,height:Number(o.height)||0}))}});
-    }
-   }
-   continue;
-  }
-  if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
-  else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
-  else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
-  prism(e,footprint,z0,height);
- }
- const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
- const wallSideEdges=new Map();
- // Screen-space projected coordinates are for rasterization only. Model-space
- // coordinates drive topology so camera rotation, pan, zoom and perspective do
- // not change which edges are considered shared or coplanar.
- const edgePointKey=pt=>[pt.worldX,pt.worldY,pt.worldZ].map(v=>Number(v).toFixed(6)).join(",");
- const edgeKey=(a,b)=>{const ka=edgePointKey(a),kb=edgePointKey(b);return ka<kb?ka+"|"+kb:kb+"|"+ka};
- const faceNormal=face=>{
-  const a=face.poly[0],b=face.poly[1],c=face.poly[2],ux=b.worldX-a.worldX,uy=b.worldY-a.worldY,uz=b.worldZ-a.worldZ,vx=c.worldX-a.worldX,vy=c.worldY-a.worldY,vz=c.worldZ-a.worldZ,n={x:uy*vz-uz*vy,y:uz*vx-ux*vz,z:ux*vy-uy*vx},length=Math.hypot(n.x,n.y,n.z)||1;
-  return{x:n.x/length,y:n.y/length,z:n.z/length};
- };
- const wallFaceNormals=new Map();
- for(const face of orderedFaces)if(face.material==="wall"&&!face.topFace) {
-  const normal=faceNormal(face);wallFaceNormals.set(face,normal);
-  for(let i=0;i<face.poly.length;i++){const key=edgeKey(face.poly[i],face.poly[(i+1)%face.poly.length]);if(!wallSideEdges.has(key))wallSideEdges.set(key,[]);wallSideEdges.get(key).push(face)}
- }
- const coplanarWallFaceBuckets=new Map();
- const canonicalPlane=face=>{
-  const n=wallFaceNormals.get(face);if(!n)return null;
-  let sign=1;for(const component of [n.x,n.y,n.z])if(Math.abs(component)>1e-5){sign=component<0?-1:1;break}
-  const normal={x:n.x*sign,y:n.y*sign,z:n.z*sign},p=face.poly[0],d=normal.x*p.worldX+normal.y*p.worldY+normal.z*p.worldZ,normalKey=[normal.x,normal.y,normal.z].map(v=>Math.round(v*100000)).join(",");
-  return{normal,d,key:normalKey};
- };
- const facePlaneKeys=new Map();
- for(const face of wallFaceNormals.keys()){const plane=canonicalPlane(face);if(!plane)continue;facePlaneKeys.set(face,plane);if(!coplanarWallFaceBuckets.has(plane.key))coplanarWallFaceBuckets.set(plane.key,[]);coplanarWallFaceBuckets.get(plane.key).push(face)}
- // Segment-overlap handling is what edge-only incidence misses: an edge can be
- // only partly covered by another coplanar wall skin, such as a wall split by a
- // doorway or crossing cut. Compare projected samples against each face in the
- // same model-space plane, independent of whether vertices are identical.
- const onSegment3d=(point,a,b,tol=.001)=>{
-  const vx=b.worldX-a.worldX,vy=b.worldY-a.worldY,vz=b.worldZ-a.worldZ,wx=point.worldX-a.worldX,wy=point.worldY-a.worldY,wz=point.worldZ-a.worldZ,ll=vx*vx+vy*vy+vz*vz;
-  if(ll<1e-12)return Math.hypot(wx,wy,wz)<=tol;
-  const t=Math.max(0,Math.min(1,(wx*vx+wy*vy+wz*vz)/ll));
-  return Math.hypot(wx-vx*t,wy-vy*t,wz-vz*t)<=tol;
- };
- const pointInFace3d=(point,face)=>{
-  const plane=facePlaneKeys.get(face);if(!plane||!point||Math.abs(plane.normal.x*point.worldX+plane.normal.y*point.worldY+plane.normal.z*point.worldZ-plane.d)>.001)return false;
-  const dropAxis=Math.abs(plane.normal.x)>Math.abs(plane.normal.y)?(Math.abs(plane.normal.x)>Math.abs(plane.normal.z)?"x":"z"):(Math.abs(plane.normal.y)>Math.abs(plane.normal.z)?"y":"z");
-  const uv=pt=>dropAxis==="x"?[pt.worldY,pt.worldZ]:dropAxis==="y"?[pt.worldX,pt.worldZ]:[pt.worldX,pt.worldY];
-  const [px,py]=uv(point);let inside=false;
-  for(let i=0,j=face.poly.length-1;i<face.poly.length;j=i++){
-   const [xi,yi]=uv(face.poly[i]),[xj,yj]=uv(face.poly[j]);
-   if(onSegment3d(point,face.poly[j],face.poly[i],.001))return true;
-   if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/((yj-yi)||1e-12)+xi))inside=!inside;
-  }
-  return inside;
- };
- const edgeCoveredByCoplanarFace=(a,b,face)=>{
-  const normal=wallFaceNormals.get(face),plane=facePlaneKeys.get(face);if(!normal||!plane)return false;
-  const edgeVector={x:b.worldX-a.worldX,y:b.worldY-a.worldY,z:b.worldZ-a.worldZ},edgeLength=Math.hypot(edgeVector.x,edgeVector.y,edgeVector.z);
-  if(edgeLength<1e-8)return true;
-  const candidates=coplanarWallFaceBuckets.get(plane.key)||[];
-  const samples=[0,.25,.5,.75,1].map(t=>({worldX:a.worldX+edgeVector.x*t,worldY:a.worldY+edgeVector.y*t,worldZ:a.worldZ+edgeVector.z*t}));
-  for(const other of candidates) {
-   if(other===face)continue;
-   const otherPlane=facePlaneKeys.get(other),otherNormal=wallFaceNormals.get(other);
-   if(!otherPlane||!otherNormal||Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)<.99999||Math.abs(plane.d-otherPlane.d)>.001)continue;
-   if(samples.every(point=>pointInFace3d(point,other)))return true;
-  }
-  return false;
- };
- for(const face of orderedFaces) {
-  const base=materialColors[face.material]||materialColors.wall;
-  ctx.fillStyle=face.selected?(face.topFace?"#bce3e6":"#9acbd0"):(base.startsWith("#")?shadeHex(base,face.shade||0):base);
-  ctx.strokeStyle=face.selected?"#087e8b":face.material==="glass"?"#5896a5":face.material==="door"?"#876044":"#71808a";
-  ctx.lineWidth=face.selected?1.6:face.material==="glass"?.7:.8;
-  ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
-  ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();
-  if(face.material!=="wall"||face.topFace||face.selected) {
-   if(face.material==="wall"&&face.topFace&&!face.selected&&face.skipTopEdges?.length) {
-    for(let i=0;i<face.poly.length;i++){if(face.skipTopEdges.includes(i))continue;const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
-   } else ctx.stroke();
-   continue;
-  }
-  for(let i=0;i<face.poly.length;i++) {
-   const a=face.poly[i],b=face.poly[(i+1)%face.poly.length],owners=wallSideEdges.get(edgeKey(a,b))||[],normal=wallFaceNormals.get(face);
-   const exactSharedCoplanarEdge=owners.some(other=>other!==face&&(()=>{const otherNormal=wallFaceNormals.get(other);return otherNormal&&normal&&Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)>.99999})());
-   if(exactSharedCoplanarEdge||edgeCoveredByCoplanarFace(a,b,face))continue;
-   // Preserve each physical wall-end silhouette and each jamb/reveal edge.
-   // Only coincident/coplanar skin edges covered by another skin are removed.
-   const ws=face.wallSegment,side=face.wallSideIndex;
-   if(ws&&(side===0||side===2)&&(i===1||i===3)) {
-    const distance=side===0?(i===1?ws.hi:ws.lo):(i===1?ws.lo:ws.hi),atStart=Math.abs(distance)<1e-4,atEnd=Math.abs(distance-ws.length)<1e-4;
-    if(!(atStart||atEnd))continue;
-    if((wallEndNeighbors.get(face.id+":"+(atStart?"start":"end"))||[]).length)continue;
-   }
-   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+
+const materialColors={wall:"#d8e0e4",door:"#b88760",glass:"rgba(123,198,214,.46)",frame:"#5f737d",handle:"#aeb8bd",slab:"#c9d4d9",concrete:"#b9c6cd",roof:"#a97b5b"};
+const shadeHex=(hex,amount)=>{const value=parseInt(hex.slice(1),16),r=value>>16,g=(value>>8)&255,b=value&255,adjust=c=>Math.max(0,Math.min(255,Math.round(c+(amount>=0?(255-c)*amount:c*amount))));return "#"+[adjust(r),adjust(g),adjust(b)].map(c=>c.toString(16).padStart(2,"0")).join("")};
+const prism=(e,footprint,z0,height,material,geometryOptions={})=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height)),chosenElement=(!!options.interactive&&selected.has(e.id)),surface=material||({wall:"wall",door:"door",window:"glass",slab:"slab",column:"concrete",beam:"concrete",roof:"roof"}[e.type]||"wall");
+for(let i=0;i<base.length;i++){if(geometryOptions.skipSides?.includes(i))continue;const j=(i+1)%base.length,poly=[base[i],base[j],top[j],top[i]],shade=i%2?-.035:-.13;faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:surface,shade,selected:chosenElement,...(geometryOptions.wallSegment?{wallSegment:geometryOptions.wallSegment,wallSideIndex:i}:{})})}
+faces3d.push({id:e.id,poly:top,depth:top.reduce((sum,pt)=>sum+pt.depth,0)/top.length,material:surface,shade:.13,selected:chosenElement,topFace:true,skipTopEdges:geometryOptions.skipTopEdges||[]})};
+for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","door","window","roof"].includes(e.type))continue;const storyElevation=storyElevationById.get(e.storyId)||0;if(e.type==="roof"){const center={x:e.boundary.reduce((s,v)=>s+v.x,0)/e.boundary.length,y:e.boundary.reduce((s,v)=>s+v.y,0)/e.boundary.length},radius=Math.min(...e.boundary.map(v=>Math.hypot(v.x-center.x,v.y-center.y))),baseZ=storyElevation+(e.elevation||0)+(e.offset||0),rise=Math.tan((e.pitch||30)*Math.PI/180)*radius,base=e.boundary.map(v=>project3d(v,baseZ)),inner=e.boundary.map(v=>project3d(v,baseZ-(e.thickness||.18))),peak=project3d(center,baseZ+rise),chosenElement=(!!options.interactive&&selected.has(e.id));for(let i=0;i<base.length;i++){const j=(i+1)%base.length,poly=[base[i],base[j],peak];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:"roof",shade:.1,selected:chosenElement,topFace:true});faces3d.push({id:e.id,poly:[base[j],base[i],inner[i],inner[j]],depth:(base[i].depth+base[j].depth)/2,material:"roof",shade:-.22,selected:chosenElement})}continue}if(e.type==="door"||e.type==="window"){
+ const host=wallById.get(e.hostWallId);if(!host)continue;
+ const g=hostedOpening3dGeometry(host,e),baseZ=storyElevation+(host.baseOffset||0)+g.zOffset;
+ if(e.type==="window"){
+  const frame=.045,depth=(g.thickness||.025)*1.8;
+  const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy)||1,nx=-dy/len*depth/2,ny=dx/len*depth/2;
+  const offset=e.offset||0,width=e.width||0,a={x:host.start.x+dx*offset/len,y:host.start.y+dy*offset/len},b={x:host.start.x+dx*(offset+width)/len,y:host.start.y+dy*(offset+width)/len};
+  const zBottom=baseZ,zTop=baseZ+g.height;
+  const frameRects=[
+   [{x:a.x,y:a.y},{x:b.x,y:b.y},0,frame],
+   [{x:a.x,y:a.y},{x:b.x,y:b.y},g.height-frame,g.height],
+  ];
+  for(const [u,v,lo,hi] of frameRects){const poly=[{x:u.x+nx,y:u.y+ny},{x:v.x+nx,y:v.y+ny},{x:v.x-nx,y:v.y-ny},{x:u.x-nx,y:u.y-ny}];prism(e,poly,zBottom+lo,Math.max(.015,hi-lo),"frame")}
+  const jambs=[a,b];
+  for(const jamb of jambs){const poly=[{x:jamb.x+nx,y:jamb.y+ny},{x:jamb.x+nx+dx/len*frame,y:jamb.y+ny+dy/len*frame},{x:jamb.x-nx+dx/len*frame,y:jamb.y-ny+dy/len*frame},{x:jamb.x-nx,y:jamb.y-ny}];prism(e,poly,zBottom,g.height,"frame")}
+  if((e.libraryType||"single-leaf")==="double-leaf"){const half=e.width/2,first=hostedOpening3dGeometry(host,{...e,width:half}),second=hostedOpening3dGeometry(host,{...e,offset:e.offset+half,width:half}),mid={x:(a.x+b.x)/2,y:(a.y+b.y)/2},mullion=[{x:mid.x+nx,y:mid.y+ny},{x:mid.x+dx/len*frame+nx,y:mid.y+dy/len*frame+ny},{x:mid.x+dx/len*frame-nx,y:mid.y+dy/len*frame-ny},{x:mid.x-nx,y:mid.y-ny}];prism(e,first.boundary,baseZ,first.height);prism(e,second.boundary,baseZ,second.height);prism(e,mullion,zBottom,Math.max(.015,g.height))}else prism(e,g.boundary,baseZ,g.height,"glass");
+ }else{
+  const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len,nx=-uy,ny=ux;
+  const wallDepth=Math.max(.07,(host.thickness||.15)*.72),frameWidth=.065,offset=Number(e.offset)||0,width=Number(e.width)||0;
+  const at=distance=>({x:host.start.x+ux*distance,y:host.start.y+uy*distance});
+  const wallRect=(center,along,depth)=>[{x:center.x-ux*along/2-nx*depth/2,y:center.y-uy*along/2-ny*depth/2},{x:center.x+ux*along/2-nx*depth/2,y:center.y+uy*along/2-ny*depth/2},{x:center.x+ux*along/2+nx*depth/2,y:center.y+uy*along/2+ny*depth/2},{x:center.x-ux*along/2+nx*depth/2,y:center.y-uy*along/2+ny*depth/2}];
+  const left=at(offset+frameWidth/2),right=at(offset+width-frameWidth/2),headZ=baseZ+Math.max(0,g.height-frameWidth);
+  prism(e,wallRect(left,frameWidth,wallDepth),baseZ,Math.max(.04,g.height),"frame");
+  prism(e,wallRect(right,frameWidth,wallDepth),baseZ,Math.max(.04,g.height),"frame");
+  prism(e,wallRect(at(offset+width/2),Math.max(.04,width-frameWidth),wallDepth),headZ,frameWidth,"frame");
+  if((e.libraryType||"single-leaf")==="double-leaf"){
+   const half=width/2,first=hostedDoorLeaf3dGeometry(host,{...e,width:half,hingeSide:"left"}),second=hostedDoorLeaf3dGeometry(host,{...e,offset:e.offset+half,width:half,hingeSide:"right"});
+   prism(e,first.boundary,baseZ,first.height,"door");prism(e,second.boundary,baseZ,second.height,"door");
+  }else{
+   const leaf=hostedDoorLeaf3dGeometry(host,e,{frameWidth});
+   prism(e,leaf.boundary,baseZ,leaf.height,"door");
+   const handleDistance=offset+width*.78,handleCenter={x:host.start.x+ux*handleDistance+nx*wallDepth*.48,y:host.start.y+uy*handleDistance+ny*wallDepth*.48},handleLength=.035,handleDepth=.018;
+   const handleFoot=[{x:handleCenter.x-ux*handleLength/2-nx*handleDepth/2,y:handleCenter.y-uy*handleLength/2-ny*handleDepth/2},{x:handleCenter.x+ux*handleLength/2-nx*handleDepth/2,y:handleCenter.y+uy*handleLength/2-ny*handleDepth/2},{x:handleCenter.x+ux*handleLength/2+nx*handleDepth/2,y:handleCenter.y+uy*handleLength/2+ny*handleDepth/2},{x:handleCenter.x-ux*handleLength/2+nx*handleDepth/2,y:handleCenter.y-uy*handleLength/2+ny*handleDepth/2}];
+   const handleZ=baseZ+Math.min(g.height*.58,1.0);
+   prism(e,handleFoot,handleZ,.045,"handle");
   }
  }
- hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));
+ continue
+}let footprint=[],z0=storyElevation,height=0;
+if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=mergeHostedOpeningRecords(e.openings,hostedOpeningsByWall.get(e.id)||[]);const junctionCuts=wallCrossingCutsByWall.get(e.id)||[];const cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}for(const cut of junctionCuts)cuts.push(cut.start,cut.end);const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2;if(junctionCuts.some(cut=>mid>cut.start-1e-7&&mid<cut.end+1e-7))continue;const holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len});
+const crossingCornerKey=(distance,side)=>e.id+":"+Number(distance.toFixed(6))+":"+side;
+const crossingCorner=(cut,boundary,side)=>{
+ const targetDistance=boundary==="start"?cut.start:cut.end,key=crossingCornerKey(targetDistance,side);
+ const cached=wallCrossingCornerCache.get(key);if(cached)return cached.point;
+ const point=at(targetDistance),atStart=boundary==="end";
+ const virtualWall=boundary==="start"?{...e,start:e.start,end:point}:{...e,start:point,end:e.end};
+ const host=cut.hostWall,hdx=host.end.x-host.start.x,hdy=host.end.y-host.start.y,h2=hdx*hdx+hdy*hdy,hostLen=Math.sqrt(h2);
+ if(hostLen<1e-8){const fallback={x:point.x+nx*side,y:point.y+ny*side};wallCrossingCornerCache.set(key,{point:fallback,resolved:false});return fallback}
+ const rawT=((point.x-host.start.x)*hdx+(point.y-host.start.y)*hdy)/h2,param=Math.max(0,Math.min(1,rawT));
+ const closest={x:host.start.x+hdx*param,y:host.start.y+hdy*param};
+ const alignment=Math.abs(cross2({x:dx,y:dy},{x:hdx,y:hdy}))/(len*hostLen||1);
+ const candidate={neighbor:host,neighborT:param,closest,isT:true,distance:Math.hypot(point.x-closest.x,point.y-closest.y),alignment};
+ const resolved=resolveWallEndCorner(virtualWall,atStart,side,[candidate],{endpointTolerance,maxMiterRatio:8});
+ if(resolved.resolved)wallCrossingResolvedCorners.add(key);
+ wallCrossingCornerCache.set(key,{point:resolved.point,resolved:resolved.resolved});
+ return resolved.point;
+};
+const cornerAt=(distance,side)=>{
+ if(distance<=endpointTolerance)return wallEndCorner(e,true,side);
+ if(len-distance<=endpointTolerance)return wallEndCorner(e,false,side);
+ for(const cut of junctionCuts){
+  if(Math.abs(distance-cut.start)<1e-5)return crossingCorner(cut,"start",side);
+  if(Math.abs(distance-cut.end)<1e-5)return crossingCorner(cut,"end",side);
+ }
+ const q=at(distance);return{x:q.x+nx*side,y:q.y+ny*side};
+};
+const crossingResolved=(distance)=>[-1,1].every(side=>wallCrossingResolvedCorners.has(crossingCornerKey(distance,side)));
+for(const [low,high] of solids){
+ const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)],skipSides=[],skipTopEdges=[];
+ // Opening-boundary end caps are internal wall faces, not exterior surfaces.
+ // Suppress their vertical caps to avoid persistent full-height stripes.
+ const openingBoundaryAt=distance=>openings.some(o=>
+  Math.abs((Number(o.offset)||0)-distance)<1e-5||
+  Math.abs((Number(o.offset)||0)+(Number(o.width)||0)-distance)<1e-5
+ );
+ if(openingBoundaryAt(lo)){skipSides.push(3);skipTopEdges.push(3)}
+ if(openingBoundaryAt(hi)){skipSides.push(1);skipTopEdges.push(1)}
+ if(lo<=endpointTolerance&&wallEndResolvedCorners.has(e.id+":start:1")&&wallEndResolvedCorners.has(e.id+":start:-1")){skipSides.push(3);skipTopEdges.push(3)}
+ if(hi>=len-endpointTolerance&&wallEndResolvedCorners.has(e.id+":end:1")&&wallEndResolvedCorners.has(e.id+":end:-1")){skipSides.push(1);skipTopEdges.push(1)}
+ const startCut=junctionCuts.find(cut=>Math.abs(lo-cut.end)<1e-5);
+ const endCut=junctionCuts.find(cut=>Math.abs(hi-cut.start)<1e-5);
+ // A junction cut is an internal join, never a physical wall end. Do not
+ // render a thickness cap there: if miter resolution falls back, the cap
+ // becomes the conspicuous vertical strip at the wall intersection.
+ if(startCut){skipSides.push(3);skipTopEdges.push(3)}
+ if(endCut){skipSides.push(1);skipTopEdges.push(1)}
+ prism(e,poly,base+low,high-low,undefined,{skipSides,skipTopEdges,wallSegment:{lo,hi,length:len,zLow:low,zHigh:high,openings:openings.map(o=>({offset:Number(o.offset)||0,width:Number(o.width)||0,sill:Number(o.sill)||0,height:Number(o.height)||0}))}});
+} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
+else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
+else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
+prism(e,footprint,z0,height)
+}
+const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
+const wallSideEdges=new Map();
+const edgePointKey=pt=>[pt.worldX,pt.worldY,pt.worldZ].map(v=>Number(v).toFixed(6)).join(",");
+const edgeKey=(a,b)=>{const ka=edgePointKey(a),kb=edgePointKey(b);return ka<kb?ka+"|"+kb:kb+"|"+ka};
+// Keep face incidence, not just a Set of element IDs: several split faces from
+// one wall can share an edge. Only suppress the seam when those faces are
+// coplanar; preserve genuine jamb/reveal and corner edges.
+const faceNormal=face=>{
+ const a=face.poly[0],b=face.poly[1],c=face.poly[2];
+ const ux=b.worldX-a.worldX,uy=b.worldY-a.worldY,uz=b.worldZ-a.worldZ;
+ const vx=c.worldX-a.worldX,vy=c.worldY-a.worldY,vz=c.worldZ-a.worldZ;
+ const n={x:uy*vz-uz*vy,y:uz*vx-ux*vz,z:ux*vy-uy*vx};
+ const length=Math.hypot(n.x,n.y,n.z)||1;
+ return {x:n.x/length,y:n.y/length,z:n.z/length};
+};
+const wallFaceNormals=new Map();
+for(const face of orderedFaces){
+ if(face.material!=="wall"||face.topFace)continue;
+ const normal=faceNormal(face);wallFaceNormals.set(face,normal);
+ for(let i=0;i<face.poly.length;i++){
+  const key=edgeKey(face.poly[i],face.poly[(i+1)%face.poly.length]);
+  if(!wallSideEdges.has(key))wallSideEdges.set(key,[]);
+  wallSideEdges.get(key).push(face);
+ }
+}
+const coplanarWallFaceBuckets=new Map();
+const canonicalPlane=face=>{
+ const n=wallFaceNormals.get(face);if(!n)return null;
+ let sign=1;for(const component of [n.x,n.y,n.z]){if(Math.abs(component)>1e-5){sign=component<0?-1:1;break}}
+ const normal={x:n.x*sign,y:n.y*sign,z:n.z*sign},p=face.poly[0];
+ const d=normal.x*p.worldX+normal.y*p.worldY+normal.z*p.worldZ;
+ const normalKey=[normal.x,normal.y,normal.z].map(v=>Math.round(v*100000)).join(",");
+ // Bucket by orientation only. Plane offsets are compared with a tolerance
+ // below; quantizing d in the key can split two coplanar faces at rounding
+ // boundaries and leave the internal seam visible.
+ return {normal,d,key:normalKey};
+};
+const facePlaneKeys=new Map();
+for(const face of wallFaceNormals.keys()){
+ const plane=canonicalPlane(face);if(!plane)continue;
+ facePlaneKeys.set(face,plane);
+ if(!coplanarWallFaceBuckets.has(plane.key))coplanarWallFaceBuckets.set(plane.key,[]);
+ coplanarWallFaceBuckets.get(plane.key).push(face);
+}
+for(const face of orderedFaces){
+ const base=materialColors[face.material]||materialColors.wall;
+ ctx.fillStyle=face.selected?(face.topFace?"#bce3e6":"#9acbd0"):(base.startsWith("#")?shadeHex(base,face.shade||0):base);
+ ctx.strokeStyle=face.selected?"#087e8b":face.material==="glass"?"#5896a5":face.material==="door"?"#876044":"#71808a";
+ ctx.lineWidth=face.selected?1.6:face.material==="glass"?.7:.8;
+ ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+ ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();
+ if(face.material!=="wall"||face.topFace||face.selected){
+  if(face.material==="wall"&&face.topFace&&!face.selected&&face.skipTopEdges?.length){
+   for(let i=0;i<face.poly.length;i++){if(face.skipTopEdges.includes(i))continue;const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  }else ctx.stroke();
+  continue
+ }
+ for(let i=0;i<face.poly.length;i++){
+  const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];
+  // The wall skin is emitted as separate prisms for openings and junction
+  // cuts. Vertical edges at those internal stations are tessellation seams,
+  // not physical edges; opening frames/reveals and resolved junction geometry
+  // provide the real boundaries. Keep strokes only at actual source-wall ends.
+  const ws=face.wallSegment,side=face.wallSideIndex;
+  if(ws&&(side===0||side===2)&&(i===1||i===3)){
+   const distance=side===0?(i===1?ws.hi:ws.lo):(i===1?ws.lo:ws.hi);
+   const endpointTolerance=1e-4;
+   const atWallStart=Math.abs(distance)<endpointTolerance;
+   const atWallEnd=Math.abs(distance-ws.length)<endpointTolerance;
+   const isPhysicalWallEnd=atWallStart||atWallEnd;
+   if(!isPhysicalWallEnd)continue;
+   // Joined source endpoints are internal junction edges, not exposed
+   // silhouettes. Suppress the vertical stroke using the same endpoint
+   // neighbour graph that resolved the wall geometry.
+   const endpointKey=face.id+":"+(atWallStart?"start":"end");
+   if((wallEndNeighbors.get(endpointKey)||[]).length)continue;
+  }
+  const owners=wallSideEdges.get(edgeKey(a,b))||[];
+  const normal=wallFaceNormals.get(face);
+  const edgeVec={x:b.worldX-a.worldX,y:b.worldY-a.worldY,z:b.worldZ-a.worldZ};
+  const edgeLength=Math.hypot(edgeVec.x,edgeVec.y,edgeVec.z)||1;
+  const exactSharedCoplanarEdge=owners.some(other=>{
+   if(other===face)return false;
+   const otherNormal=wallFaceNormals.get(other);
+   return !!otherNormal&&!!normal&&Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)>.99999;
+  });
+  let containedCoplanarEdge=false;
+  if(!exactSharedCoplanarEdge){
+   const plane=facePlaneKeys.get(face),candidates=plane?(coplanarWallFaceBuckets.get(plane.key)||[]):[];
+   const normal=wallFaceNormals.get(face);
+   const dropAxis=Math.abs(normal.x)>Math.abs(normal.y)?(Math.abs(normal.x)>Math.abs(normal.z)?"x":"z"):(Math.abs(normal.y)>Math.abs(normal.z)?"y":"z");
+   const uv=pt=>dropAxis==="x"?{x:pt.worldY,y:pt.worldZ}:dropAxis==="y"?{x:pt.worldX,y:pt.worldZ}:{x:pt.worldX,y:pt.worldY};
+   const start2=uv(a),end2=uv(b);
+   for(const other of candidates){
+    if(other===face)continue;
+    const otherPlane=facePlaneKeys.get(other);
+    if(!otherPlane||Math.abs(plane.normal.x*otherPlane.normal.x+plane.normal.y*otherPlane.normal.y+plane.normal.z*otherPlane.normal.z)<.99999||Math.abs(plane.d-otherPlane.d)>.001)continue;
+    if(segmentCoveredByPolygon2D(start2,end2,other.poly.map(uv),{tolerance:.001})){containedCoplanarEdge=true;break}
+   }
+  }
+  const sharedCoplanarEdge=exactSharedCoplanarEdge||containedCoplanarEdge;
+  if(sharedCoplanarEdge)continue;
+  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+ }
+}
+hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));
 }
 function renderFloorPlanElements(ctx,items,pointAt,scaleFactor,options={}){
 for(const e of items){const isSel=!!options.interactive&&selected.has(e.id),isHover=!!options.interactive&&hoveredElementId===e.id&&!isSel;ctx.strokeStyle=isSel?"#087e8b":isHover?"#d97706":e.type==="room"?"#6aa5a8":"#4b5660";ctx.fillStyle=e.type==="room"?"rgba(217,240,242,.28)":"#e9eef0";ctx.lineWidth=isSel?2:isHover?1.8:1;
