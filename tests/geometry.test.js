@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide } from "../src/core/geometry.js";
+import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner } from "../src/core/geometry.js";
 
 test("line intersection returns parameters and point",()=>{
  const hit=lineIntersection({x:0,y:0},{x:1,y:0},{x:2,y:-1},{x:0,y:1});
@@ -118,4 +118,43 @@ test("wall junction offsets stay bounded for L corners and reversed wall directi
    }
   }
  }
+});
+
+
+test("renderer wall-end resolver builds both external L-corner vertices without diagonal fallback strips",()=>{
+ const horizontal={id:"horizontal",start:{x:-2,y:0},end:{x:0,y:0},thickness:.2};
+ const vertical={id:"vertical",start:{x:0,y:0},end:{x:0,y:2},thickness:.2};
+ const candidate={neighbor:vertical,neighborT:0,closest:{x:0,y:0},isT:false,distance:0,alignment:1};
+ const upper=resolveWallEndCorner(horizontal,false,1,[candidate]);
+ const lower=resolveWallEndCorner(horizontal,false,-1,[candidate]);
+ assert.equal(upper.resolved,true);
+ assert.equal(lower.resolved,true);
+ assert.ok(Math.abs(upper.point.x-.1)<1e-8&&Math.abs(upper.point.y-.1)<1e-8);
+ assert.ok(Math.abs(lower.point.x+.1)<1e-8&&Math.abs(lower.point.y+.1)<1e-8);
+});
+
+test("renderer wall-end resolver joins a T branch to the approached host face",()=>{
+ const branch={id:"branch",start:{x:0,y:2},end:{x:0,y:0},thickness:.2};
+ const host={id:"host",start:{x:-2,y:0},end:{x:2,y:0},thickness:.2};
+ const candidate={neighbor:host,neighborT:.5,closest:{x:0,y:0},isT:true,distance:0,alignment:0};
+ const left=resolveWallEndCorner(branch,false,1,[candidate]);
+ const right=resolveWallEndCorner(branch,false,-1,[candidate]);
+ assert.equal(left.resolved,true);
+ assert.equal(right.resolved,true);
+ assert.ok(Math.abs(left.point.y-.1)<1e-8);
+ assert.ok(Math.abs(right.point.y-.1)<1e-8);
+ assert.ok(Math.abs(left.point.x-.1)<1e-8);
+ assert.ok(Math.abs(right.point.x+.1)<1e-8);
+});
+
+test("renderer wall-end resolver stays bounded at acute corners and handles continuous wall chains",()=>{
+ const acuteA={id:"a",start:{x:-2,y:0},end:{x:0,y:0},thickness:.2};
+ const acuteB={id:"b",start:{x:0,y:0},end:{x:-2,y:.01},thickness:.2};
+ const acute=resolveWallEndCorner(acuteA,false,1,[{neighbor:acuteB,neighborT:0,closest:{x:0,y:0},isT:false,distance:0,alignment:.005}],{maxMiterRatio:2});
+ assert.equal(acute.resolved,false,"overlong acute miter must fall back instead of producing a spike");
+ const first={id:"first",start:{x:-2,y:0},end:{x:0,y:0},thickness:.2};
+ const second={id:"second",start:{x:0,y:0},end:{x:2,y:0},thickness:.2};
+ const chain=resolveWallEndCorner(first,false,1,[{neighbor:second,neighborT:0,closest:{x:0,y:0},isT:false,distance:0,alignment:1}]);
+ assert.equal(chain.resolved,true);
+ assert.ok(Math.abs(chain.point.y-.1)<1e-8);
 });
