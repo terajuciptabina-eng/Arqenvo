@@ -189,3 +189,134 @@ export function selectWallJunctionCandidate(candidates) {
   candidates.forEach(score);
   return candidates.reduce((best, candidate) => score(candidate) < score(best) ? candidate : best, candidates[0]);
 }
+
+
+/**
+ * Resolve one wall-side vertex at an endpoint junction.
+ *
+ * The offset boundary lines are infinite lines, not forward-only rays: one
+ * side of an L junction legitimately intersects behind the centre-line
+ * endpoint. Restricting either line to the forward direction creates the
+ * diagonal end caps and overlapping strips visible at wall corners.
+ *
+ * T branches terminate at the approached face of the host wall. Their
+ * intersection may lie up to half the host thickness behind the branch end.
+ * Every candidate is bounded by a local miter limit to avoid spikes.
+ */
+export function resolveWallEndCorner(wall, atStart, side, candidates = [], {
+  endpointTolerance = 0.005,
+  maxMiterRatio = 8,
+  parallelTolerance = 1e-8,
+} = {}) {
+  const validWall = value => value && finitePoint(value.start) && finitePoint(value.end);
+  if (!validWall(wall)) throw new TypeError("Wall corner needs finite wall endpoints");
+  if (typeof atStart !== "boolean") throw new TypeError("Wall corner endpoint must be start or end");
+  if (![1, -1].includes(side)) throw new RangeError("Wall corner side must be 1 or -1");
+  if (!Array.isArray(candidates)) throw new TypeError("Wall corner candidates must be an array");
+  if (![endpointTolerance, maxMiterRatio, parallelTolerance].every(Number.isFinite) ||
+      endpointTolerance < 0 || maxMiterRatio < 1 || parallelTolerance <= 0) {
+    throw new RangeError("Wall corner tolerances or miter ratio are invalid");
+  }
+
+  const dx = wall.end.x - wall.start.x, dy = wall.end.y - wall.start.y;
+  const length = Math.hypot(dx, dy);
+  const joint = atStart ? wall.start : wall.end;
+  if (length <= EPS) return { point: { ...joint }, resolved: false, reason: "degenerate-wall" };
+
+  const ux = dx / length, uy = dy / length;
+  const inwardRay = { x: atStart ? ux : -ux, y: atStart ? uy : -uy };
+  const outwardRay = { x: -inwardRay.x, y: -inwardRay.y };
+  const normal = { x: -inwardRay.y, y: inwardRay.x };
+  const localSide = side * (atStart ? 1 : -1);
+  const half = (Number.isFinite(wall.thickness) && wall.thickness > 0 ? wall.thickness : 0.15) / 2;
+  const fallback = { x: joint.x + normal.x * half * localSide, y: joint.y + normal.y * half * localSide };
+  const a = fallback;
+  const cross2 = (u, v) => u.x * v.y - u.y * v.x;
+  const dot2 = (u, v) => u.x * v.x + u.y * v.y;
+  const sideNormal = { x: normal.x * localSide, y: normal.y * localSide };
+  let best = null;
+
+  for (const info of candidates) {
+    const neighbor = info?.neighbor;
+    if (!validWall(neighbor)) continue;
+    const ndx = neighbor.end.x - neighbor.start.x, ndy = neighbor.end.y - neighbor.start.y;
+    const nlen = Math.hypot(ndx, ndy);
+    if (nlen <= EPS) continue;
+
+    const nux = ndx / nlen, nuy = ndy / nlen;
+    const neighborHalf = (Number.isFinite(neighbor.thickness) && neighbor.thickness > 0 ? neighbor.thickness : 0.15) / 2;
+    const isT = Boolean(info.isT);
+    const neighborT = Number.isFinite(info.neighborT) ? info.neighborT : 0;
+    const center = finitePoint(info.closest) ? info.closest : joint;
+    const options = [];
+
+    if (isT) {
+      const hostNormal = { x: -nuy, y: nux };
+      const faceSide = wallHostFaceSide(inwardRay, hostNormal);
+      const b = {
+        x: center.x + hostNormal.x * neighborHalf * faceSide,
+        y: center.y + hostNormal.y * neighborHalf * faceSide,
+      };
+      // A T-junction connects to the host face on either side of the
+      // branch's endpoint projection; the host line is not a forward ray.
+      options.push({ b, ray: { x: nux, y: nuy }, sidePenalty: 0, tJunction: true });
+    } else {
+      const neighborInward = neighborT < 0.5
+        ? { x: nux, y: nuy }
+        : { x: -nux, y: -nuy };
+      const neighborNormal = { x: -neighborInward.y, y: neighborInward.x };
+      for (const sign of [-1, 1]) {
+        const offset = { x: neighborNormal.x * neighborHalf * sign, y: neighborNormal.y * neighborHalf * sign };
+        const b = { x: joint.x + offset.x, y: joint.y + offset.y };
+        // Of the two parallel wall faces, select the one on the same
+        // boundary side as this offset edge. This distinguishes the external
+        // and re-entrant vertices at a corner without a distance-only guess.
+        const handedness = Math.sign(cross2(outwardRay, sideNormal));
+        const facing = handedness * dot2(offset, outwardRay);
+        options.push({
+          b,
+          ray: neighborInward,
+          sidePenalty: facing < -parallelTolerance ? 1 : 0,
+          tJunction: false,
+        });
+      }
+    }
+
+    for (const option of options) {
+      const denominator = cross2(outwardRay, option.ray);
+      if (Math.abs(denominator) <= parallelTolerance) {
+        // Collinear wall chains share a continuous offset edge. Mark that
+        // edge resolved only when the candidate offset vertex actually
+        // coincides with this wall's offset vertex.
+        if (!option.tJunction && Math.hypot(option.b.x - a.x, option.b.y - a.y) <= endpointTolerance) {
+          const score = (option.sidePenalty || 0) * 1e6 + (Number(info.distance) || 0);
+          if (!best || score < best.score) best = { point: { x: (option.b.x + a.x) / 2, y: (option.b.y + a.y) / 2 }, score, neighborId: neighbor.id };
+        }
+        continue;
+      }
+
+      const delta = { x: option.b.x - a.x, y: option.b.y - a.y };
+      const t = cross2(delta, option.ray) / denominator;
+      const s = cross2(delta, outwardRay) / denominator;
+      if (!Number.isFinite(t) || !Number.isFinite(s)) continue;
+
+      const hit = { x: a.x + outwardRay.x * t, y: a.y + outwardRay.y * t };
+      const hitDistance = Math.hypot(hit.x - joint.x, hit.y - joint.y);
+      const maxDistance = Math.max(half, neighborHalf) * maxMiterRatio + endpointTolerance;
+      if (!Number.isFinite(hitDistance) || hitDistance > maxDistance) continue;
+
+      // At a T-junction the endpoint is projected onto a host face, so the
+      // vertex must remain within half the host thickness. For endpoint joins,
+      // use the global miter bound and let side-consistency choose the vertex.
+      if (option.tJunction && Math.abs(t) > neighborHalf + endpointTolerance) continue;
+
+      const score = (option.sidePenalty || 0) * 1e6 +
+        hitDistance + Math.abs(t) * 1e-3 + (Number(info.distance) || 0) * 1e-2 +
+        (option.tJunction ? -1e-4 : 0);
+      if (!best || score < best.score) best = { point: hit, score, neighborId: neighbor.id };
+    }
+  }
+
+  if (best) return { point: best.point, resolved: true, neighborId: best.neighborId };
+  return { point: fallback, resolved: false, reason: candidates.length ? "no-valid-intersection" : "isolated-end" };
+}
