@@ -114,6 +114,6 @@ test("authoritative hosted openings replace stale cached wall opening geometry",
  const hosted=[{id:"d1",type:"door",offset:2,width:1,height:2.1,sill:0,hostWallId:"w1"}];
  const merged=mergeHostedOpeningRecords(cached,hosted);
  assert.equal(merged.length,2);
- assert.deepEqual(merged.find(o=>o.id==="d1"),hosted);
+ assert.deepEqual(merged.filter(o=>o.id==="d1"),hosted);
  assert.deepEqual(merged.find(o=>o.id==="legacy"),cached[1]);
 });
