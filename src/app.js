@@ -316,9 +316,35 @@ function render3DScene(ctx,items,project3d,options={}){
  const wallEndResolvedCorners=new Set();
  const visibleWalls=items.filter(v=>v.type==="wall"&&isLayerVisible(v));
  const cross2=(a,b)=>a.x*b.y-a.y*b.x;
+ // Index wall bounds by story and spatial cell. Junction candidates can only
+ // affect an endpoint within the wall's half-thickness, so a local bucket
+ // replaces a full scan of every wall for every endpoint during every orbit frame.
+ const wallCellSize=4;
+ const maxWallHalfThickness=Math.max(0,...visibleWalls.map(w=>(Number(w.thickness)||.15)/2));
+ const wallBuckets=new Map();
+ const wallBucketKey=(storyId,cx,cy)=>storyId+":"+cx+":"+cy;
+ for(const candidate of visibleWalls){
+  const margin=maxWallHalfThickness+endpointTolerance;
+  const minX=Math.floor((Math.min(candidate.start.x,candidate.end.x)-margin)/wallCellSize);
+  const maxX=Math.floor((Math.max(candidate.start.x,candidate.end.x)+margin)/wallCellSize);
+  const minY=Math.floor((Math.min(candidate.start.y,candidate.end.y)-margin)/wallCellSize);
+  const maxY=Math.floor((Math.max(candidate.start.y,candidate.end.y)+margin)/wallCellSize);
+  for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++){
+   const key=wallBucketKey(candidate.storyId,cx,cy);
+   if(!wallBuckets.has(key))wallBuckets.set(key,[]);
+   wallBuckets.get(key).push(candidate);
+  }
+ }
+ const hostedOpeningsByWall=new Map();
+ for(const opening of items){
+  if((opening.type!=="door"&&opening.type!=="window")||!opening.hostWallId)continue;
+  if(!hostedOpeningsByWall.has(opening.hostWallId))hostedOpeningsByWall.set(opening.hostWallId,[]);
+  hostedOpeningsByWall.get(opening.hostWallId).push(opening);
+ }
  for(const wall of visibleWalls)for(const atStart of [true,false]){
   const joint=atStart?wall.start:wall.end,candidates=[];
-  for(const candidate of visibleWalls){
+  const bucket=wallBuckets.get(wallBucketKey(wall.storyId,Math.floor(joint.x/wallCellSize),Math.floor(joint.y/wallCellSize)))||[];
+  for(const candidate of bucket){
    if(candidate.id===wall.id||candidate.storyId!==wall.storyId)continue;
    const vx=candidate.end.x-candidate.start.x,vy=candidate.end.y-candidate.start.y,l2=vx*vx+vy*vy;
    if(l2<1e-10)continue;
@@ -405,11 +431,11 @@ for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","do
  }
  continue
 }let footprint=[],z0=storyElevation,height=0;
-if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=[...(e.openings||[])];for(const hosted of items){if((hosted.type==="door"||hosted.type==="window")&&hosted.hostWallId===e.id&&!openings.some(opening=>opening.id===hosted.id))openings.push(hosted)}const cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len}),cornerAt=(distance,side)=>distance<=endpointTolerance?wallEndCorner(e,true,side):len-distance<=endpointTolerance?wallEndCorner(e,false,side):(()=>{const q=at(distance);return{x:q.x+nx*(side),y:q.y+ny*(side)}})();for(const [low,high] of solids){const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)],skipSides=[];if(lo<=endpointTolerance&&wallEndResolvedCorners.has(e.id+":start:1")&&wallEndResolvedCorners.has(e.id+":start:-1"))skipSides.push(3);if(hi>=len-endpointTolerance&&wallEndResolvedCorners.has(e.id+":end:1")&&wallEndResolvedCorners.has(e.id+":end:-1"))skipSides.push(1);prism(e,poly,base+low,high-low,undefined,{skipSides})} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
+if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=[...(e.openings||[])];for(const hosted of hostedOpeningsByWall.get(e.id)||[]){if(!openings.some(opening=>opening.id===hosted.id))openings.push(hosted)}const cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len}),cornerAt=(distance,side)=>distance<=endpointTolerance?wallEndCorner(e,true,side):len-distance<=endpointTolerance?wallEndCorner(e,false,side):(()=>{const q=at(distance);return{x:q.x+nx*(side),y:q.y+ny*(side)}})();for(const [low,high] of solids){const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)],skipSides=[];if(lo<=endpointTolerance&&wallEndResolvedCorners.has(e.id+":start:1")&&wallEndResolvedCorners.has(e.id+":start:-1"))skipSides.push(3);if(hi>=len-endpointTolerance&&wallEndResolvedCorners.has(e.id+":end:1")&&wallEndResolvedCorners.has(e.id+":end:-1"))skipSides.push(1);prism(e,poly,base+low,high-low,undefined,{skipSides})} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
 else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
 else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
 prism(e,footprint,z0,height)
-}for(const face of faces3d.sort((a,b)=>a.depth-b.depth)){const base=materialColors[face.material]||materialColors.wall;ctx.save();ctx.fillStyle=face.selected?(face.topFace?"#bce3e6":"#9acbd0"):(base.startsWith("#")?shadeHex(base,face.shade||0):base);ctx.strokeStyle=face.selected?"#087e8b":face.material==="glass"?"#5896a5":face.material==="door"?"#876044":"#71808a";ctx.lineWidth=face.selected?1.6:face.material==="glass"?.7:.8;ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;ctx.stroke();ctx.restore()}hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));
+}for(const face of faces3d.sort((a,b)=>a.depth-b.depth)){const base=materialColors[face.material]||materialColors.wall;ctx.fillStyle=face.selected?(face.topFace?"#bce3e6":"#9acbd0"):(base.startsWith("#")?shadeHex(base,face.shade||0):base);ctx.strokeStyle=face.selected?"#087e8b":face.material==="glass"?"#5896a5":face.material==="door"?"#876044":"#71808a";ctx.lineWidth=face.selected?1.6:face.material==="glass"?.7:.8;ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();ctx.stroke()}hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));
 }
 function renderFloorPlanElements(ctx,items,pointAt,scaleFactor,options={}){
 for(const e of items){const isSel=!!options.interactive&&selected.has(e.id),isHover=!!options.interactive&&hoveredElementId===e.id&&!isSel;ctx.strokeStyle=isSel?"#087e8b":isHover?"#d97706":e.type==="room"?"#6aa5a8":"#4b5660";ctx.fillStyle=e.type==="room"?"rgba(217,240,242,.28)":"#e9eef0";ctx.lineWidth=isSel?2:isHover?1.8:1;
