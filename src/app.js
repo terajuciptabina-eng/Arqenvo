@@ -524,6 +524,22 @@ for(const face of orderedFaces){
   wallSideEdges.get(key).push(face);
  }
 }
+const coplanarWallFaceBuckets=new Map();
+const canonicalPlane=face=>{
+ const n=wallFaceNormals.get(face);if(!n)return null;
+ let sign=1;for(const component of [n.x,n.y,n.z]){if(Math.abs(component)>1e-5){sign=component<0?-1:1;break}}
+ const normal={x:n.x*sign,y:n.y*sign,z:n.z*sign},p=face.poly[0];
+ const d=normal.x*p.x+normal.y*p.y+normal.z*(p.depth||0);
+ const normalKey=[normal.x,normal.y,normal.z].map(v=>Math.round(v*100)).join(",");
+ return {normal,d,key:normalKey+":"+Math.round(d)};
+};
+const facePlaneKeys=new Map();
+for(const face of wallFaceNormals.keys()){
+ const plane=canonicalPlane(face);if(!plane)continue;
+ facePlaneKeys.set(face,plane);
+ if(!coplanarWallFaceBuckets.has(plane.key))coplanarWallFaceBuckets.set(plane.key,[]);
+ coplanarWallFaceBuckets.get(plane.key).push(face);
+}
 for(const face of orderedFaces){
  const base=materialColors[face.material]||materialColors.wall;
  ctx.fillStyle=face.selected?(face.topFace?"#bce3e6":"#9acbd0"):(base.startsWith("#")?shadeHex(base,face.shade||0):base);
@@ -542,13 +558,37 @@ for(const face of orderedFaces){
   const normal=wallFaceNormals.get(face);
   const edgeVec={x:b.x-a.x,y:b.y-a.y,z:(b.depth||0)-(a.depth||0)};
   const edgeLength=Math.hypot(edgeVec.x,edgeVec.y,edgeVec.z)||1;
-  // Use the prebuilt exact-edge incidence index. Scanning every face for
-  // every edge made 3D redraw quadratic and could freeze the whole workspace.
-  const sharedCoplanarEdge=owners.some(other=>{
+  const exactSharedCoplanarEdge=owners.some(other=>{
    if(other===face)return false;
    const otherNormal=wallFaceNormals.get(other);
    return !!otherNormal&&!!normal&&Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)>.999;
   });
+  let containedCoplanarEdge=false;
+  if(!exactSharedCoplanarEdge){
+   const plane=facePlaneKeys.get(face),candidates=plane?(coplanarWallFaceBuckets.get(plane.key)||[]):[];
+   const midpoint={x:(a.x+b.x)/2,y:(a.y+b.y)/2,depth:((a.depth||0)+(b.depth||0))/2};
+   const edgePointA={x:a.x,y:a.y,depth:a.depth||0},edgePointB={x:b.x,y:b.y,depth:b.depth||0};
+   for(const other of candidates){
+    if(other===face)continue;
+    const otherPlane=facePlaneKeys.get(other);if(!otherPlane||Math.abs(plane.d-otherPlane.d)>.75)continue;
+    const dropAxis=Math.abs(otherPlane.normal.x)>Math.abs(otherPlane.normal.y)?(Math.abs(otherPlane.normal.x)>Math.abs(otherPlane.normal.z)?"x":"z"):(Math.abs(otherPlane.normal.y)>Math.abs(otherPlane.normal.z)?"y":"z");
+    const uv=pt=>dropAxis==="x"?[pt.y,pt.depth||0]:dropAxis==="y"?[pt.x,pt.depth||0]:[pt.x,pt.y];
+    const pointInFace=pt=>{
+     const [px,py]=uv(pt);let inside=false;
+     for(let k=0,j=other.poly.length-1;k<other.poly.length;j=k++){
+      const [xi,yi]=uv(other.poly[k]),[xj,yj]=uv(other.poly[j]);
+      if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/((yj-yi)||1e-12)+xi))inside=!inside;
+     }
+     return inside;
+    };
+    const nearBoundary=pt=>other.poly.some((p,k)=>{
+     const q=other.poly[(k+1)%other.poly.length],vx=q.x-p.x,vy=q.y-p.y,vz=(q.depth||0)-(p.depth||0),wx=pt.x-p.x,wy=pt.y-p.y,wz=(pt.depth||0)-(p.depth||0),ll=vx*vx+vy*vy+vz*vz||1,t=Math.max(0,Math.min(1,(wx*vx+wy*vy+wz*vz)/ll));
+     return Math.hypot(wx-vx*t,wy-vy*t,wz-vz*t)<=.75;
+    });
+    if([edgePointA,midpoint,edgePointB].every(pt=>pointInFace(pt)||nearBoundary(pt))){containedCoplanarEdge=true;break}
+   }
+  }
+  const sharedCoplanarEdge=exactSharedCoplanarEdge||containedCoplanarEdge;
   if(sharedCoplanarEdge)continue;
   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
  }
