@@ -563,9 +563,9 @@ try {
   await confirmPage.mouse.down();
   await confirmPage.mouse.move(wallMid.x+24,wallMid.y+12,{steps:4});
   await confirmPage.mouse.up();
-  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Element edit committed"));
-  assert.equal(await confirmPage.locator("#selectionInfo").textContent(),"No selection","Desktop mouse release should commit and clear selection");
-  assert.equal(await confirmPage.locator("#editActions").evaluate(el=>el.hidden),true,"Desktop mouse release should not leave edit actions open");
+  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Element moved · selection retained"));
+  assert.match(await confirmPage.locator("#selectionInfo").textContent(),/1 element selected/i,"Desktop move should commit while retaining the selected element, matching CAD editing behavior");
+  assert.equal(await confirmPage.locator("#editActions").evaluate(el=>el.hidden),false,"The selected element's edit actions should remain available after a committed move");
   await confirmPage.close();
 
   // Mobile 3D zoom controls: touch-sized buttons must change the actual camera readout.
