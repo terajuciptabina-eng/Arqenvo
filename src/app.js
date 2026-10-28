@@ -540,12 +540,25 @@ for(const face of orderedFaces){
  for(let i=0;i<face.poly.length;i++){
   const a=face.poly[i],b=face.poly[(i+1)%face.poly.length],owners=wallSideEdges.get(edgeKey(a,b))||[];
   const normal=wallFaceNormals.get(face);
-  const sharedCoplanarEdge=owners.some(other=>{
-   if(other===face)return false;
+  const edgeVec={x:b.x-a.x,y:b.y-a.y,z:(b.depth||0)-(a.depth||0)};
+  const edgeLength=Math.hypot(edgeVec.x,edgeVec.y,edgeVec.z)||1;
+  const sharedCoplanarEdge=orderedFaces.some(other=>{
+   if(other===face||other.material!=="wall"||other.topFace)return false;
    const otherNormal=wallFaceNormals.get(other);
-   // Junctions can split one visible plane across different wall elements.
-   // Suppress the shared edge based on surface geometry, not wall IDs.
-   return otherNormal&&normal&&Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)>.999;
+   if(!otherNormal||!normal||Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)<.999)return false;
+   for(let j=0;j<other.poly.length;j++){
+    const c=other.poly[j],d=other.poly[(j+1)%other.poly.length];
+    const ov={x:d.x-c.x,y:d.y-c.y,z:(d.depth||0)-(c.depth||0)},ol=Math.hypot(ov.x,ov.y,ov.z)||1;
+    const crossDir={x:edgeVec.y*ov.z-edgeVec.z*ov.y,y:edgeVec.z*ov.x-edgeVec.x*ov.z,z:edgeVec.x*ov.y-edgeVec.y*ov.x};
+    if(Math.hypot(crossDir.x,crossDir.y,crossDir.z)/(edgeLength*ol)>.001)return false;
+    const rel={x:c.x-a.x,y:c.y-a.y,z:(c.depth||0)-(a.depth||0)};
+    const crossLine={x:rel.y*edgeVec.z-rel.z*edgeVec.y,y:rel.z*edgeVec.x-rel.x*edgeVec.z,z:rel.x*edgeVec.y-rel.y*edgeVec.x};
+    if(Math.hypot(crossLine.x,crossLine.y,crossLine.z)/edgeLength>.002)return false;
+    const t0=(rel.x*edgeVec.x+rel.y*edgeVec.y+rel.z*edgeVec.z)/(edgeLength*edgeLength);
+    const t1=t0+(ov.x*edgeVec.x+ov.y*edgeVec.y+ov.z*edgeVec.z)/(edgeLength*edgeLength);
+    if(Math.min(t0,t1)<=.002&&Math.max(t0,t1)>=.998)return true;
+   }
+   return false;
   });
   if(sharedCoplanarEdge)continue;
   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
