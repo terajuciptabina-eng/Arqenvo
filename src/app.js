@@ -314,13 +314,21 @@ function render3DScene(ctx,items,project3d,options={}){
  const endpointTolerance=.025;
  const wallEndNeighbors=new Map();
  const visibleWalls=items.filter(v=>v.type==="wall"&&isLayerVisible(v));
+ const cross2=(a,b)=>a.x*b.y-a.y*b.x;
  for(const wall of visibleWalls)for(const atStart of [true,false]){
-  const joint=atStart?wall.start:wall.end;let best=null,nearest=endpointTolerance;
+  const joint=atStart?wall.start:wall.end;let best=null,nearest=Infinity;
   for(const candidate of visibleWalls){
    if(candidate.id===wall.id||candidate.storyId!==wall.storyId)continue;
-   for(const candidateAtStart of [true,false]){
-    const q=candidateAtStart?candidate.start:candidate.end,d=Math.hypot(q.x-joint.x,q.y-joint.y);
-    if(d<nearest){nearest=d;best={neighbor:candidate,neighborAtStart:candidateAtStart}}
+   const vx=candidate.end.x-candidate.start.x,vy=candidate.end.y-candidate.start.y,l2=vx*vx+vy*vy;
+   if(l2<1e-10)continue;
+   const tRaw=((joint.x-candidate.start.x)*vx+(joint.y-candidate.start.y)*vy)/l2;
+   const t=Math.max(0,Math.min(1,tRaw)),q={x:candidate.start.x+vx*t,y:candidate.start.y+vy*t};
+   const distance=Math.hypot(q.x-joint.x,q.y-joint.y);
+   // A wall endpoint can meet either another endpoint (L join) or the side
+   // of a continuous wall (T join). Restrict candidates to the same story.
+   const tolerance=(candidate.thickness||.15)/2+endpointTolerance;
+   if(distance<=tolerance&&distance<nearest){
+    nearest=distance;best={neighbor:candidate,neighborT:t,closest:q,isT:t>.025&&t<.975};
    }
   }
   if(best)wallEndNeighbors.set(wall.id+":"+(atStart?"start":"end"),best);
@@ -331,18 +339,30 @@ function render3DScene(ctx,items,project3d,options={}){
   const fallback={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
   const neighborInfo=wallEndNeighbors.get(wall.id+":"+(atStart?"start":"end"));
   if(!neighborInfo)return fallback;
-  const {neighbor,neighborAtStart}=neighborInfo;
-  const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nray={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy},nn={x:-nray.y,y:nray.x},nhalf=(neighbor.thickness||.15)/2;
-  const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide},b={x:joint.x+nn.x*nhalf*localSide,y:joint.y+nn.y*nhalf*localSide};
-  const cross=(u,v)=>u.x*v.y-u.y*v.x,den=cross(ray,nray);
+  const {neighbor,neighborT,closest,isT}=neighborInfo;
+  const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
+  const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nn={x:-nuy,y:nux},nhalf=(neighbor.thickness||.15)/2;
+  const cross=(u,v)=>u.x*v.y-u.y*v.x;
+  if(isT){
+   // Stop the joining wall at the near face of the host wall, not at its
+   // centreline. This avoids wall-end caps and geometry leaking through a T joint.
+   const hostSide=Math.sign(ray.x*nn.x+ray.y*nn.y)||1;
+   const b={x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide};
+   const den=cross(ray,{x:nux,y:nuy});
+   if(Math.abs(den)<1e-7)return fallback;
+   const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,{x:nux,y:nuy})/den,hit={x:a.x+ray.x*t,y:a.y+ray.y*t};
+   return Number.isFinite(hit.x)&&Number.isFinite(hit.y)&&Math.hypot(hit.x-joint.x,hit.y-joint.y)<=Math.max(half,nhalf)*8?hit:fallback;
+  }
+  const neighborAtStart=neighborT<.5,nray={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy},neighborNormal={x:-nray.y,y:nray.x};
+  const b={x:joint.x+neighborNormal.x*nhalf*localSide,y:joint.y+neighborNormal.y*nhalf*localSide},den=cross(ray,nray);
   if(Math.abs(den)<1e-7)return fallback;
   const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,nray)/den,hit={x:a.x+ray.x*t,y:a.y+ray.y*t};
   return Number.isFinite(hit.x)&&Number.isFinite(hit.y)&&Math.hypot(hit.x-joint.x,hit.y-joint.y)<=Math.max(half,nhalf)*8?hit:fallback;
  };
 const materialColors={wall:"#d8e0e4",door:"#b88760",glass:"rgba(123,198,214,.46)",frame:"#5f737d",handle:"#aeb8bd",slab:"#c9d4d9",concrete:"#b9c6cd",roof:"#a97b5b"};
 const shadeHex=(hex,amount)=>{const value=parseInt(hex.slice(1),16),r=value>>16,g=(value>>8)&255,b=value&255,adjust=c=>Math.max(0,Math.min(255,Math.round(c+(amount>=0?(255-c)*amount:c*amount))));return "#"+[adjust(r),adjust(g),adjust(b)].map(c=>c.toString(16).padStart(2,"0")).join("")};
-const prism=(e,footprint,z0,height,material)=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height)),chosenElement=(!!options.interactive&&selected.has(e.id)),surface=material||({wall:"wall",door:"door",window:"glass",slab:"slab",column:"concrete",beam:"concrete",roof:"roof"}[e.type]||"wall");
-for(let i=0;i<base.length;i++){const j=(i+1)%base.length,poly=[base[i],base[j],top[j],top[i]],shade=i%2?-.035:-.13;faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:surface,shade,selected:chosenElement})}
+const prism=(e,footprint,z0,height,material,geometryOptions={})=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height)),chosenElement=(!!options.interactive&&selected.has(e.id)),surface=material||({wall:"wall",door:"door",window:"glass",slab:"slab",column:"concrete",beam:"concrete",roof:"roof"}[e.type]||"wall");
+for(let i=0;i<base.length;i++){if(geometryOptions.skipSides?.includes(i))continue;const j=(i+1)%base.length,poly=[base[i],base[j],top[j],top[i]],shade=i%2?-.035:-.13;faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:surface,shade,selected:chosenElement})}
 faces3d.push({id:e.id,poly:top,depth:top.reduce((sum,pt)=>sum+pt.depth,0)/top.length,material:surface,shade:.13,selected:chosenElement,topFace:true})};
 for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","door","window","roof"].includes(e.type))continue;const storyElevation=storyElevationById.get(e.storyId)||0;if(e.type==="roof"){const center={x:e.boundary.reduce((s,v)=>s+v.x,0)/e.boundary.length,y:e.boundary.reduce((s,v)=>s+v.y,0)/e.boundary.length},radius=Math.min(...e.boundary.map(v=>Math.hypot(v.x-center.x,v.y-center.y))),baseZ=storyElevation+(e.elevation||0)+(e.offset||0),rise=Math.tan((e.pitch||30)*Math.PI/180)*radius,base=e.boundary.map(v=>project3d(v,baseZ)),inner=e.boundary.map(v=>project3d(v,baseZ-(e.thickness||.18))),peak=project3d(center,baseZ+rise),chosenElement=(!!options.interactive&&selected.has(e.id));for(let i=0;i<base.length;i++){const j=(i+1)%base.length,poly=[base[i],base[j],peak];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:"roof",shade:.1,selected:chosenElement,topFace:true});faces3d.push({id:e.id,poly:[base[j],base[i],inner[i],inner[j]],depth:(base[i].depth+base[j].depth)/2,material:"roof",shade:-.22,selected:chosenElement})}continue}if(e.type==="door"||e.type==="window"){
  const host=wallById.get(e.hostWallId);if(!host)continue;
@@ -383,7 +403,7 @@ for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","do
  }
  continue
 }let footprint=[],z0=storyElevation,height=0;
-if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=e.openings||[],cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len}),cornerAt=(distance,side)=>distance<=endpointTolerance?wallEndCorner(e,true,side):len-distance<=endpointTolerance?wallEndCorner(e,false,side):(()=>{const q=at(distance);return{x:q.x+nx*(side),y:q.y+ny*(side)}})();for(const [low,high] of solids){const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)];prism(e,poly,base+low,high-low)} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
+if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=e.openings||[],cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len}),cornerAt=(distance,side)=>distance<=endpointTolerance?wallEndCorner(e,true,side):len-distance<=endpointTolerance?wallEndCorner(e,false,side):(()=>{const q=at(distance);return{x:q.x+nx*(side),y:q.y+ny*(side)}})();for(const [low,high] of solids){const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)],skipSides=[];if(lo<=endpointTolerance&&wallEndNeighbors.has(e.id+":start"))skipSides.push(3);if(hi>=len-endpointTolerance&&wallEndNeighbors.has(e.id+":end"))skipSides.push(1);prism(e,poly,base+low,high-low,undefined,{skipSides})} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
 else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
 else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
 prism(e,footprint,z0,height)
