@@ -538,8 +538,10 @@ for(const face of orderedFaces){
   const a=face.poly[i],b=face.poly[(i+1)%face.poly.length],owners=wallSideEdges.get(edgeKey(a,b))||[];
   const normal=wallFaceNormals.get(face);
   const sharedCoplanarEdge=owners.some(other=>{
-   if(other===face||other.id!==face.id)return false;
+   if(other===face)return false;
    const otherNormal=wallFaceNormals.get(other);
+   // Junctions can split one visible plane across different wall elements.
+   // Suppress the shared edge based on surface geometry, not wall IDs.
    return otherNormal&&normal&&Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)>.999;
   });
   if(sharedCoplanarEdge)continue;
