@@ -373,7 +373,6 @@ function render3DScene(ctx,items,project3d,options={}){
   if(!candidates?.length)return fallback;
   const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
   const cross=(u,v)=>u.x*v.y-u.y*v.x;
-  const dot=(u,v)=>u.x*v.x+u.y*v.y;
   // Resolve face continuity from the adjacent centre-lines. For endpoint joins,
   // choose the neighbour's offset face whose normal points to this wall-side.
   // For T-junctions, the branch must intersect the host face on its approach side.
@@ -397,8 +396,12 @@ function render3DScene(ctx,items,project3d,options={}){
         const b={x:joint.x+nNormal.x*nhalf*sign,y:joint.y+nNormal.y*nhalf*sign};
         // The offset face must be on the same physical side of the shared
         // junction, selected by comparing its normal with this wall's offset.
-        const facing=dot({x:b.x-joint.x,y:b.y-joint.y},{x:a.x-joint.x,y:a.y-joint.y});
-        options.push({b,ray:nOut,allowBackward:false,sidePenalty:facing<0?1:0});
+        const candidateNormal={x:-nIn.y,y:nIn.x};
+        const expectedNormal={x:normal.x*localSide,y:normal.y*localSide};
+        // A shared centre-line corner only joins the offset face with the same
+        // geometric side label. Avoid score-only selection between both faces.
+        const facing=candidateNormal.x*expectedNormal.x+candidateNormal.y*expectedNormal.y;
+        options.push({b,ray:nOut,allowBackward:false,sidePenalty:facing<0.25?1:0});
       }
     }
     for(const option of options){
