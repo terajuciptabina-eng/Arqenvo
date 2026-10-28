@@ -509,15 +509,18 @@ prism(e,footprint,z0,height)
 }
 const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
 const wallSideEdges=new Map();
-const edgePointKey=pt=>[pt.x,pt.y,pt.depth].map(v=>Number(v).toFixed(3)).join(",");
+// Topology must be evaluated in model space. Screen x/y are pixels while
+ // projected depth is in model units; mixing them made coplanarity and shared-edge
+ // tests scale- and camera-dependent. Keep screen coordinates only for drawing.
+ const edgePointKey=pt=>[pt.worldX,pt.worldY,pt.worldZ].map(v=>Number(v).toFixed(6)).join(",");
 const edgeKey=(a,b)=>{const ka=edgePointKey(a),kb=edgePointKey(b);return ka<kb?ka+"|"+kb:kb+"|"+ka};
 // Keep face incidence, not just a Set of element IDs: several split faces from
 // one wall can share an edge. Only suppress the seam when those faces are
 // coplanar; preserve genuine jamb/reveal and corner edges.
 const faceNormal=face=>{
  const a=face.poly[0],b=face.poly[1],c=face.poly[2];
- const ux=b.x-a.x,uy=b.y-a.y,uz=(b.depth||0)-(a.depth||0);
- const vx=c.x-a.x,vy=c.y-a.y,vz=(c.depth||0)-(a.depth||0);
+ const ux=b.worldX-a.worldX,uy=b.worldY-a.worldY,uz=b.worldZ-a.worldZ;
+  const vx=c.worldX-a.worldX,vy=c.worldY-a.worldY,vz=c.worldZ-a.worldZ;
  const n={x:uy*vz-uz*vy,y:uz*vx-ux*vz,z:ux*vy-uy*vx};
  const length=Math.hypot(n.x,n.y,n.z)||1;
  return {x:n.x/length,y:n.y/length,z:n.z/length};
@@ -537,7 +540,7 @@ const canonicalPlane=face=>{
  const n=wallFaceNormals.get(face);if(!n)return null;
  let sign=1;for(const component of [n.x,n.y,n.z]){if(Math.abs(component)>1e-5){sign=component<0?-1:1;break}}
  const normal={x:n.x*sign,y:n.y*sign,z:n.z*sign},p=face.poly[0];
- const d=normal.x*p.x+normal.y*p.y+normal.z*(p.depth||0);
+ const d=normal.x*p.worldX+normal.y*p.worldY+normal.z*p.worldZ;
  const normalKey=[normal.x,normal.y,normal.z].map(v=>Math.round(v*100)).join(",");
  // Bucket by orientation only. Plane offsets are compared with a tolerance
  // below; quantizing d in the key can split two coplanar faces at rounding
@@ -580,7 +583,7 @@ for(const face of orderedFaces){
   }
   const owners=wallSideEdges.get(edgeKey(a,b))||[];
   const normal=wallFaceNormals.get(face);
-  const edgeVec={x:b.x-a.x,y:b.y-a.y,z:(b.depth||0)-(a.depth||0)};
+  const edgeVec={x:b.worldX-a.worldX,y:b.worldY-a.worldY,z:b.worldZ-a.worldZ};
   const edgeLength=Math.hypot(edgeVec.x,edgeVec.y,edgeVec.z)||1;
   const exactSharedCoplanarEdge=owners.some(other=>{
    if(other===face)return false;
@@ -590,13 +593,13 @@ for(const face of orderedFaces){
   let containedCoplanarEdge=false;
   if(!exactSharedCoplanarEdge){
    const plane=facePlaneKeys.get(face),candidates=plane?(coplanarWallFaceBuckets.get(plane.key)||[]):[];
-   const midpoint={x:(a.x+b.x)/2,y:(a.y+b.y)/2,depth:((a.depth||0)+(b.depth||0))/2};
-   const edgePointA={x:a.x,y:a.y,depth:a.depth||0},edgePointB={x:b.x,y:b.y,depth:b.depth||0};
+   const midpoint={worldX:(a.worldX+b.worldX)/2,worldY:(a.worldY+b.worldY)/2,worldZ:(a.worldZ+b.worldZ)/2};
+    const edgePointA={worldX:a.worldX,worldY:a.worldY,worldZ:a.worldZ},edgePointB={worldX:b.worldX,worldY:b.worldY,worldZ:b.worldZ};
    for(const other of candidates){
     if(other===face)continue;
-    const otherPlane=facePlaneKeys.get(other);if(!otherPlane||Math.abs(plane.d-otherPlane.d)>.75)continue;
+    const otherPlane=facePlaneKeys.get(other);if(!otherPlane||Math.abs(plane.d-otherPlane.d)>.001)continue;
     const dropAxis=Math.abs(otherPlane.normal.x)>Math.abs(otherPlane.normal.y)?(Math.abs(otherPlane.normal.x)>Math.abs(otherPlane.normal.z)?"x":"z"):(Math.abs(otherPlane.normal.y)>Math.abs(otherPlane.normal.z)?"y":"z");
-    const uv=pt=>dropAxis==="x"?[pt.y,pt.depth||0]:dropAxis==="y"?[pt.x,pt.depth||0]:[pt.x,pt.y];
+    const uv=pt=>dropAxis==="x"?[pt.worldY,pt.worldZ]:dropAxis==="y"?[pt.worldX,pt.worldZ]:[pt.worldX,pt.worldY];
     const pointInFace=pt=>{
      const [px,py]=uv(pt);let inside=false;
      for(let k=0,j=other.poly.length-1;k<other.poly.length;j=k++){
@@ -606,8 +609,8 @@ for(const face of orderedFaces){
      return inside;
     };
     const nearBoundary=pt=>other.poly.some((p,k)=>{
-     const q=other.poly[(k+1)%other.poly.length],vx=q.x-p.x,vy=q.y-p.y,vz=(q.depth||0)-(p.depth||0),wx=pt.x-p.x,wy=pt.y-p.y,wz=(pt.depth||0)-(p.depth||0),ll=vx*vx+vy*vy+vz*vz||1,t=Math.max(0,Math.min(1,(wx*vx+wy*vy+wz*vz)/ll));
-     return Math.hypot(wx-vx*t,wy-vy*t,wz-vz*t)<=.75;
+     const q=other.poly[(k+1)%other.poly.length],vx=q.worldX-p.worldX,vy=q.worldY-p.worldY,vz=q.worldZ-p.worldZ,wx=pt.worldX-p.worldX,wy=pt.worldY-p.worldY,wz=pt.worldZ-p.worldZ,ll=vx*vx+vy*vy+vz*vz||1,t=Math.max(0,Math.min(1,(wx*vx+wy*vy+wz*vz)/ll));
+      return Math.hypot(wx-vx*t,wy-vy*t,wz-vz*t)<=.001;
     });
     if([edgePointA,midpoint,edgePointB].every(pt=>pointInFace(pt)||nearBoundary(pt))){containedCoplanarEdge=true;break}
    }
@@ -714,7 +717,7 @@ const wx=pt.x,wy=pt.y,wz=z;
 const rx=wx*cy-wy*sy,ry=wx*sy+wy*cy;
 const px=(rx-camera3d.panX)*scale*.72*camera3d.zoom;
 const py=((ry-camera3d.panY)*sp-(wz-camera3d.targetZ)*cp)*scale*.72*camera3d.zoom;
-return{x:c.clientWidth/2+origin.x+px,y:c.clientHeight*.58+origin.y+py,depth:ry*cp+wz*sp};
+return{x:c.clientWidth/2+origin.x+px,y:c.clientHeight*.58+origin.y+py,depth:ry*cp+wz*sp,worldX:wx,worldY:wy,worldZ:wz};
 };
 render3DScene(x,els(),project3d,{interactive:true});if(draft.length&&tool!=="select"){const anchor=draft[draft.length-1],cursor=mouse?screenToWorld3d(mouse,story().elevation||0):anchor,points=[...draft,cursor].map(pt=>project3d(pt,story().elevation||0));x.save();x.strokeStyle="#087e8b";x.fillStyle="rgba(8,126,139,.12)";x.lineWidth=2;x.setLineDash([5,4]);x.beginPath();points.forEach((pt,i)=>i?x.lineTo(pt.x,pt.y):x.moveTo(pt.x,pt.y));if(tool==="slab"&&draft.length>1){x.closePath();x.fill()}x.stroke();x.setLineDash([]);x.restore()}
 $("selectionInfo").textContent=selected.size?selected.size+" selected · "+chosen().map(e=>e.type).join(", "):"No selection";updateHistoryButtons()}}
