@@ -1,7 +1,7 @@
 name: ARQENVO Core Checks
 on:
   push:
-    branches: ["main"]
+    branches: ["main", "fix/root-cause-wall-junction-hosted-openings-20261028"]
   pull_request:
     branches: ["main"]
   workflow_dispatch:
@@ -17,9 +17,12 @@ jobs:
           node-version: 22
       - run: npm test
       - run: npm run check
-
-      - run: npm install --no-save --package-lock=false playwright@1.56.1
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:layout
-      - run: npm run test:browser
-        if: always()
+      - name: Install Playwright and Chromium
+        if: success()
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run tablet layout smoke test
+        run: npm run test:layout
+      - name: Run browser smoke test
+        run: npm run test:browser
