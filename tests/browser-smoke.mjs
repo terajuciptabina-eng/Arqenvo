@@ -386,6 +386,7 @@ try {
   await modelPoint(2.2, wallY + .8, "move");
   await modelPoint(3.2, wallY + 1.2);
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"), null, { timeout: 8000 });
+  await openingPage.waitForFunction(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return !!(els.find(e=>e.type==="window")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="window"))},{},{timeout:3000});
   const libraryWindowElement=await openingPage.evaluate(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return els.find(e=>e.type==="window")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="window")});
   assert.equal(libraryWindowElement?.libraryType,"double-leaf","Saved Window should retain its Double Leaf library type");
 
