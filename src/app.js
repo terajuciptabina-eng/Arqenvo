@@ -361,45 +361,67 @@ function render3DScene(ctx,items,project3d,options={}){
   if(candidates.length)wallEndNeighbors.set(wall.id+":"+(atStart?"start":"end"),candidates);
  }
  const wallEndCorner=(wall,atStart,side)=>{
-  const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
-  const joint=atStart?wall.start:wall.end;
-  const inwardRay={x:atStart?ux:-ux,y:atStart?uy:-uy},outwardRay={x:atStart?-ux:ux,y:atStart?-uy:uy};
-  const normal={x:-inwardRay.y,y:inwardRay.x},localSide=side*(atStart?1:-1),half=(wall.thickness||.15)/2;
+  const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy);
+  if(!Number.isFinite(len)||len<1e-8)return atStart?{...wall.start}:{...wall.end};
+  const ux=dx/len,uy=dy/len,joint=atStart?wall.start:wall.end;
+  const inwardRay={x:atStart?ux:-ux,y:atStart?uy:-uy};
+  const outwardRay={x:-inwardRay.x,y:-inwardRay.y};
+  const normal={x:-inwardRay.y,y:inwardRay.x},localSide=side*(atStart?1:-1);
+  const half=(wall.thickness||.15)/2;
   const fallback={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
   const candidates=wallEndNeighbors.get(wall.id+":"+(atStart?"start":"end"));
   if(!candidates?.length)return fallback;
-  const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide},cross=(u,v)=>u.x*v.y-u.y*v.x;
+  const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
+  const cross=(u,v)=>u.x*v.y-u.y*v.x;
+  const dot=(u,v)=>u.x*v.x+u.y*v.y;
+  // Resolve face continuity from the adjacent centre-lines. For endpoint joins,
+  // choose the neighbour's offset face whose normal points to this wall-side.
+  // For T-junctions, the branch must intersect the host face on its approach side.
   let best=null;
-  // Resolve each wall side using forward-facing offset-line intersections.
-  // Choosing a neighbor side by nearest-point distance alone is ambiguous at
-  // 90-degree corners: both faces are equally distant and can create spikes.
   for(const info of candidates){
-   const {neighbor,neighborT,closest,isT}=info;
-   const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nhalf=(neighbor.thickness||.15)/2;
-   const offsetOptions=[];
-   if(isT){
-    const nn={x:-nuy,y:nux},hostSide=wallHostFaceSide(inwardRay,nn);
-    offsetOptions.push({b:{x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide},otherRay:{x:nux,y:nuy},requireForwardOther:false});
-   }else{
-    const neighborAtStart=neighborT<.5,neighborInwardRay={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy};
-    const neighborNormal={x:-neighborInwardRay.y,y:neighborInwardRay.x};
-    const ray={x:-neighborInwardRay.x,y:-neighborInwardRay.y};
-    for(const sign of [-1,1]){
-     offsetOptions.push({b:{x:joint.x+neighborNormal.x*nhalf*sign,y:joint.y+neighborNormal.y*nhalf*sign},otherRay:ray,requireForwardOther:true});
+    const {neighbor,neighborT,closest,isT}=info;
+    const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y;
+    const nlen=Math.hypot(ndx,ndy);
+    if(!Number.isFinite(nlen)||nlen<1e-8)continue;
+    const nux=ndx/nlen,nuy=ndy/nlen,nhalf=(neighbor.thickness||.15)/2;
+    const options=[];
+    if(isT){
+      const hostNormal={x:-nuy,y:nux};
+      const faceSide=wallHostFaceSide(inwardRay,hostNormal);
+      options.push({b:{x:closest.x+hostNormal.x*nhalf*faceSide,y:closest.y+hostNormal.y*nhalf*faceSide},ray:{x:nux,y:nuy},allowBackward:false});
+    }else{
+      const atNeighborStart=neighborT<.5;
+      const nIn={x:atNeighborStart?nux:-nux,y:atNeighborStart?nuy:-nuy};
+      const nOut={x:-nIn.x,y:-nIn.y},nNormal={x:-nIn.y,y:nIn.x};
+      for(const sign of [-1,1]){
+        const b={x:joint.x+nNormal.x*nhalf*sign,y:joint.y+nNormal.y*nhalf*sign};
+        // The offset face must be on the same physical side of the shared
+        // junction, selected by comparing its normal with this wall's offset.
+        const facing=dot({x:b.x-joint.x,y:b.y-joint.y},{x:a.x-joint.x,y:a.y-joint.y});
+        options.push({b,ray:nOut,allowBackward:false,sidePenalty:facing<0?1:0});
+      }
     }
-   }
-   for(const option of offsetOptions){
-    const {b,otherRay,requireForwardOther}=option,den=cross(outwardRay,otherRay);
-    if(Math.abs(den)<1e-7)continue;
-    const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den,s=cross(delta,outwardRay)/den;
-    if(!Number.isFinite(t)||!Number.isFinite(s)||t < -endpointTolerance||(requireForwardOther&&s < -endpointTolerance))continue;
-    const hit={x:a.x+outwardRay.x*t,y:a.y+outwardRay.y*t},hitDistance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
-    if(!Number.isFinite(hit.x)||!Number.isFinite(hit.y)||hitDistance>Math.max(half,nhalf)*8)continue;
-    const score=hitDistance+Math.max(0,t)*.001+info.distance*.1+(isT?-.001:0)+(1-Math.max(0,Math.min(1,info.alignment)))*.0001;
-    if(!best||score<best.score)best={hit,score};
-   }
+    for(const option of options){
+      const denominator=cross(outwardRay,option.ray);
+      if(Math.abs(denominator)<1e-8)continue;
+      const delta={x:option.b.x-a.x,y:option.b.y-a.y};
+      const t=cross(delta,option.ray)/denominator;
+      const s=cross(delta,outwardRay)/denominator;
+      if(!Number.isFinite(t)||!Number.isFinite(s)||t < -endpointTolerance)continue;
+      if(!option.allowBackward&&s < -endpointTolerance)continue;
+      const hit={x:a.x+outwardRay.x*t,y:a.y+outwardRay.y*t};
+      const distance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
+      // No unbounded miters: fall back to the local end cap if the offset lines
+      // would form a long spike or if numerical degeneracy made the hit invalid.
+      if(!Number.isFinite(distance)||distance>Math.max(half,nhalf)*8)continue;
+      const score=(option.sidePenalty||0)*100+Math.max(0,t)+info.distance*.01+(isT?-.05:0);
+      if(!best||score<best.score)best={hit,score};
+    }
   }
-  if(best){wallEndResolvedCorners.add(wall.id+":"+(atStart?"start":"end")+":"+side);return best.hit}
+  if(best){
+    wallEndResolvedCorners.add(wall.id+":"+(atStart?"start":"end")+":"+side);
+    return best.hit;
+  }
   return fallback;
  };
 
