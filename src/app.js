@@ -574,9 +574,15 @@ for(const face of orderedFaces){
   if(ws&&(side===0||side===2)&&(i===1||i===3)){
    const distance=side===0?(i===1?ws.hi:ws.lo):(i===1?ws.lo:ws.hi);
    const endpointTolerance=1e-4;
-   const isPhysicalWallEnd=Math.abs(distance)<endpointTolerance||
-    Math.abs(distance-ws.length)<endpointTolerance;
+   const atWallStart=Math.abs(distance)<endpointTolerance;
+   const atWallEnd=Math.abs(distance-ws.length)<endpointTolerance;
+   const isPhysicalWallEnd=atWallStart||atWallEnd;
    if(!isPhysicalWallEnd)continue;
+   // Joined source endpoints are internal junction edges, not exposed
+   // silhouettes. Suppress the vertical stroke using the same endpoint
+   // neighbour graph that resolved the wall geometry.
+   const endpointKey=face.id+":"+(atWallStart?"start":"end");
+   if((wallEndNeighbors.get(endpointKey)||[]).length)continue;
   }
   const owners=wallSideEdges.get(edgeKey(a,b))||[];
   const normal=wallFaceNormals.get(face);
