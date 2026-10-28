@@ -312,19 +312,26 @@ function render3DScene(ctx,items,project3d,options={}){
  const wallById=new Map(items.filter(v=>v.type==="wall").map(v=>[v.id,v]));
  const storyElevationById=new Map(p.stories.map(v=>[v.id,v.elevation||0]));
  const endpointTolerance=.025;
+ const wallEndNeighbors=new Map();
+ const visibleWalls=items.filter(v=>v.type==="wall"&&isLayerVisible(v));
+ for(const wall of visibleWalls)for(const atStart of [true,false]){
+  const joint=atStart?wall.start:wall.end;let best=null,nearest=endpointTolerance;
+  for(const candidate of visibleWalls){
+   if(candidate.id===wall.id||candidate.storyId!==wall.storyId)continue;
+   for(const candidateAtStart of [true,false]){
+    const q=candidateAtStart?candidate.start:candidate.end,d=Math.hypot(q.x-joint.x,q.y-joint.y);
+    if(d<nearest){nearest=d;best={neighbor:candidate,neighborAtStart:candidateAtStart}}
+   }
+  }
+  if(best)wallEndNeighbors.set(wall.id+":"+(atStart?"start":"end"),best);
+ }
  const wallEndCorner=(wall,atStart,side)=>{
   const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
   const joint=atStart?wall.start:wall.end,ray={x:atStart?ux:-ux,y:atStart?uy:-uy},normal={x:-ray.y,y:ray.x},localSide=side*(atStart?1:-1),half=(wall.thickness||.15)/2;
   const fallback={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
-  let neighbor=null,neighborAtStart=false,nearest=endpointTolerance;
-  for(const candidate of items){
-   if(candidate.type!=="wall"||candidate.id===wall.id)continue;
-   for(const startSide of [true,false]){
-    const q=startSide?candidate.start:candidate.end,d=Math.hypot(q.x-joint.x,q.y-joint.y);
-    if(d<nearest){nearest=d;neighbor=candidate;neighborAtStart=startSide}
-   }
-  }
-  if(!neighbor)return fallback;
+  const neighborInfo=wallEndNeighbors.get(wall.id+":"+(atStart?"start":"end"));
+  if(!neighborInfo)return fallback;
+  const {neighbor,neighborAtStart}=neighborInfo;
   const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nray={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy},nn={x:-nray.y,y:nray.x},nhalf=(neighbor.thickness||.15)/2;
   const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide},b={x:joint.x+nn.x*nhalf*localSide,y:joint.y+nn.y*nhalf*localSide};
   const cross=(u,v)=>u.x*v.y-u.y*v.x,den=cross(ray,nray);
