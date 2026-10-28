@@ -759,10 +759,10 @@ try {
     await input.fill(value);
     await input.press("Enter");
   }
-  await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return Number(r?.pitch)===25&&Number(r?.elevation)===3.4&&Number(r?.offset)===2.75&&Number(r?.thickness)===.22}).catch(async error=>{const diag=await roofPage.evaluate(()=>({roof:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"),inputs:[...document.querySelectorAll('#elementProperties [data-prop]')].map(e=>({prop:e.dataset.prop,value:e.value})) ,status:document.querySelector("#status")?.textContent}));throw new Error("Roof property values were not persisted; "+JSON.stringify(diag)+"; "+error.message)});
+  await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return Number(r?.pitch)===25&&Number(r?.elevation)===3.4&&Number(r?.offset)===2.75&&Number(r?.thickness)===.22}).catch(async error=>{const diag=await roofPage.evaluate(()=>({roof:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="roof").at(-1),inputs:[...document.querySelectorAll('#elementProperties [data-prop]')].map(e=>({prop:e.dataset.prop,value:e.value})) ,status:document.querySelector("#status")?.textContent}));throw new Error("Roof property values were not persisted; "+JSON.stringify(diag)+"; "+error.message)});
   // Verify the same offset changes the 3D roof base elevation.
   await roofPage.locator("#threeTab").click();
-  const baseZ=await roofPage.evaluate(()=>{const p=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}"),roof=p.elements.find(e=>e.type==="roof");return (p.stories.find(s=>s.id===roof.storyId)?.elevation||0)+roof.elevation+roof.offset});
+  const baseZ=await roofPage.evaluate(()=>{const p=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}"),roof=p.elements.filter(e=>e.type==="roof").at(-1);return (p.stories.find(s=>s.id===roof.storyId)?.elevation||0)+roof.elevation+roof.offset});
   assert.equal(baseZ,6.15,"Roof Offset must add to the roof's base Z elevation");
   assert.deepEqual(pageErrors, [], "Editor should not throw browser runtime errors");
   console.log("Browser smoke passed: app boot, T-junction, Undo/Redo, wall-chain, independent Door/Window selection, no page errors.");
