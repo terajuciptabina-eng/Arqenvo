@@ -2107,7 +2107,8 @@ $("pickUpParameters")?.addEventListener("click",()=>{arqenvoPickMode=true;arqenv
 $("injectParameters")?.addEventListener("click",arqenvoInjectParameters);
 // Capture before normal Select-tool handling so an Inject click edits its target directly without selecting it first.
 c.addEventListener("pointerdown",event=>{
- if(!arqenvenvoInjectMode||event.button!==0||layoutMode)return;
+ const wantsPick=arqenvoPickMode||(event.altKey&&!event.ctrlKey&&!event.metaKey); const wantsInject=arqenvenvoInjectMode||(event.altKey&&(event.ctrlKey||event.metaKey));
+ if((!wantsPick&&!wantsInject)||event.button!==0||layoutMode)return;
  if(!c.contains(event.target))return;
  const rect=c.getBoundingClientRect(),screenPoint={x:event.clientX-rect.left,y:event.clientY-rect.top};
  let target=null;
@@ -2119,9 +2120,11 @@ c.addEventListener("pointerdown",event=>{
    ||hitPolys3d.slice().reverse().find(item=>pointInPolygon(screenPoint,item.poly));
   if(hit)target=els().find(el=>el.id===hit.id)||null;
  }
- if(!target){$("status").textContent="Inject mode · click a compatible "+arqenvoPickedParameters?.type+" element";event.preventDefault();event.stopImmediatePropagation();return}
- if(target.type!==arqenvoPickedParameters?.type){$("status").textContent="Inject expects "+arqenvoPickedParameters?.type+"; clicked "+target.type;event.preventDefault();event.stopImmediatePropagation();return}
+ if(!target){$("status").textContent=wantsPick?"Pick Up mode · click directly on a source element":"Inject mode · click a compatible "+arqenvoPickedParameters?.type+" element";event.preventDefault();event.stopImmediatePropagation();return}
  event.preventDefault();event.stopImmediatePropagation();
+ if(wantsPick){arqenvoPickMode=false;$("pickUpParameters")?.classList.remove("active");arqenvoPickParameters(target);return}
+ if(target.type!==arqenvoPickedParameters?.type){$("status").textContent="Inject expects "+arqenvoPickedParameters?.type+"; clicked "+target.type;return}
+ if(target.id===arqenvoPickedParameters?.sourceId){$("status").textContent="Source element · click another compatible target";return}
  arqenvoInjectIntoElement(target);
 },true);
 document.addEventListener("keydown",event=>{
