@@ -421,7 +421,7 @@ for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","do
   const wallDepth=Math.max(.07,(host.thickness||.15)*.72),frameWidth=.065,offset=Number(e.offset)||0,width=Number(e.width)||0;
   const at=distance=>({x:host.start.x+ux*distance,y:host.start.y+uy*distance});
   const wallRect=(center,along,depth)=>[{x:center.x-ux*along/2-nx*depth/2,y:center.y-uy*along/2-ny*depth/2},{x:center.x+ux*along/2-nx*depth/2,y:center.y+uy*along/2-ny*depth/2},{x:center.x+ux*along/2+nx*depth/2,y:center.y+uy*along/2+ny*depth/2},{x:center.x-ux*along/2+nx*depth/2,y:center.y-uy*along/2+ny*depth/2}];
-  const left=at(offset),right=at(offset+width),headZ=baseZ+Math.max(0,g.height-frameWidth);
+  const left=at(offset+frameWidth/2),right=at(offset+width-frameWidth/2),headZ=baseZ+Math.max(0,g.height-frameWidth);
   prism(e,wallRect(left,frameWidth,wallDepth),baseZ,Math.max(.04,g.height),"frame");
   prism(e,wallRect(right,frameWidth,wallDepth),baseZ,Math.max(.04,g.height),"frame");
   prism(e,wallRect(at(offset+width/2),Math.max(.04,width-frameWidth),wallDepth),headZ,frameWidth,"frame");
@@ -1419,7 +1419,7 @@ function fit3d(){
    add(center,peak);
   }else if(e.type==="door"||e.type==="window"){
    const host=visible.find(v=>v.id===e.hostWallId&&v.type==="wall");if(!host)continue;
-   const geometry=hostedOpening3dGeometry(host,e),base=elevation+(host.baseOffset||0)+geometry.zOffset;
+   const geometry=e.type==="door"?hostedDoorLeaf3dGeometry(host,e):hostedOpening3dGeometry(host,e),base=elevation+(host.baseOffset||0)+geometry.zOffset;
    for(const point of geometry.boundary||[]){add(point,base);add(point,base+geometry.height)}
   }
  }
