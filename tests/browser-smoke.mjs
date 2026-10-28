@@ -481,9 +481,11 @@ try {
   await modelPoint((updatedDoorGeometry.a.x+updatedDoorGeometry.b.x)/2,(updatedDoorGeometry.a.y+updatedDoorGeometry.b.y)/2);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:3000}).catch(async error=>{const diag=await openingPage.evaluate(()=>({hitDebug:window.__arqenvoDebug?.getLastFloorSelectionDebug?.(),selection:document.querySelector("#selectionInfo")?.textContent,status:document.querySelector("#status")?.textContent,properties:document.querySelector("#elementProperties")?.textContent?.slice(0,220),tool:document.querySelector("#toolName")?.value}));throw new Error("Click inside hosted opening did not select Door; "+JSON.stringify(diag)+"; "+error.message)});
   const doorOffsetBeforeMove = Number(await openingPage.locator('[data-prop="offset"]').inputValue());
-  const dragScreenPoint = async (wx, wy) => openingPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
-  const doorDragStart = await dragScreenPoint(-3.434, wallY + 0.566);
-  const doorDragEnd = await dragScreenPoint(-2.634, wallY + 0.566);
+  const dragScreenPoint = async (wx, wy) => openingPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),view=window.__arqenvoDebug?.getViewport(),scale=view?.scale||Number(document.querySelector("#scaleSelect")?.value||36),origin=view?.origin||{x:0,y:0}; return {x:rect.left+canvas.clientWidth/2+origin.x+wx*scale,y:rect.top+canvas.clientHeight/2+origin.y-wy*scale}; }, {wx,wy});
+  // Derive the drag target from the current Door leaf instead of stale fixed coordinates.
+  const doorLeafMid={x:(updatedDoorSwing.hinge.x+updatedDoorSwing.openFree.x)/2,y:(updatedDoorSwing.hinge.y+updatedDoorSwing.openFree.y)/2};
+  const doorDragStart = await dragScreenPoint(doorLeafMid.x,doorLeafMid.y);
+  const doorDragEnd = await dragScreenPoint(doorLeafMid.x+0.8,doorLeafMid.y);
   await openingPage.mouse.move(doorDragStart.x, doorDragStart.y);
   await openingPage.mouse.down();
   await openingPage.mouse.move(doorDragEnd.x, doorDragEnd.y, {steps:6});
