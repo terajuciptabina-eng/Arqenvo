@@ -458,6 +458,9 @@ try {
   await openingPage.waitForFunction(() => ["Opening updated","Element parameters updated"].includes(document.querySelector("#status")?.textContent) && Number(document.querySelector('[data-prop="width"]')?.value) === 1.2);
   assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
     "Pressing Enter should apply the new door width to the hosted opening");
+  // Property edits use a debounced autosave. Wait for the persisted model before
+  // deriving model-space coordinates from localStorage in this browser test.
+  await openingPage.waitForFunction(()=>{const elements=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];const door=elements.find(e=>e.type==="door");return !!door&&door.alignment==="left"&&Number(door.offset)===0&&Number(door.width)===1.2;},null,{timeout:3000});
   // Recalculate the current Door symbol after the hinge, swing, alignment and
   // width changes. Fixed screen/model coordinates become stale when these
   // properties change and can make this browser test fail despite valid Door behavior.
