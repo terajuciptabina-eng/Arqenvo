@@ -5,7 +5,7 @@ import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, openingOffsetForAnchor, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, findClosedWallLoops, mergeHostedOpeningRecords} from "./core/authoring.js";
 import {ModelHistory, transactModel} from "./core/transactions.js";
-import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner } from "./core/geometry.js";
+import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut } from "./core/geometry.js";
 import {normalizeUnitSystem,formatLength,formatArea} from "./core/units.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set(),groupsSuspended=false;
@@ -307,33 +307,94 @@ function drawWallJunctions(){
   x.closePath();x.fill();x.restore();
  }
 }
+let wallTopologyCacheKey=null,wallTopologyCache=null;
 function render3DScene(ctx,items,project3d,options={}){
  const faces3d=[];
  const wallById=new Map(items.filter(v=>v.type==="wall").map(v=>[v.id,v]));
  const storyElevationById=new Map(p.stories.map(v=>[v.id,v.elevation||0]));
  const endpointTolerance=.025;
- const wallEndNeighbors=new Map();
  const wallEndResolvedCorners=new Set();
+ const wallCrossingResolvedCorners=new Set();
+ const wallCrossingCornerCache=new Map();
  const visibleWalls=items.filter(v=>v.type==="wall"&&isLayerVisible(v));
  const cross2=(a,b)=>a.x*b.y-a.y*b.x;
- // Index wall bounds by story and spatial cell. Junction candidates can only
- // affect an endpoint within the wall's half-thickness, so a local bucket
- // replaces a full scan of every wall for every endpoint during every orbit frame.
  const wallCellSize=4;
- const maxWallHalfThickness=visibleWalls.reduce((max,w)=>Math.max(max,(Number(w.thickness)||.15)/2),0);
- const wallBuckets=new Map();
- const wallBucketKey=(storyId,cx,cy)=>storyId+":"+cx+":"+cy;
- for(const candidate of visibleWalls){
-  const margin=maxWallHalfThickness+endpointTolerance;
-  const minX=Math.floor((Math.min(candidate.start.x,candidate.end.x)-margin)/wallCellSize);
-  const maxX=Math.floor((Math.max(candidate.start.x,candidate.end.x)+margin)/wallCellSize);
-  const minY=Math.floor((Math.min(candidate.start.y,candidate.end.y)-margin)/wallCellSize);
-  const maxY=Math.floor((Math.max(candidate.start.y,candidate.end.y)+margin)/wallCellSize);
-  for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++){
-   const key=wallBucketKey(candidate.storyId,cx,cy);
-   if(!wallBuckets.has(key))wallBuckets.set(key,[]);
-   wallBuckets.get(key).push(candidate);
+ const wallTopologyKey=visibleWalls.slice().sort((a,b)=>String(a.id).localeCompare(String(b.id))).map(w=>
+  [w.id,w.storyId,w.start.x,w.start.y,w.end.x,w.end.y,Number(w.thickness)||.15].join(":")
+ ).join("|");
+ let wallEndNeighbors,wallCrossingCutsByWall;
+ if(wallTopologyCache&&wallTopologyCache.key===wallTopologyKey){
+  wallEndNeighbors=wallTopologyCache.wallEndNeighbors;
+  wallCrossingCutsByWall=wallTopologyCache.wallCrossingCutsByWall;
+ }else{
+  wallEndNeighbors=new Map();
+  wallCrossingCutsByWall=new Map();
+  const maxWallHalfThickness=visibleWalls.reduce((max,w)=>Math.max(max,(Number(w.thickness)||.15)/2),0);
+  const wallBuckets=new Map();
+  const wallBucketKey=(storyId,cx,cy)=>storyId+":"+cx+":"+cy;
+  for(const candidate of visibleWalls){
+   const margin=maxWallHalfThickness+endpointTolerance;
+   const minX=Math.floor((Math.min(candidate.start.x,candidate.end.x)-margin)/wallCellSize);
+   const maxX=Math.floor((Math.max(candidate.start.x,candidate.end.x)+margin)/wallCellSize);
+   const minY=Math.floor((Math.min(candidate.start.y,candidate.end.y)-margin)/wallCellSize);
+   const maxY=Math.floor((Math.max(candidate.start.y,candidate.end.y)+margin)/wallCellSize);
+   for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++){
+    const key=wallBucketKey(candidate.storyId,cx,cy);
+    if(!wallBuckets.has(key))wallBuckets.set(key,[]);
+    wallBuckets.get(key).push(candidate);
+   }
   }
+  const wallOrder=new Map(visibleWalls.map((wall,index)=>[wall.id,index]));
+  const candidatesForWall=wall=>{
+   const margin=maxWallHalfThickness+endpointTolerance,nearby=new Set();
+   const minX=Math.floor((Math.min(wall.start.x,wall.end.x)-margin)/wallCellSize);
+   const maxX=Math.floor((Math.max(wall.start.x,wall.end.x)+margin)/wallCellSize);
+   const minY=Math.floor((Math.min(wall.start.y,wall.end.y)-margin)/wallCellSize);
+   const maxY=Math.floor((Math.max(wall.start.y,wall.end.y)+margin)/wallCellSize);
+   for(let cx=minX;cx<=maxX;cx++)for(let cy=minY;cy<=maxY;cy++){
+    for(const candidate of wallBuckets.get(wallBucketKey(wall.storyId,cx,cy))||[])nearby.add(candidate);
+   }
+   return nearby;
+  };
+  // Endpoint joins cover L/T junctions. Proper interior segment crossings are
+  // separately given a deterministic host and a finite cut interval.
+  for(const wall of visibleWalls){
+   for(const candidate of candidatesForWall(wall)){
+    if(candidate.id===wall.id||candidate.storyId!==wall.storyId||
+       wallOrder.get(wall.id)>=wallOrder.get(candidate.id))continue;
+    const cut=wallCrossingCut(wall,candidate,{tolerance:endpointTolerance,minSineAngle:.05});
+    if(!cut)continue;
+    const sec=cut.cutWall;
+    if(!wallCrossingCutsByWall.has(sec.id))wallCrossingCutsByWall.set(sec.id,[]);
+    wallCrossingCutsByWall.get(sec.id).push({
+     start:cut.start,end:cut.end,centerDistance:cut.centerDistance,
+     hostWall:cut.hostWall,intersection:cut.intersection,halfSpan:cut.halfSpan,
+     sineAngle:cut.sineAngle
+    });
+   }
+  }
+  // Build the local endpoint candidate index only once per stable wall geometry.
+  for(const wall of visibleWalls)for(const atStart of [true,false]){
+   const joint=atStart?wall.start:wall.end,candidates=[];
+   const bucket=wallBuckets.get(wallBucketKey(wall.storyId,Math.floor(joint.x/wallCellSize),Math.floor(joint.y/wallCellSize)))||[];
+   for(const candidate of bucket){
+    if(candidate.id===wall.id||candidate.storyId!==wall.storyId)continue;
+    const vx=candidate.end.x-candidate.start.x,vy=candidate.end.y-candidate.start.y,l2=vx*vx+vy*vy;
+    if(l2<1e-10)continue;
+    const tRaw=((joint.x-candidate.start.x)*vx+(joint.y-candidate.start.y)*vy)/l2;
+    const t=Math.max(0,Math.min(1,tRaw)),q={x:candidate.start.x+vx*t,y:candidate.start.y+vy*t};
+    const distance=Math.hypot(q.x-joint.x,q.y-joint.y);
+    const tolerance=(candidate.thickness||.15)/2+endpointTolerance;
+    if(distance<=tolerance){
+     const nlen=Math.sqrt(l2),wallLen=Math.hypot(wall.end.x-wall.start.x,wall.end.y-wall.start.y)||1;
+     const alignment=Math.abs(cross2({x:wall.end.x-wall.start.x,y:wall.end.y-wall.start.y},{x:vx,y:vy}))/(wallLen*nlen||1);
+     candidates.push({neighbor:candidate,neighborT:t,closest:q,isT:t>.025&&t<.975,distance,alignment});
+    }
+   }
+   if(candidates.length)wallEndNeighbors.set(wall.id+":"+(atStart?"start":"end"),candidates);
+  }
+  for(const cuts of wallCrossingCutsByWall.values())cuts.sort((a,b)=>a.start-b.start||a.end-b.end||String(a.hostWall.id).localeCompare(String(b.hostWall.id)));
+  wallTopologyCache={key:wallTopologyKey,wallEndNeighbors,wallCrossingCutsByWall};
  }
  const hostedOpeningsByWall=new Map();
  for(const opening of items){
