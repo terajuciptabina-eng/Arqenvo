@@ -320,7 +320,7 @@ function render3DScene(ctx,items,project3d,options={}){
  // affect an endpoint within the wall's half-thickness, so a local bucket
  // replaces a full scan of every wall for every endpoint during every orbit frame.
  const wallCellSize=4;
- const maxWallHalfThickness=Math.max(0,...visibleWalls.map(w=>(Number(w.thickness)||.15)/2));
+ const maxWallHalfThickness=visibleWalls.reduce((max,w)=>Math.max(max,(Number(w.thickness)||.15)/2),0);
  const wallBuckets=new Map();
  const wallBucketKey=(storyId,cx,cy)=>storyId+":"+cx+":"+cy;
  for(const candidate of visibleWalls){
@@ -2045,7 +2045,12 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    // Check both to make returning a floating Navigator/Toolbox reliably dock.
    const panelRect=panel.getBoundingClientRect();
    const panelOverlapsOrigin=!!origin&&panelRect.right>=origin.left-24&&panelRect.left<=origin.right+24&&panelRect.bottom>=origin.top-24&&panelRect.top<=origin.bottom+24;
-   const returnedToOrigin=pointerReturnedToOrigin||panelOverlapsOrigin;
+   // A newly floating palette is often wider than its original dock slot,
+   // so its rectangle can overlap the dock even when the pointer was released
+   // well inside the workspace. Require the release point itself to be near
+   // the remembered slot before using panel overlap as a docking signal.
+   const pointerNearOrigin=!!origin&&e.clientX>=origin.left-edgePad&&e.clientX<=origin.right+edgePad&&e.clientY>=origin.top-edgePad&&e.clientY<=origin.bottom+edgePad;
+   const returnedToOrigin=pointerReturnedToOrigin||(panelOverlapsOrigin&&pointerNearOrigin);
    const originalSide=d.dockSide||d.originSide||state[key].side||(key==='toolbox'?'left':'right');
    // The docked pane occupies a full-height track while floating panes use
    // their own bounded rectangle. If the user releases over the remembered
