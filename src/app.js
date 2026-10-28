@@ -362,38 +362,32 @@ function render3DScene(ctx,items,project3d,options={}){
  }
  const wallEndCorner=(wall,atStart,side)=>{
   const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
-  const joint=atStart?wall.start:wall.end,ray={x:atStart?ux:-ux,y:atStart?uy:-uy},normal={x:-ray.y,y:ray.x},localSide=side*(atStart?1:-1),half=(wall.thickness||.15)/2;
+  const joint=atStart?wall.start:wall.end;
+  const inwardRay={x:atStart?ux:-ux,y:atStart?uy:-uy},outwardRay={x:atStart?-ux:ux,y:atStart?-uy:uy};
+  const normal={x:-inwardRay.y,y:inwardRay.x},localSide=side*(atStart?1:-1),half=(wall.thickness||.15)/2;
   const fallback={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
   const candidates=wallEndNeighbors.get(wall.id+":"+(atStart?"start":"end"));
   if(!candidates?.length)return fallback;
-  const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
-  const cross=(u,v)=>u.x*v.y-u.y*v.x;
+  const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide},cross=(u,v)=>u.x*v.y-u.y*v.x;
   let best=null;
-  // Resolve each corner against all nearby walls. Picking a single neighbour
-  // for both corners fails at T, L and multi-wall junctions when the first
-  // candidate happens to be parallel or belongs to the wrong branch.
+  // Solve wall-end corners along the outward ray; inward intersections create diagonal wall faces.
   for(const info of candidates){
    const {neighbor,neighborT,closest,isT}=info;
    const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nhalf=(neighbor.thickness||.15)/2;
    let b,otherRay,den;
    if(isT){
-    const nn={x:-nuy,y:nux},hostSide=wallHostFaceSide(ray,nn);
-    b={x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide};
-    otherRay={x:nux,y:nuy};
-    den=cross(ray,otherRay);
+    const nn={x:-nuy,y:nux},hostSide=wallHostFaceSide(inwardRay,nn);
+    b={x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide};otherRay={x:nux,y:nuy};
    }else{
-    const neighborAtStart=neighborT<.5,nray={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy},neighborNormal={x:-nray.y,y:nray.x};
+    const neighborAtStart=neighborT<.5,neighborInwardRay={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy};
+    const neighborNormal={x:-neighborInwardRay.y,y:neighborInwardRay.x};
     b={x:joint.x+neighborNormal.x*nhalf*localSide,y:joint.y+neighborNormal.y*nhalf*localSide};
-    otherRay=nray;
-    den=cross(ray,otherRay);
+    otherRay={x:-neighborInwardRay.x,y:-neighborInwardRay.y};
    }
-   if(Math.abs(den)<1e-7)continue;
+   den=cross(outwardRay,otherRay);if(Math.abs(den)<1e-7)continue;
    const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den;
-   // A valid corner intersection must lie along the outward ray from this wall end.
-   // Intersections behind the endpoint create long, inverted miters and exposed wall caps.
    if(!Number.isFinite(t)||t < -endpointTolerance)continue;
-   const hit={x:a.x+ray.x*t,y:a.y+ray.y*t};
-   const hitDistance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
+   const hit={x:a.x+outwardRay.x*t,y:a.y+outwardRay.y*t},hitDistance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
    if(!Number.isFinite(hit.x)||!Number.isFinite(hit.y)||hitDistance>Math.max(half,nhalf)*8)continue;
    const score=hitDistance+info.distance*.1+(isT?-0.001:0)+(1-Math.max(0,Math.min(1,info.alignment)))*0.0001;
    if(!best||score<best.score)best={hit,score};
