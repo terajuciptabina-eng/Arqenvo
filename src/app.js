@@ -2103,7 +2103,7 @@ function arqenvoInjectParameters(){
  c.style.cursor="copy";
  $("status").textContent="Inject mode active · click target element(s) · Esc to finish";
 }
-$("pickUpParameters")?.addEventListener("click",arqenvoPickParameters);
+$("pickUpParameters")?.addEventListener("click",()=>{arqenvoPickMode=true;arqenvenvoInjectMode=false;$("pickUpParameters").classList.add("active");$("injectParameters").classList.remove("active");c.style.cursor="copy";$("status").textContent="Pick Up mode · click a source element"});
 $("injectParameters")?.addEventListener("click",arqenvoInjectParameters);
 // Capture before normal Select-tool handling so an Inject click edits its target directly without selecting it first.
 c.addEventListener("pointerdown",event=>{
