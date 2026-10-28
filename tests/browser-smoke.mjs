@@ -563,7 +563,7 @@ try {
   await confirmPage.mouse.down();
   await confirmPage.mouse.move(wallMid.x+24,wallMid.y+12,{steps:4});
   await confirmPage.mouse.up();
-  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Element moved · selection retained"));
+  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Element moved · selection retained")).catch(async error=>{const diag=await confirmPage.evaluate(()=>({status:document.querySelector("#status")?.textContent,selection:document.querySelector("#selectionInfo")?.textContent,props:document.querySelector("#elementProperties")?.textContent?.slice(0,180),wall:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall"),viewport:window.__arqenvoViewport}));throw new Error("Desktop wall move did not commit; "+JSON.stringify(diag)+"; "+error.message)});
   assert.match(await confirmPage.locator("#selectionInfo").textContent(),/1 element selected/i,"Desktop move should commit while retaining the selected element, matching CAD editing behavior");
   assert.equal(await confirmPage.locator("#editActions").evaluate(el=>el.hidden),false,"The selected element's edit actions should remain available after a committed move");
   await confirmPage.close();
