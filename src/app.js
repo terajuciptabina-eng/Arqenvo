@@ -381,9 +381,15 @@ function render3DScene(ctx,items,project3d,options={}){
    }else{
     const neighborAtStart=neighborT<.5,neighborInwardRay={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy};
     const neighborNormal={x:-neighborInwardRay.y,y:neighborInwardRay.x};
-    b={x:joint.x+neighborNormal.x*nhalf*localSide,y:joint.y+neighborNormal.y*nhalf*localSide};
+    // The correct face on a corner is the neighbor offset closest to this
+    // wall's offset point. Reusing localSide fails when the two wall directions
+    // differ, causing protruding caps at L junctions.
+    const plus={x:joint.x+neighborNormal.x*nhalf,y:joint.y+neighborNormal.y*nhalf};
+    const minus={x:joint.x-neighborNormal.x*nhalf,y:joint.y-neighborNormal.y*nhalf};
+    const dPlus=Math.hypot(a.x-plus.x,a.y-plus.y),dMinus=Math.hypot(a.x-minus.x,a.y-minus.y);
+    b=dPlus<=dMinus?plus:minus;
     otherRay={x:-neighborInwardRay.x,y:-neighborInwardRay.y};
-   }
+   }}
    den=cross(outwardRay,otherRay);if(Math.abs(den)<1e-7)continue;
    const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den;
    if(!Number.isFinite(t)||(isT&&t < -endpointTolerance))continue;
