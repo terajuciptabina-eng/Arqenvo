@@ -488,8 +488,11 @@ for(const [low,high] of solids){
  if(hi>=len-endpointTolerance&&wallEndResolvedCorners.has(e.id+":end:1")&&wallEndResolvedCorners.has(e.id+":end:-1")){skipSides.push(1);skipTopEdges.push(1)}
  const startCut=junctionCuts.find(cut=>Math.abs(lo-cut.end)<1e-5);
  const endCut=junctionCuts.find(cut=>Math.abs(hi-cut.start)<1e-5);
- if(startCut&&crossingResolved(startCut.end)){skipSides.push(3);skipTopEdges.push(3)}
- if(endCut&&crossingResolved(endCut.start)){skipSides.push(1);skipTopEdges.push(1)}
+ // A junction cut is an internal join, never a physical wall end. Do not
+ // render a thickness cap there: if miter resolution falls back, the cap
+ // becomes the conspicuous vertical strip at the wall intersection.
+ if(startCut){skipSides.push(3);skipTopEdges.push(3)}
+ if(endCut){skipSides.push(1);skipTopEdges.push(1)}
  prism(e,poly,base+low,high-low,undefined,{skipSides,skipTopEdges});
 } }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
 else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
