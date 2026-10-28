@@ -704,6 +704,16 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
   grid-column:auto!important;grid-row:auto!important;z-index:1201!important;overflow:auto!important;
  }
 }
+/* Final phone overlay override after all legacy responsive rules. */
+@media(max-width:600px) and (pointer:coarse){
+ body .work.navigator-open>.navigator{
+  display:block!important;position:absolute!important;
+  left:48px!important;right:0!important;top:0!important;bottom:0!important;
+  width:auto!important;height:auto!important;min-width:0!important;max-width:none!important;
+  min-height:0!important;max-height:none!important;margin:0!important;
+  grid-column:auto!important;grid-row:auto!important;z-index:1201!important;overflow:auto!important;
+ }
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
