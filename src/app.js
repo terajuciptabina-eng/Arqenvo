@@ -366,26 +366,36 @@ function render3DScene(ctx,items,project3d,options={}){
   const fallback={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
   const candidates=wallEndNeighbors.get(wall.id+":"+(atStart?"start":"end"));
   if(!candidates?.length)return fallback;
-  const neighborInfo=selectWallJunctionCandidate(candidates);
-  const {neighbor,neighborT,closest,isT}=neighborInfo;
   const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
-  const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nn={x:-nuy,y:nux},nhalf=(neighbor.thickness||.15)/2;
   const cross=(u,v)=>u.x*v.y-u.y*v.x;
-  if(isT){
-   // Stop the joining wall at the near face of the host wall, not at its
-   // centreline. This avoids wall-end caps and geometry leaking through a T joint.
-   const hostSide=Math.sign(ray.x*nn.x+ray.y*nn.y)||1;
-   const b={x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide};
-   const den=cross(ray,{x:nux,y:nuy});
-   if(Math.abs(den)<1e-7)return fallback;
-   const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,{x:nux,y:nuy})/den,hit={x:a.x+ray.x*t,y:a.y+ray.y*t};
-   if(Number.isFinite(hit.x)&&Number.isFinite(hit.y)&&Math.hypot(hit.x-joint.x,hit.y-joint.y)<=Math.max(half,nhalf)*8){wallEndResolvedCorners.add(wall.id+":"+(atStart?"start":"end")+":"+side);return hit}return fallback;
+  let best=null;
+  // Resolve each corner against all nearby walls. Picking a single neighbour
+  // for both corners fails at T, L and multi-wall junctions when the first
+  // candidate happens to be parallel or belongs to the wrong branch.
+  for(const info of candidates){
+   const {neighbor,neighborT,closest,isT}=info;
+   const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nhalf=(neighbor.thickness||.15)/2;
+   let b,otherRay,den;
+   if(isT){
+    const nn={x:-nuy,y:nux},hostSide=Math.sign(ray.x*nn.x+ray.y*nn.y)||1;
+    b={x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide};
+    otherRay={x:nux,y:nuy};
+    den=cross(ray,otherRay);
+   }else{
+    const neighborAtStart=neighborT<.5,nray={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy},neighborNormal={x:-nray.y,y:nray.x};
+    b={x:joint.x+neighborNormal.x*nhalf*localSide,y:joint.y+neighborNormal.y*nhalf*localSide};
+    otherRay=nray;
+    den=cross(ray,otherRay);
+   }
+   if(Math.abs(den)<1e-7)continue;
+   const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den,hit={x:a.x+ray.x*t,y:a.y+ray.y*t};
+   const hitDistance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
+   if(!Number.isFinite(hit.x)||!Number.isFinite(hit.y)||hitDistance>Math.max(half,nhalf)*8)continue;
+   const score=hitDistance+info.distance*.1+(isT?-0.001:0)+(1-Math.max(0,Math.min(1,info.alignment)))*0.0001;
+   if(!best||score<best.score)best={hit,score};
   }
-  const neighborAtStart=neighborT<.5,nray={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy},neighborNormal={x:-nray.y,y:nray.x};
-  const b={x:joint.x+neighborNormal.x*nhalf*localSide,y:joint.y+neighborNormal.y*nhalf*localSide},den=cross(ray,nray);
-  if(Math.abs(den)<1e-7)return fallback;
-  const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,nray)/den,hit={x:a.x+ray.x*t,y:a.y+ray.y*t};
-  if(Number.isFinite(hit.x)&&Number.isFinite(hit.y)&&Math.hypot(hit.x-joint.x,hit.y-joint.y)<=Math.max(half,nhalf)*8){wallEndResolvedCorners.add(wall.id+":"+(atStart?"start":"end")+":"+side);return hit}return fallback;
+  if(best){wallEndResolvedCorners.add(wall.id+":"+(atStart?"start":"end")+":"+side);return best.hit}
+  return fallback;
  };
 const materialColors={wall:"#d8e0e4",door:"#b88760",glass:"rgba(123,198,214,.46)",frame:"#5f737d",handle:"#aeb8bd",slab:"#c9d4d9",concrete:"#b9c6cd",roof:"#a97b5b"};
 const shadeHex=(hex,amount)=>{const value=parseInt(hex.slice(1),16),r=value>>16,g=(value>>8)&255,b=value&255,adjust=c=>Math.max(0,Math.min(255,Math.round(c+(amount>=0?(255-c)*amount:c*amount))));return "#"+[adjust(r),adjust(g),adjust(b)].map(c=>c.toString(16).padStart(2,"0")).join("")};
