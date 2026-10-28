@@ -89,3 +89,12 @@ test("wall junction candidate resolution is deterministic and geometry-ranked",(
  assert.equal(selectWallJunctionCandidate([]),null);
  assert.throws(()=>selectWallJunctionCandidate([{distance:NaN,alignment:1}]),/finite/);
 });
+
+
+test("T-junction host face follows the branch approach side, not the branch side normal",()=>{
+ const {wallHostFaceSide}=await import("../src/core/geometry.js");
+ assert.equal(wallHostFaceSide({x:0,y:-1},{x:0,y:1}),-1,"branch below a horizontal host meets its lower face");
+ assert.equal(wallHostFaceSide({x:0,y:1},{x:0,y:1}),1,"branch above a horizontal host meets its upper face");
+ assert.equal(wallHostFaceSide({x:-1,y:0},{x:0,y:1}),1,"parallel dot fallback is deterministic");
+ assert.throws(()=>wallHostFaceSide({x:0,y:0},{x:0,y:1}),/non-zero/);
+});

@@ -105,6 +105,21 @@ export function wallSolidIntervals(hostLength,openings,{tolerance=1e-8}={}) {
 
 
 /**
+ * Select the host-wall face approached by a terminating branch at a T-junction.
+ * `branchRay` points from the branch endpoint back into the branch; the face
+ * on that same side of the host centreline is the one the branch must meet.
+ */
+export function wallHostFaceSide(branchRay, hostNormal, {tolerance=1e-8}={}) {
+  if(!finitePoint(branchRay)||!finitePoint(hostNormal)) throw new TypeError("T-junction directions must be finite points");
+  if(!Number.isFinite(tolerance)||tolerance<0) throw new RangeError("Tolerance must be non-negative");
+  const rayLength=norm(branchRay),normalLength=norm(hostNormal);
+  if(rayLength<EPS||normalLength<EPS) throw new RangeError("T-junction directions must have non-zero length");
+  const alignment=dot(branchRay,hostNormal)/(rayLength*normalLength);
+  if(Math.abs(alignment)<=tolerance) return 1;
+  return alignment<0?-1:1;
+}
+
+/**
  * Resolve the end join between two centre-line walls sharing a junction.
  * wallA runs into the junction; wallB runs away from it. Each side is
  * intersected independently. Acute joins beyond the miter limit are bevelled

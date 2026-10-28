@@ -5,7 +5,7 @@ import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, openingOffsetForAnchor, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, findClosedWallLoops} from "./core/authoring.js";
 import {ModelHistory, transactModel} from "./core/transactions.js";
-import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate } from "./core/geometry.js";
+import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide } from "./core/geometry.js";
 import {normalizeUnitSystem,formatLength,formatArea} from "./core/units.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set(),groupsSuspended=false;
@@ -377,7 +377,7 @@ function render3DScene(ctx,items,project3d,options={}){
    const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nhalf=(neighbor.thickness||.15)/2;
    let b,otherRay,den;
    if(isT){
-    const nn={x:-nuy,y:nux},cornerNormal={x:-ray.y*localSide,y:ray.x*localSide},hostSide=Math.sign(cornerNormal.x*nn.x+cornerNormal.y*nn.y)||1;
+    const nn={x:-nuy,y:nux},hostSide=wallHostFaceSide(ray,nn);
     b={x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide};
     otherRay={x:nux,y:nuy};
     den=cross(ray,otherRay);
