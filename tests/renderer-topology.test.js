@@ -26,5 +26,5 @@ test("coplanar wall seam suppression uses model-space tolerances", () => {
 
 test("3D edge renderer delegates complete coplanar coverage to the geometric predicate", () => {
   assert.match(source, /segmentCoveredByPolygon2D\(start2,end2,other\.poly\.map\(uv\),\{tolerance:\.001\}\)/);
-  assert.match(source, /wallEndNeighbors\.get\(face\.id\+":"\+\(atStart\?"start":"end"\)\)/);
+  assert.match(source, /wallEndNeighbors\.get\(face\.id\+":"\+\(atStart\?"start":"end"\)\)\|\|\[\]\)/);
 });
