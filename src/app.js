@@ -594,6 +594,14 @@ for(const face of orderedFaces){
   // not physical edges; opening frames/reveals and resolved junction geometry
   // provide the real boundaries. Keep strokes only at actual source-wall ends.
   const ws=face.wallSegment,side=face.wallSideIndex;
+  if(ws&&(side===0||side===2)&&(i===0||i===2)){
+   const edgeZ=Math.abs(a.worldZ-b.worldZ)<=.001?(a.worldZ+b.worldZ)/2:NaN;
+   const openingBoundary=ws.openings?.some(o=>{
+    const inside=ws.lo>=o.offset-1e-4&&ws.hi<=o.offset+o.width+1e-4;
+    return inside&&(Math.abs(edgeZ-(o.sill||0))<.001||Math.abs(edgeZ-((o.sill||0)+o.height))<.001);
+   });
+   if(openingBoundary)continue;
+  }
   if(ws&&(side===0||side===2)&&(i===1||i===3)){
    const distance=side===0?(i===1?ws.hi:ws.lo):(i===1?ws.lo:ws.hi);
    const endpointTolerance=1e-4;
