@@ -627,6 +627,8 @@ try {
   await edgePage.locator("#wallGeometryMethod").selectOption("single");
   const edgePoint=async(wx,wy)=>{const pt=await edgePage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await edgePage.mouse.click(pt.x,pt.y)};
   await edgePoint(-3,0);await edgePoint(0,0);await edgePoint(0,0);await edgePoint(0,3);
+  // Continuous wall chains remain provisional until Enter commits the chain.
+  await edgePage.keyboard.press("Enter");
   await edgePage.waitForTimeout(850);
   const originalWalls=await edgePage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="wall").map(e=>({id:e.id,start:e.start,end:e.end})));
   assert.equal(originalWalls.length,2,"Edge regression fixture must create two walls sharing one endpoint");
