@@ -755,7 +755,9 @@ try {
   await roofPage.mouse.click(roofCenterPoint.x,roofCenterPoint.y);
   await roofPage.waitForFunction(()=>document.querySelector('#elementProperties input[readonly]')?.value?.toLowerCase().includes("roof"));
   for(const [name,value] of [["pitch","25"],["elevation","3.4"],["offset","2.75"],["thickness","0.22"]]){
-    await roofPage.locator('#elementProperties [data-prop="'+name+'"]').fill(value);
+    const input=roofPage.locator('#elementProperties [data-prop="'+name+'"]');
+    await input.fill(value);
+    await input.press("Tab"); // Generic property fields commit on change/blur.
   }
   await roofPage.waitForFunction(()=>{const roofs=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="roof");return roofs.some(r=>Number(r.pitch)===25&&Number(r.elevation)===3.4&&Number(r.offset)===2.75&&Number(r.thickness)===.22)}).catch(async error=>{const diag=await roofPage.evaluate(()=>({roofs:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="roof"),inputs:[...document.querySelectorAll('#elementProperties [data-prop]')].map(e=>({prop:e.dataset.prop,value:e.value})),status:document.querySelector("#status")?.textContent}));throw new Error("Roof property values were not persisted; "+JSON.stringify(diag)+"; "+error.message)});
   // Verify the same offset changes the 3D roof base elevation.
