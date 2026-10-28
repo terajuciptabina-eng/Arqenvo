@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide } from "../src/core/geometry.js";
+import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut } from "../src/core/geometry.js";
 
 test("line intersection returns parameters and point",()=>{
  const hit=lineIntersection({x:0,y:0},{x:1,y:0},{x:2,y:-1},{x:0,y:1});
@@ -96,4 +96,91 @@ test("T-junction host face follows the branch approach side, not the branch side
  assert.equal(wallHostFaceSide({x:0,y:1},{x:0,y:1}),1,"branch above a horizontal host meets its upper face");
  assert.equal(wallHostFaceSide({x:-1,y:0},{x:0,y:1}),1,"parallel dot fallback is deterministic");
  assert.throws(()=>wallHostFaceSide({x:0,y:0},{x:0,y:1}),/non-zero/);
+});
+
+
+// Orthogonal and oblique junction regression cases: side endpoints must stay finite,
+// bounded to the local wall half-thickness, and stable regardless of candidate order.
+test("wall junction offsets stay bounded for L corners and reversed wall directions",()=>{
+ const cases=[
+  [{start:{x:-2,y:0},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:0,y:2}}],
+  [{start:{x:2,y:0},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:0,y:2}}],
+  [{start:{x:-2,y:-1},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:1,y:2}}],
+  [{start:{x:0,y:0},end:{x:2,y:0}},{start:{x:2,y:0},end:{x:2,y:2}}],
+ ];
+ for(const [a,b] of cases){
+  const j=wallEndJoin(a,b,.2,.2);
+  for(const side of [j.left,j.right]){
+   for(const p of side.points){
+    assert.ok(Number.isFinite(p.x)&&Number.isFinite(p.y));
+    assert.ok(Math.hypot(p.x-j.junction.x,p.y-j.junction.y)<=2.001,
+      "miter regression must remain bounded");
+   }
+  }
+ }
+});
+
+
+test("renderer wall-end resolver builds both external L-corner vertices without diagonal fallback strips",()=>{
+ const horizontal={id:"horizontal",start:{x:-2,y:0},end:{x:0,y:0},thickness:.2};
+ const vertical={id:"vertical",start:{x:0,y:0},end:{x:0,y:2},thickness:.2};
+ const candidate={neighbor:vertical,neighborT:0,closest:{x:0,y:0},isT:false,distance:0,alignment:1};
+ const upper=resolveWallEndCorner(horizontal,false,1,[candidate]);
+ const lower=resolveWallEndCorner(horizontal,false,-1,[candidate]);
+ assert.equal(upper.resolved,true);
+ assert.equal(lower.resolved,true);
+ assert.ok(Math.abs(upper.point.x-.1)<1e-8&&Math.abs(upper.point.y-.1)<1e-8);
+ assert.ok(Math.abs(lower.point.x+.1)<1e-8&&Math.abs(lower.point.y+.1)<1e-8);
+});
+
+test("renderer wall-end resolver joins a T branch to the approached host face",()=>{
+ const branch={id:"branch",start:{x:0,y:2},end:{x:0,y:0},thickness:.2};
+ const host={id:"host",start:{x:-2,y:0},end:{x:2,y:0},thickness:.2};
+ const candidate={neighbor:host,neighborT:.5,closest:{x:0,y:0},isT:true,distance:0,alignment:0};
+ const left=resolveWallEndCorner(branch,false,1,[candidate]);
+ const right=resolveWallEndCorner(branch,false,-1,[candidate]);
+ assert.equal(left.resolved,true);
+ assert.equal(right.resolved,true);
+ assert.ok(Math.abs(left.point.y-.1)<1e-8);
+ assert.ok(Math.abs(right.point.y-.1)<1e-8);
+ assert.ok(Math.abs(left.point.x-.1)<1e-8);
+ assert.ok(Math.abs(right.point.x+.1)<1e-8);
+});
+
+test("renderer wall-end resolver handles continuous wall chains; core miter join bevels extreme angles",()=>{
+ const first={id:"first",start:{x:-2,y:0},end:{x:0,y:0},thickness:.2};
+ const second={id:"second",start:{x:0,y:0},end:{x:2,y:0},thickness:.2};
+ const chain=resolveWallEndCorner(first,false,1,[{neighbor:second,neighborT:0,closest:{x:0,y:0},isT:false,distance:0,alignment:1}]);
+ assert.equal(chain.resolved,true);
+ assert.ok(Math.abs(chain.point.y-.1)<1e-8);
+ const acuteA={start:{x:-2,y:0},end:{x:0,y:0}};
+ const acuteB={start:{x:0,y:0},end:{x:-2,y:.01}};
+ assert.equal(wallEndJoin(acuteA,acuteB,.2,.2,{miterLimit:2}).type,"bevel");
+});
+
+
+test("wall cross junction trims the stable secondary wall to host faces",()=>{
+ const horizontal={id:"a",type:"wall",storyId:"story-1",start:{x:-2,y:0},end:{x:2,y:0},thickness:.2};
+ const vertical={id:"b",type:"wall",storyId:"story-1",start:{x:0,y:-2},end:{x:0,y:2},thickness:.2};
+ const cut=wallCrossingCut(horizontal,vertical);
+ assert.ok(cut);
+ assert.equal(cut.hostWall.id,"a");
+ assert.equal(cut.cutWall.id,"b");
+ assert.ok(Math.abs(cut.intersection.x)<1e-8&&Math.abs(cut.intersection.y)<1e-8);
+ assert.ok(Math.abs(cut.start-1.9)<1e-8);
+ assert.ok(Math.abs(cut.end-2.1)<1e-8);
+ const reversed=wallCrossingCut(vertical,horizontal);
+ assert.equal(reversed.hostWall.id,cut.hostWall.id,"input element order must not change host choice");
+ assert.equal(reversed.cutWall.id,cut.cutWall.id);
+});
+
+test("wall cross cuts scale for oblique junctions and ignore endpoint, parallel and cross-story cases",()=>{
+ const host={id:"host",storyId:"s",start:{x:-3,y:0},end:{x:3,y:0},thickness:.3};
+ const oblique={id:"oblique",storyId:"s",start:{x:0,y:-2},end:{x:2,y:2},thickness:.15};
+ const cut=wallCrossingCut(host,oblique);
+ assert.ok(cut);
+ assert.ok(Math.abs(cut.halfSpan-.15/Math.sin(Math.atan(2)))<1e-8);
+ assert.equal(wallCrossingCut(host,{...oblique,start:{x:0,y:0}}),null,"endpoint joins must use endpoint resolver");
+ assert.equal(wallCrossingCut(host,{...oblique,start:{x:0,y:-2},end:{x:6,y:.01}}),null,"near-parallel lines must not create very long cuts");
+ assert.equal(wallCrossingCut(host,{...oblique,storyId:"other"}),null,"different stories must remain independent");
 });

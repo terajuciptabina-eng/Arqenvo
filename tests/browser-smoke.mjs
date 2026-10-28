@@ -78,6 +78,57 @@ try {
   await page.locator("#redo").click();
   await page.waitForFunction(() => document.querySelector("#undo")?.disabled === false);
 
+  // 3D geometry regression: crossing walls must render without runtime errors,
+  // keep the host continuous and not add duplicate model elements.
+  const crossingPage = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+  crossingPage.setDefaultTimeout(8000);
+  crossingPage.on("pageerror", error => pageErrors.push(error.message));
+  await crossingPage.goto(`http://127.0.0.1:${address.port}/`, { waitUntil: "domcontentloaded" });
+  await crossingPage.waitForFunction(() => document.querySelector("#canvas")?.clientWidth > 100);
+  const crossingCanvas = crossingPage.locator("#canvas");
+  const crossingPoint = async (wx, wy) => {
+    const pt = await crossingPage.evaluate(({wx,wy}) => {
+      const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect();
+      const scale=Number(document.querySelector("#scaleSelect")?.value||36);
+      const t=window.__arqenvoViewport||{origin:{x:0,y:0},scale};
+      return {x:rect.left+canvas.clientWidth/2+(t.origin?.x||0)+wx*(t.scale||scale),
+              y:rect.top+canvas.clientHeight/2+(t.origin?.y||0)-wy*(t.scale||scale)};
+    }, {wx,wy});
+    await crossingPage.mouse.click(pt.x,pt.y);
+  };
+  await crossingPage.locator("#snapToggle").click();
+  await crossingPage.locator("#gridQuick").selectOption("0.1");
+  await crossingPage.locator('[data-tool="wall"]').click();
+  await crossingPage.locator("#wallGeometryMethod").selectOption("single");
+  // Horizontal host at y=0.
+  await crossingPoint(-3,0); await crossingPoint(3,0); await crossingPage.keyboard.press("Enter");
+  await crossingPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length===1);
+  // Vertical wall through the host's interior creates a true X crossing.
+  await crossingPoint(0,-2); await crossingPoint(0,2); await crossingPage.keyboard.press("Enter");
+  await crossingPage.waitForFunction(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length===2);
+  await crossingPage.locator("#threeTab").click();
+  await crossingPage.waitForFunction(()=>document.querySelector("#viewLabel")?.textContent.includes("3D Window"));
+  await crossingPage.waitForTimeout(100);
+  const crossingState=await crossingPage.evaluate(()=>({
+    walls:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.filter(e=>e.type==="wall").length||0,
+    canvas:document.querySelector("#canvas")?.width>0&&document.querySelector("#canvas")?.height>0,
+    view:document.querySelector("#viewLabel")?.textContent||""
+  }));
+  assert.equal(crossingState.walls,2,"An X junction must retain its two source walls");
+  assert.equal(crossingState.canvas,true,"3D view must render after an X crossing");
+  assert.ok(crossingState.view.includes("3D Window"),"X crossing test must exercise 3D renderer");
+  const crossingPixels=await crossingCanvas.evaluate(el=>{
+    const ctx=el.getContext("2d"),w=el.width,h=el.height;
+    let nonWhite=0;
+    for(let y=Math.floor(h*.25);y<Math.floor(h*.75);y+=8)for(let x=Math.floor(w*.25);x<Math.floor(w*.75);x+=8){
+      const px=ctx.getImageData(x,y,1,1).data;
+      if(px[0]<230||px[1]<230||px[2]<230)nonWhite++;
+    }
+    return nonWhite;
+  });
+  assert.ok(crossingPixels>5,"3D X-junction must produce rendered wall pixels in the viewport");
+  await crossingPage.close();
+
   // Returning to the first point must not auto-close an active chain.
   await page.locator('[data-tool="wall"]').click();
   await page.locator("#wallGeometryMethod").selectOption("continuous");

@@ -137,3 +137,27 @@ test("3D door leaf remains closed in the host wall plane while plan swing stays 
  const defaultState=hostedDoorLeaf3dGeometry(wall,{...door,model3dState:undefined});
  assert.equal(defaultState.model3dState,"closed","missing/legacy state defaults to closed in 3D");
 });
+
+
+test("door/window hosting rejects openings that cross the wall end",()=>{
+ const host={id:"wall",start:{x:0,y:0},end:{x:4,y:0},thickness:.15};
+ for(const type of ["door","window"]){
+  assert.throws(()=>hostedOpening3dGeometry(host,{type,offset:3.2,width:1,height:1.2,sill:type==="window"?.9:0}),/fit/);
+ }
+});
+
+test("door leaf remains on wall plane for reversed and vertical hosts",()=>{
+ const hosts=[
+  {start:{x:4,y:0},end:{x:0,y:0},thickness:.15},
+  {start:{x:0,y:0},end:{x:0,y:4},thickness:.15},
+  {start:{x:2,y:4},end:{x:2,y:0},thickness:.15}
+ ];
+ for(const host of hosts){
+  const leaf=hostedDoorLeaf3dGeometry(host,{type:"door",offset:1,width:.9,height:2.1,sill:0,hingeSide:"left"});
+  const dx=host.end.x-host.start.x,dy=host.end.y-host.start.y,len=Math.hypot(dx,dy);
+  for(const p of leaf.boundary){
+   const signed=((p.x-host.start.x)*(-dy/len)+(p.y-host.start.y)*(dx/len));
+   assert.ok(Math.abs(signed)<=.04,"closed door thickness must remain close to the wall centreline");
+  }
+ }
+});
