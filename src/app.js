@@ -550,10 +550,10 @@ for(const face of orderedFaces){
     const c=other.poly[j],d=other.poly[(j+1)%other.poly.length];
     const ov={x:d.x-c.x,y:d.y-c.y,z:(d.depth||0)-(c.depth||0)},ol=Math.hypot(ov.x,ov.y,ov.z)||1;
     const crossDir={x:edgeVec.y*ov.z-edgeVec.z*ov.y,y:edgeVec.z*ov.x-edgeVec.x*ov.z,z:edgeVec.x*ov.y-edgeVec.y*ov.x};
-    if(Math.hypot(crossDir.x,crossDir.y,crossDir.z)/(edgeLength*ol)>.001)return false;
+    if(Math.hypot(crossDir.x,crossDir.y,crossDir.z)/(edgeLength*ol)>.001)continue;
     const rel={x:c.x-a.x,y:c.y-a.y,z:(c.depth||0)-(a.depth||0)};
     const crossLine={x:rel.y*edgeVec.z-rel.z*edgeVec.y,y:rel.z*edgeVec.x-rel.x*edgeVec.z,z:rel.x*edgeVec.y-rel.y*edgeVec.x};
-    if(Math.hypot(crossLine.x,crossLine.y,crossLine.z)/edgeLength>.002)return false;
+    if(Math.hypot(crossLine.x,crossLine.y,crossLine.z)/edgeLength>.002)continue;
     const t0=(rel.x*edgeVec.x+rel.y*edgeVec.y+rel.z*edgeVec.z)/(edgeLength*edgeLength);
     const t1=t0+(ov.x*edgeVec.x+ov.y*edgeVec.y+ov.z*edgeVec.z)/(edgeLength*edgeLength);
     if(Math.min(t0,t1)<=.002&&Math.max(t0,t1)>=.998)return true;
