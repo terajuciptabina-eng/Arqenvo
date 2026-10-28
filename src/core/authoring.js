@@ -125,13 +125,26 @@ export function hostedDoorLeaf3dGeometry(wall, opening, { leafThickness = 0.035,
   const finish = { x: wall.start.x + ux * endDistance, y: wall.start.y + uy * endDistance };
   const depth = Math.max(0.02, Math.min(leafThickness, (wall.thickness || 0.15) * 0.45));
   const half = depth / 2;
-  const boundary = [
+  let boundary = [
     { x: start.x + nx * half, y: start.y + ny * half },
     { x: finish.x + nx * half, y: finish.y + ny * half },
     { x: finish.x - nx * half, y: finish.y - ny * half },
     { x: start.x - nx * half, y: start.y - ny * half },
   ];
-  return { ...hosted, boundary, thickness: depth, isClosedLeaf: true };
+  // The 2D swing symbol is independent. 3D doors default to closed, and only
+  // rotate out of the host plane when the explicit 3D state is set to "open".
+  const isOpen = opening.model3dState === "open";
+  if (isOpen) {
+    const hinge = opening.hingeSide === "right" ? finish : start;
+    const direction = opening.swingDirection === "outside" ? -1 : 1;
+    const angle = (opening.hingeSide === "right" ? -1 : 1) * direction * Math.PI / 2;
+    const c = Math.cos(angle), s = Math.sin(angle);
+    boundary = boundary.map(point => {
+      const x = point.x - hinge.x, y = point.y - hinge.y;
+      return { x: hinge.x + x * c - y * s, y: hinge.y + x * s + y * c };
+    });
+  }
+  return { ...hosted, boundary, thickness: depth, isClosedLeaf: !isOpen, model3dState: isOpen ? "open" : "closed" };
 }
 
 export function hostedOpening3dGeometry(wall, opening, { leafThickness = 0.035, paneThickness = 0.025 } = {}) {

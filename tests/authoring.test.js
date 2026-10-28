@@ -130,4 +130,10 @@ test("3D door leaf remains closed in the host wall plane while plan swing stays 
  const rotatedWall={start:{x:1,y:2},end:{x:1,y:6},thickness:.2};
  const rotated=hostedDoorLeaf3dGeometry(rotatedWall,door);
  assert.ok(rotated.boundary.every(p=>p.x>=.95&&p.x<=1.05),"rotated host leaf remains in wall plane");
+ const open=hostedDoorLeaf3dGeometry(wall,{...door,model3dState:"open"});
+ assert.equal(open.model3dState,"open");
+ assert.equal(open.isClosedLeaf,false);
+ assert.ok(Math.abs(open.boundary[0].x-open.boundary[1].x)<1e-8,"open leaf rotates out of the wall plane");
+ const defaultState=hostedDoorLeaf3dGeometry(wall,{...door,model3dState:undefined});
+ assert.equal(defaultState.model3dState,"closed","missing/legacy state defaults to closed in 3D");
 });
