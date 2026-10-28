@@ -632,7 +632,7 @@ try {
   assert.equal(originalWalls.length,2,"Edge regression fixture must create two walls sharing one endpoint");
   await edgePage.locator('[data-tool="select"]').click();
   await edgePoint(-1.5,0);
-  await edgePage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent.includes("selected"));
+  await edgePage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent.includes("selected")).catch(async error=>{const diag=await edgePage.evaluate(()=>({selection:document.querySelector("#selectionInfo")?.textContent,status:document.querySelector("#status")?.textContent,tool:document.querySelector("#toolName")?.value,viewport:window.__arqenvoViewport,canvas:document.querySelector("#canvas")?.getBoundingClientRect().toJSON(),walls:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.filter(e=>e.type==="wall"),hitDebug:window.__arqenvoDebug?.getLastFloorSelectionDebug?.()}));throw new Error("Connected-edge fixture wall selection failed; "+JSON.stringify(diag)+"; "+error.message)});
   const selectedWallId=await edgePage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="wall")?.id);
   const neighborBefore=originalWalls.find(w=>w.id!==selectedWallId);
   const selectedBefore=originalWalls.find(w=>w.id===selectedWallId);
