@@ -146,6 +146,26 @@ export function hostedOpening3dGeometry(wall, opening, { leafThickness = 0.035, 
 }
 
 /**
+ * Merge the wall's cached opening records with the authoritative top-level
+ * door/window elements. Top-level elements win on duplicate IDs because their
+ * offset, width and vertical dimensions may have changed since the cache was made.
+ */
+export function mergeHostedOpeningRecords(wallOpenings = [], hostedElements = []) {
+  const merged = new Map();
+  for (const opening of Array.isArray(wallOpenings) ? wallOpenings : []) {
+    if (!opening || typeof opening !== "object") continue;
+    const key = opening.id || `legacy:${merged.size}`;
+    merged.set(key, { ...opening });
+  }
+  for (const opening of Array.isArray(hostedElements) ? hostedElements : []) {
+    if (!opening || typeof opening !== "object") continue;
+    const key = opening.id || `hosted:${merged.size}`;
+    merged.set(key, { ...(merged.get(key) || {}), ...opening });
+  }
+  return [...merged.values()];
+}
+
+/**
  * Small placement state machine. No model mutation occurs until confirm().
  * The caller owns host lookup and commits the returned payload in one transaction.
  */

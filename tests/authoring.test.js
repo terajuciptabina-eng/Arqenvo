@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoof } from "../src/core/model.js";
-import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, openingPlacementDirection, findClosedWallLoops } from "../src/core/authoring.js";
+import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, openingPlacementDirection, findClosedWallLoops, mergeHostedOpeningRecords } from "../src/core/authoring.js";
 
 test("door swing geometry pivots at the hinge and uses opening width as radius", () => {
   const g = doorSwingGeometry({x:10,y:20},{x:11,y:20},{hingeSide:"left",swingDirection:"inside"});
@@ -106,4 +106,14 @@ test("hosted 3D opening rejects non-finite offsets, dimensions and invalid sill"
   ]) assert.throws(() => hostedOpening3dGeometry(wall,{...valid,...changes}), /Opening must fit/);
   assert.throws(() => hostedOpening3dGeometry({...wall,start:{x:NaN,y:0}},valid), /finite/);
   assert.throws(() => hostedOpening3dGeometry(wall,valid,{leafThickness:0}), /thicknesses/);
+});
+
+
+test("authoritative hosted openings replace stale cached wall opening geometry",()=>{
+ const cached=[{id:"d1",type:"door",offset:1,width:.8,height:2,sill:0},{id:"legacy",type:"window",offset:3,width:1,height:1,sill:1}];
+ const hosted=[{id:"d1",type:"door",offset:2,width:1,height:2.1,sill:0,hostWallId:"w1"}];
+ const merged=mergeHostedOpeningRecords(cached,hosted);
+ assert.equal(merged.length,2);
+ assert.deepEqual(merged.find(o=>o.id==="d1"),hosted);
+ assert.deepEqual(merged.find(o=>o.id==="legacy"),cached[1]);
 });
