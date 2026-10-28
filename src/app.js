@@ -389,7 +389,7 @@ function render3DScene(ctx,items,project3d,options={}){
     const dPlus=Math.hypot(a.x-plus.x,a.y-plus.y),dMinus=Math.hypot(a.x-minus.x,a.y-minus.y);
     b=dPlus<=dMinus?plus:minus;
     otherRay={x:-neighborInwardRay.x,y:-neighborInwardRay.y};
-   }}
+   }
    den=cross(outwardRay,otherRay);if(Math.abs(den)<1e-7)continue;
    const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den;
    if(!Number.isFinite(t)||(isT&&t < -endpointTolerance))continue;
