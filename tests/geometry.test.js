@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin } from "../src/core/geometry.js";
+import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate } from "../src/core/geometry.js";
 
 test("line intersection returns parameters and point",()=>{
  const hit=lineIntersection({x:0,y:0},{x:1,y:0},{x:2,y:-1},{x:0,y:1});
@@ -76,4 +76,16 @@ test("segment intersection detects crossings and ignores disjoint or parallel se
 test("segment intersection rejects zero-length segments and invalid tolerance",()=>{
  assert.throws(()=>segmentIntersection({x:0,y:0},{x:0,y:0},{x:0,y:0},{x:1,y:0}),/non-zero/);
  assert.throws(()=>segmentIntersection({x:0,y:0},{x:1,y:0},{x:0,y:0},{x:0,y:1},{tolerance:-1}),/non-negative/);
+});
+
+test("wall junction candidate resolution is deterministic and geometry-ranked",()=>{
+ const parallel={neighbor:{id:"parallel"},distance:0,alignment:0,isT:false};
+ const transverse={neighbor:{id:"transverse"},distance:0,alignment:1,isT:false};
+ assert.equal(selectWallJunctionCandidate([parallel,transverse]).neighbor.id,"transverse");
+ assert.equal(selectWallJunctionCandidate([transverse,parallel]).neighbor.id,"transverse");
+ const endpoint={neighbor:{id:"endpoint"},distance:0.001,alignment:0.5,isT:false};
+ const side={neighbor:{id:"side"},distance:0,alignment:1,isT:true};
+ assert.equal(selectWallJunctionCandidate([side,endpoint]).neighbor.id,"endpoint");
+ assert.equal(selectWallJunctionCandidate([]),null);
+ assert.throws(()=>selectWallJunctionCandidate([{distance:NaN,alignment:1}]),/finite/);
 });
