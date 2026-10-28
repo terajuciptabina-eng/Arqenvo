@@ -869,6 +869,7 @@ document.addEventListener("keydown",event=>{
    toggle.title=mobile?(open?'Close Navigator':'Open Navigator'):(hidden?'Show Navigator':'Hide Navigator');
    toggle.hidden=!mobile&&!touchTablet;
   }
+  function restoreMobileOverlay(){if(!nav.dataset.mobileOverlayOriginal)return;try{for(const [k,v,p] of JSON.parse(nav.dataset.mobileOverlayOriginal)){if(v)nav.style.setProperty(k,v,p);else nav.style.removeProperty(k)}}catch{}delete nav.dataset.mobileOverlayOriginal}
   toggle.addEventListener('click',function(){
    if(isMobile())work.classList.toggle('navigator-open');
    else work.classList.toggle('navigator-hidden');
@@ -877,14 +878,12 @@ document.addEventListener("keydown",event=>{
    if(isMobile()&&work.classList.contains('navigator-open')){
     if(!nav.dataset.mobileOverlayOriginal){const props=['position','left','right','top','bottom','width','height','min-width','max-width','min-height','max-height','z-index','overflow'];nav.dataset.mobileOverlayOriginal=JSON.stringify(props.map(k=>[k,nav.style.getPropertyValue(k),nav.style.getPropertyPriority(k)]))}
     nav.style.setProperty('position','absolute','important');nav.style.setProperty('left','48px','important');nav.style.setProperty('right','0','important');nav.style.setProperty('top','0','important');nav.style.setProperty('bottom','0','important');nav.style.setProperty('width','auto','important');nav.style.setProperty('height','auto','important');nav.style.setProperty('min-width','0','important');nav.style.setProperty('max-width','none','important');nav.style.setProperty('min-height','0','important');nav.style.setProperty('max-height','none','important');nav.style.setProperty('z-index','1201','important');nav.style.setProperty('overflow','auto','important');
-   }else if(isMobile()&&nav.dataset.mobileOverlayOriginal){
-    try{for(const [k,v,p] of JSON.parse(nav.dataset.mobileOverlayOriginal)){if(v)nav.style.setProperty(k,v,p);else nav.style.removeProperty(k)}}catch{}delete nav.dataset.mobileOverlayOriginal;
-   }
+   }else if(isMobile())restoreMobileOverlay();
    /* A docked tablet panel changes the available drawing viewport; refit the model after that geometry settles. */
    if(isTouchTablet()&&!document.getElementById('layoutControls')?.classList.contains('active'))requestAnimationFrame(function(){document.getElementById('zoomFit')?.click()});
   });
   window.addEventListener('resize',sync);
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&work.classList.contains('navigator-open')){work.classList.remove('navigator-open');sync();}});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&work.classList.contains('navigator-open')){work.classList.remove('navigator-open');restoreMobileOverlay();sync();}});
   document.addEventListener('pointerdown',function(e){if(!isMobile()||!work.classList.contains('navigator-open'))return;if(e.target===toggle||toggle.contains(e.target)||nav.contains(e.target))return;work.classList.remove('navigator-open');sync();});
   sync();
  }
