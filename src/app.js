@@ -402,26 +402,7 @@ function render3DScene(ctx,items,project3d,options={}){
   if(!hostedOpeningsByWall.has(opening.hostWallId))hostedOpeningsByWall.set(opening.hostWallId,[]);
   hostedOpeningsByWall.get(opening.hostWallId).push(opening);
  }
- for(const wall of visibleWalls)for(const atStart of [true,false]){
-  const joint=atStart?wall.start:wall.end,candidates=[];
-  const bucket=wallBuckets.get(wallBucketKey(wall.storyId,Math.floor(joint.x/wallCellSize),Math.floor(joint.y/wallCellSize)))||[];
-  for(const candidate of bucket){
-   if(candidate.id===wall.id||candidate.storyId!==wall.storyId)continue;
-   const vx=candidate.end.x-candidate.start.x,vy=candidate.end.y-candidate.start.y,l2=vx*vx+vy*vy;
-   if(l2<1e-10)continue;
-   const tRaw=((joint.x-candidate.start.x)*vx+(joint.y-candidate.start.y)*vy)/l2;
-   const t=Math.max(0,Math.min(1,tRaw)),q={x:candidate.start.x+vx*t,y:candidate.start.y+vy*t};
-   const distance=Math.hypot(q.x-joint.x,q.y-joint.y);
-   const tolerance=(candidate.thickness||.15)/2+endpointTolerance;
-   if(distance<=tolerance){
-    const nlen=Math.sqrt(l2),wallLen=Math.hypot(wall.end.x-wall.start.x,wall.end.y-wall.start.y)||1;
-    const alignment=Math.abs(cross2({x:wall.end.x-wall.start.x,y:wall.end.y-wall.start.y},{x:vx,y:vy}))/(wallLen*nlen||1);
-    candidates.push({neighbor:candidate,neighborT:t,closest:q,isT:t>.025&&t<.975,distance,alignment});
-   }
-  }
-  if(candidates.length)wallEndNeighbors.set(wall.id+":"+(atStart?"start":"end"),candidates);
- }
- const wallEndCorner=(wall,atStart,side)=>{
+  const wallEndCorner=(wall,atStart,side)=>{
   const endpoint=atStart?"start":"end";
   const candidates=wallEndNeighbors.get(wall.id+":"+endpoint)||[];
   const result=resolveWallEndCorner(wall,atStart,side,candidates,{endpointTolerance,maxMiterRatio:8});
