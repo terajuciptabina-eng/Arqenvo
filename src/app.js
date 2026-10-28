@@ -377,7 +377,7 @@ function render3DScene(ctx,items,project3d,options={}){
    const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nhalf=(neighbor.thickness||.15)/2;
    let b,otherRay,den;
    if(isT){
-    const nn={x:-nuy,y:nux},hostSide=Math.sign(ray.x*nn.x+ray.y*nn.y)||1;
+    const nn={x:-nuy,y:nux},cornerNormal={x:-ray.y*localSide,y:ray.x*localSide},hostSide=Math.sign(cornerNormal.x*nn.x+cornerNormal.y*nn.y)||1;
     b={x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide};
     otherRay={x:nux,y:nuy};
     den=cross(ray,otherRay);
