@@ -413,7 +413,7 @@ function render3DScene(ctx,items,project3d,options={}){
 const materialColors={wall:"#d8e0e4",door:"#b88760",glass:"rgba(123,198,214,.46)",frame:"#5f737d",handle:"#aeb8bd",slab:"#c9d4d9",concrete:"#b9c6cd",roof:"#a97b5b"};
 const shadeHex=(hex,amount)=>{const value=parseInt(hex.slice(1),16),r=value>>16,g=(value>>8)&255,b=value&255,adjust=c=>Math.max(0,Math.min(255,Math.round(c+(amount>=0?(255-c)*amount:c*amount))));return "#"+[adjust(r),adjust(g),adjust(b)].map(c=>c.toString(16).padStart(2,"0")).join("")};
 const prism=(e,footprint,z0,height,material,geometryOptions={})=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height)),chosenElement=(!!options.interactive&&selected.has(e.id)),surface=material||({wall:"wall",door:"door",window:"glass",slab:"slab",column:"concrete",beam:"concrete",roof:"roof"}[e.type]||"wall");
-for(let i=0;i<base.length;i++){if(geometryOptions.skipSides?.includes(i))continue;const j=(i+1)%base.length,poly=[base[i],base[j],top[j],top[i]],shade=i%2?-.035:-.13;faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:surface,shade,selected:chosenElement})}
+for(let i=0;i<base.length;i++){if(geometryOptions.skipSides?.includes(i))continue;const j=(i+1)%base.length,poly=[base[i],base[j],top[j],top[i]],shade=i%2?-.035:-.13;faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:surface,shade,selected:chosenElement,...(geometryOptions.wallSegment?{wallSegment:geometryOptions.wallSegment,wallSideIndex:i}:{})})}
 faces3d.push({id:e.id,poly:top,depth:top.reduce((sum,pt)=>sum+pt.depth,0)/top.length,material:surface,shade:.13,selected:chosenElement,topFace:true,skipTopEdges:geometryOptions.skipTopEdges||[]})};
 for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","door","window","roof"].includes(e.type))continue;const storyElevation=storyElevationById.get(e.storyId)||0;if(e.type==="roof"){const center={x:e.boundary.reduce((s,v)=>s+v.x,0)/e.boundary.length,y:e.boundary.reduce((s,v)=>s+v.y,0)/e.boundary.length},radius=Math.min(...e.boundary.map(v=>Math.hypot(v.x-center.x,v.y-center.y))),baseZ=storyElevation+(e.elevation||0)+(e.offset||0),rise=Math.tan((e.pitch||30)*Math.PI/180)*radius,base=e.boundary.map(v=>project3d(v,baseZ)),inner=e.boundary.map(v=>project3d(v,baseZ-(e.thickness||.18))),peak=project3d(center,baseZ+rise),chosenElement=(!!options.interactive&&selected.has(e.id));for(let i=0;i<base.length;i++){const j=(i+1)%base.length,poly=[base[i],base[j],peak];faces3d.push({id:e.id,poly,depth:poly.reduce((sum,pt)=>sum+pt.depth,0)/poly.length,material:"roof",shade:.1,selected:chosenElement,topFace:true});faces3d.push({id:e.id,poly:[base[j],base[i],inner[i],inner[j]],depth:(base[i].depth+base[j].depth)/2,material:"roof",shade:-.22,selected:chosenElement})}continue}if(e.type==="door"||e.type==="window"){
  const host=wallById.get(e.hostWallId);if(!host)continue;
@@ -501,7 +501,7 @@ for(const [low,high] of solids){
  // becomes the conspicuous vertical strip at the wall intersection.
  if(startCut){skipSides.push(3);skipTopEdges.push(3)}
  if(endCut){skipSides.push(1);skipTopEdges.push(1)}
- prism(e,poly,base+low,high-low,undefined,{skipSides,skipTopEdges});
+ prism(e,poly,base+low,high-low,undefined,{skipSides,skipTopEdges,wallSegment:{lo,hi,zLow:low,zHigh:high,openings:openings.map(o=>({offset:Number(o.offset)||0,width:Number(o.width)||0,sill:Number(o.sill)||0,height:Number(o.height)||0}))}});
 } }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
 else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
 else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
@@ -565,7 +565,20 @@ for(const face of orderedFaces){
   continue
  }
  for(let i=0;i<face.poly.length;i++){
-  const a=face.poly[i],b=face.poly[(i+1)%face.poly.length],owners=wallSideEdges.get(edgeKey(a,b))||[];
+  const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];
+  // A wall face is split into solid bands around a hosted opening. Its
+  // vertical boundary edges above the lintel and below the sill are renderer
+  // seams, not physical edges; retain only the actual opening reveal.
+  const ws=face.wallSegment,side=face.wallSideIndex;
+  if(ws&&(side===0||side===2)&&(i===1||i===3)){
+   const distance=side===0?(i===1?ws.hi:ws.lo):(i===1?ws.lo:ws.hi);
+   const atOpeningBoundary=ws.openings.some(o=>
+    (Math.abs(distance-o.offset)<1e-5||Math.abs(distance-(o.offset+o.width))<1e-5)&&
+    (ws.zHigh<=o.sill+1e-5||ws.zLow>=o.sill+o.height-1e-5)
+   );
+   if(atOpeningBoundary)continue;
+  }
+  const owners=wallSideEdges.get(edgeKey(a,b))||[];
   const normal=wallFaceNormals.get(face);
   const edgeVec={x:b.x-a.x,y:b.y-a.y,z:(b.depth||0)-(a.depth||0)};
   const edgeLength=Math.hypot(edgeVec.x,edgeVec.y,edgeVec.z)||1;
