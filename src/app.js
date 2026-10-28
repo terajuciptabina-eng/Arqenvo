@@ -2038,7 +2038,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    const wr=work.getBoundingClientRect(),edge=Math.max(28,Math.min(48,Math.round(Math.min(wr.width,wr.height)*.045)));
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
-   const origin=d.dockRect;
+   const origin=d.dockRect,edgePad=24;
    const pointerReturnedToOrigin=!!origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24;
    // During a drag the pointer retains its original grab offset, so it may be
    // inside the remembered dock slot while the panel rectangle overlaps it.
@@ -2055,7 +2055,6 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    // The docked pane occupies a full-height track while floating panes use
    // their own bounded rectangle. If the user releases over the remembered
    // dock slot (or the original side strip), restore the dock directly.
-   const edgePad=24;
    const sideStrip=originalSide==='left'?e.clientX<=wr.left+edge+edgePad:originalSide==='right'?e.clientX>=wr.right-edge-edgePad:originalSide==='top'?e.clientY<=wr.top+edge+edgePad:e.clientY>=wr.bottom-edge-edgePad;
    if(returnedToOrigin||sideStrip){setMode(key,'dock',originalSide);return}
    const r=panel.getBoundingClientRect(),s=state[key];
