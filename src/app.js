@@ -2038,8 +2038,8 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    const wr=work.getBoundingClientRect(),edge=Math.max(28,Math.min(48,Math.round(Math.min(wr.width,wr.height)*.045)));
    const side=dockSideAt(e.clientX,e.clientY,key);
    if(side){setMode(key,'dock',side);return}
-   const origin=d.dockRect,edgePad=24;
-   const pointerReturnedToOrigin=!!origin&&e.clientX>=origin.left-24&&e.clientX<=origin.right+24&&e.clientY>=origin.top-24&&e.clientY<=origin.bottom+24;
+   const origin=d.dockRect,edgePad=24,dockReturnTolerance=8;
+   const pointerReturnedToOrigin=!!origin&&e.clientX>=origin.left-dockReturnTolerance&&e.clientX<=origin.right+dockReturnTolerance&&e.clientY>=origin.top-dockReturnTolerance&&e.clientY<=origin.bottom+dockReturnTolerance;
    // During a drag the pointer retains its original grab offset, so it may be
    // inside the remembered dock slot while the panel rectangle overlaps it.
    // Check both to make returning a floating Navigator/Toolbox reliably dock.
@@ -2049,7 +2049,7 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
    // so its rectangle can overlap the dock even when the pointer was released
    // well inside the workspace. Require the release point itself to be near
    // the remembered slot before using panel overlap as a docking signal.
-   const pointerNearOrigin=!!origin&&e.clientX>=origin.left-edgePad&&e.clientX<=origin.right+edgePad&&e.clientY>=origin.top-edgePad&&e.clientY<=origin.bottom+edgePad;
+   const pointerNearOrigin=!!origin&&e.clientX>=origin.left-dockReturnTolerance&&e.clientX<=origin.right+dockReturnTolerance&&e.clientY>=origin.top-dockReturnTolerance&&e.clientY<=origin.bottom+dockReturnTolerance;
    const returnedToOrigin=pointerReturnedToOrigin||(panelOverlapsOrigin&&pointerNearOrigin);
    const originalSide=d.dockSide||d.originSide||state[key].side||(key==='toolbox'?'left':'right');
    // The docked pane occupies a full-height track while floating panes use
