@@ -560,8 +560,8 @@ for(const face of orderedFaces){
    }
    // A wall split can leave an edge wholly inside a larger coplanar wall face.
    // It is not a shared edge in that case, so test containment in the face itself.
-   const midpoint={x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:((a.depth||0)+(b.depth||0))/2};
-   const origin=other.poly[0],planeDistance=Math.abs((midpoint.x-origin.x)*otherNormal.x+(midpoint.y-origin.y)*otherNormal.y+(midpoint.z-(origin.depth||0))*otherNormal.z);
+   const midpoint={x:(a.x+b.x)/2,y:(a.y+b.y)/2,depth:((a.depth||0)+(b.depth||0))/2};
+   const origin=other.poly[0],planeDistance=Math.abs((midpoint.x-origin.x)*otherNormal.x+(midpoint.y-origin.y)*otherNormal.y+(midpoint.depth-(origin.depth||0))*otherNormal.z);
    if(planeDistance>.75)continue;
    const dropAxis=Math.abs(otherNormal.x)>Math.abs(otherNormal.y)?(Math.abs(otherNormal.x)>Math.abs(otherNormal.z)?"x":"z"):(Math.abs(otherNormal.y)>Math.abs(otherNormal.z)?"y":"z");
    const uv=pt=>dropAxis==="x"?[pt.y,pt.depth||0]:dropAxis==="y"?[pt.x,pt.depth||0]:[pt.x,pt.y];
