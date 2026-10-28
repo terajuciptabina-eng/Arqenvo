@@ -577,10 +577,10 @@ try {
   await mobileZoomPage.locator("#threeTab").click();
   await mobileZoomPage.waitForFunction(()=>getComputedStyle(document.querySelector("#mobile3dZoom")).display!=="none");
   const mobileZoomBefore=Number((await mobileZoomPage.locator("#mobile3dZoomReadout").textContent()).replace("%",""));
-  await mobileZoomPage.locator("#mobileZoomIn").tap();
+  await mobileZoomPage.locator("#mobile3dZoomIn").tap();
   const mobileZoomAfter=Number((await mobileZoomPage.locator("#mobile3dZoomReadout").textContent()).replace("%",""));
   assert.ok(mobileZoomAfter>mobileZoomBefore,"Mobile 3D Zoom In should increase camera zoom");
-  await mobileZoomPage.locator("#mobileZoomOut").tap();
+  await mobileZoomPage.locator("#mobile3dZoomOut").tap();
   const mobileZoomRestored=Number((await mobileZoomPage.locator("#mobile3dZoomReadout").textContent()).replace("%",""));
   assert.ok(mobileZoomRestored<mobileZoomAfter,"Mobile 3D Zoom Out should decrease camera zoom");
   await mobileZoomPage.close();
