@@ -392,6 +392,42 @@ if(tool==="select"){
 }
 const marqueeDisplayRect=selectionBoxGesture?{left:Math.min(selectionBoxGesture.startScreen.x,selectionBoxGesture.currentScreen.x),top:Math.min(selectionBoxGesture.startScreen.y,selectionBoxGesture.currentScreen.y),right:Math.max(selectionBoxGesture.startScreen.x,selectionBoxGesture.currentScreen.x),bottom:Math.max(selectionBoxGesture.startScreen.y,selectionBoxGesture.currentScreen.y)}:lastMarqueeRect;if(view==="floor"&&tool==="marquee"&&(marqueeDraftPoints.length||marqueePreviewPoint)){const pts=marqueeDraftPoints.map(spos);if(marqueePreviewPoint)pts.push(spos(marqueePreviewPoint));if(pts.length){x.save();x.strokeStyle="#087e8b";x.fillStyle="rgba(8,126,139,.10)";x.lineWidth=1.5;x.setLineDash([5,3]);x.beginPath();x.moveTo(pts[0].x,pts[0].y);for(let i=1;i<pts.length;i++)x.lineTo(pts[i].x,pts[i].y);if(marqueeDraftPoints.length>=3)x.closePath();x.fill();x.stroke();x.restore()}}if(marqueeDisplayRect&&view==="floor"){x.save();x.strokeStyle="#087e8b";x.fillStyle="rgba(8,126,139,.10)";x.lineWidth=1.5;x.setLineDash([5,3]);if(!selectionBoxGesture&&lastMarqueePolygon&&lastMarqueePolygon.length>=3){const poly=lastMarqueePolygon.map(spos);x.beginPath();x.moveTo(poly[0].x,poly[0].y);for(let i=1;i<poly.length;i++)x.lineTo(poly[i].x,poly[i].y);x.closePath();x.fill();x.stroke()}else{const r=marqueeDisplayRect;x.fillRect(r.left,r.top,r.right-r.left,r.bottom-r.top);x.strokeRect(r.left,r.top,r.right-r.left,r.bottom-r.top)}x.restore()}drawWallJunctions();
 if(draft.length){const anchor=draft[draft.length-1],raw=mouse?wpos(mouse):anchor,g=Math.max(.1,+$("grid").value||.5),snapped=mouse?(shiftHeld?{x:Math.round(raw.x/g)*g,y:Math.round(raw.y/g)*g}:snapPoint(raw)):anchor,constrained=["wall","beam","dimension","gridline","slab","roof","zone"].includes(tool)?constrain(anchor,snapped,{shiftKey:shiftHeld}):snapped,endpoint=mouse?trackerEndpoint(anchor,constrained):null,previewPoints=draft.map(point=>spos(point));if(endpoint)previewPoints.push(spos(endpoint));x.save();x.setLineDash([4,4]);x.strokeStyle="#087e8b";x.lineWidth=1.25;x.beginPath();previewPoints.forEach((point,index)=>index?x.lineTo(point.x,point.y):x.moveTo(point.x,point.y));if(endpoint&&draft.length>1&&["slab","roof","zone"].includes(tool)){const first=spos(draft[0]);x.lineTo(first.x,first.y)}x.stroke();x.setLineDash([]);x.restore()}
+/* Canonical reference overlays for tools whose placement state is not stored in draft[]. */
+if(view==="floor"&&pendingOpeningPlacement){
+ const anchorPoint=pendingOpeningPlacement.anchorPoint,cursorPoint=pendingOpeningPlacement.cursor;
+ if(anchorPoint&&cursorPoint){
+  const a=spos(anchorPoint),b=spos(cursorPoint);
+  x.save();x.strokeStyle="#087e8b";x.fillStyle="#087e8b";x.lineWidth=1.4;x.setLineDash([5,4]);
+  x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();x.setLineDash([]);
+  for(const pt of [a,b]){x.beginPath();x.arc(pt.x,pt.y,3,0,Math.PI*2);x.fill()}
+  x.restore();
+ }
+}
+if(view==="floor"&&pendingGridSystem){
+ const gs=pendingGridSystem,originPoint=gs.origin,cursorPoint=mouse?wpos(mouse):originPoint;
+ if(originPoint&&cursorPoint){
+  const a=spos(originPoint),b=spos(cursorPoint),dx=cursorPoint.x-originPoint.x,dy=cursorPoint.y-originPoint.y,len=Math.hypot(dx,dy);
+  x.save();x.strokeStyle="#087e8b";x.fillStyle="#087e8b";x.lineWidth=1.25;x.setLineDash([5,4]);
+  x.beginPath();x.moveTo(a.x,a.y);x.lineTo(b.x,b.y);x.stroke();x.setLineDash([]);
+  x.beginPath();x.arc(a.x,a.y,4,0,Math.PI*2);x.fill();
+  if(len>=.1){
+   const ux=dx/len,uy=dy/len,vx=-uy,vy=ux,corner=gs.startCorner||"bottom-left",xSign=corner.endsWith("right")?-1:1,ySign=corner.startsWith("top")?-1:1;
+   const xs=[0],ys=[0];for(const value of gs.xSpacing||[])xs.push(xs[xs.length-1]+value);for(const value of gs.ySpacing||[])ys.push(ys[ys.length-1]+value);
+   const totalX=xs[xs.length-1]||0,totalY=ys[ys.length-1]||0,ext=Math.max(0,Number(gs.extension)||0);
+   const pointAtGrid=(gx,gy)=>({x:originPoint.x+ux*gx*xSign+vx*gy*ySign,y:originPoint.y+uy*gx*xSign+vy*gy*ySign});
+   x.globalAlpha=.72;x.setLineDash([4,4]);
+   for(const gx of xs){const p1=spos(pointAtGrid(gx,-ext)),p2=spos(pointAtGrid(gx,totalY+ext));x.beginPath();x.moveTo(p1.x,p1.y);x.lineTo(p2.x,p2.y);x.stroke()}
+   for(const gy of ys){const p1=spos(pointAtGrid(-ext,gy)),p2=spos(pointAtGrid(totalX+ext,gy));x.beginPath();x.moveTo(p1.x,p1.y);x.lineTo(p2.x,p2.y);x.stroke()}
+  }
+  x.restore();
+ }
+}
+if(view==="floor"&&tool==="column"&&mouse){
+ const cursorPoint=activeSnapPoint||wpos(mouse),p=spos(cursorPoint);
+ x.save();x.strokeStyle="#087e8b";x.lineWidth=1;x.setLineDash([4,4]);
+ x.beginPath();x.moveTo(p.x,0);x.lineTo(p.x,c.clientHeight);x.moveTo(0,p.y);x.lineTo(c.clientWidth,p.y);x.stroke();x.setLineDash([]);
+ x.beginPath();x.arc(p.x,p.y,4,0,Math.PI*2);x.fillStyle="#fff";x.fill();x.stroke();x.restore();
+}
 if(view==="floor"&&activeSnapPoint&&p.settings?.snap!==false){const q=spos(activeSnapPoint);x.save();x.strokeStyle="#00a6b5";x.fillStyle="rgba(0,166,181,.13)";x.lineWidth=1.5;x.beginPath();if(activeSnapPoint.kind==="intersection"){x.moveTo(q.x,q.y-7);x.lineTo(q.x+7,q.y+7);x.lineTo(q.x-7,q.y+7);x.closePath()}else if(activeSnapPoint.kind==="midpoint"){x.moveTo(q.x,q.y-6);x.lineTo(q.x+6,q.y);x.lineTo(q.x,q.y+6);x.lineTo(q.x-6,q.y);x.closePath()}else if(activeSnapPoint.kind==="center"){x.arc(q.x,q.y,5,0,Math.PI*2);x.moveTo(q.x-8,q.y);x.lineTo(q.x+8,q.y);x.moveTo(q.x,q.y-8);x.lineTo(q.x,q.y+8)}else if(activeSnapPoint.kind==="nearest"){x.arc(q.x,q.y,4,0,Math.PI*2);x.moveTo(q.x-7,q.y);x.lineTo(q.x+7,q.y)}else{x.rect(q.x-4,q.y-4,8,8)}x.fill();x.stroke();x.restore()}
 updateTrackerUI();
 }else{
