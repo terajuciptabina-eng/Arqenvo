@@ -2124,27 +2124,38 @@ $("injectParameters")?.addEventListener("click",arqenvoInjectParameters);
 (function installParameterTransferSet(){const button=$("injectParameters");if(!button||$("parameterTransferSet"))return;const select=document.createElement("select");select.id="parameterTransferSet";select.title="Parameter Transfer Set";select.setAttribute("aria-label","Parameter Transfer Set");select.style.cssText="max-width:130px;min-height:30px;margin-left:6px;padding:4px 6px;border:1px solid #b9c3ca;border-radius:3px;background:#fff;color:#26313b;font-size:11px";for(const [value,label] of [["all","Transfer: All"],["geometry","Transfer: Geometry"],["appearance","Transfer: Library / Appearance"],["placement","Transfer: Position / Orientation"]]){const option=document.createElement("option");option.value=value;option.textContent=label;select.append(option)}select.addEventListener("change",()=>{arqenvoTransferSet=select.value;if(arqenvoPickedParameters){arqenvoPickedParameters=null;arqenvoPickMode=true;arqenvenvoInjectMode=false;$("status").textContent="Transfer set changed · Pick Up a source again"}});button.insertAdjacentElement("afterend",select)})();
 // Capture before normal Select-tool handling so an Inject click edits its target directly without selecting it first.
 c.addEventListener("pointerdown",event=>{
- const wantsPick=arqenvoPickMode||(event.altKey&&!event.ctrlKey&&!event.metaKey); const wantsInject=arqenvenvoInjectMode||(event.altKey&&(event.ctrlKey||event.metaKey));
+ const injectModifier=event.altKey&&(event.ctrlKey||event.metaKey);
+ const pickModifier=event.altKey&&!event.ctrlKey&&!event.metaKey;
+ const wantsInject=injectModifier||(!pickModifier&&arqenvenvoInjectMode);
+ const wantsPick=!wantsInject&&(pickModifier||arqenvoPickMode);
  if((!wantsPick&&!wantsInject)||event.button!==0||layoutMode)return;
  if(!c.contains(event.target))return;
  const rect=c.getBoundingClientRect(),screenPoint={x:event.clientX-rect.left,y:event.clientY-rect.top};
  let target=null;
  if(view==="floor"){
   target=nearestElement(wpos(screenPoint));
+  // Match the application's normal hit-testing fallback when the pointer lands on
+  // a thin line or the visible edge of a selected element.
+  if(!target){const list=chosen();if(list.length===1)target=list[0]}
  }else if(view==="3d"){
   const openingIds=new Set(els().filter(el=>el.type==="door"||el.type==="window").map(el=>el.id));
-  const hit=hitPolys3d.filter(item=>openingIds.has(item.id)).slice().reverse().find(item=>pointInPolygon(screenPoint,item.poly))
-   ||hitPolys3d.slice().reverse().find(item=>pointInPolygon(screenPoint,item.poly));
+  const hit=hitPolys3d.slice().reverse().find(item=>pointInPolygon(screenPoint,item.poly));
   if(hit)target=els().find(el=>el.id===hit.id)||null;
+  if(!target){const hitOpening=hitPolys3d.filter(item=>openingIds.has(item.id)).slice().reverse().find(item=>pointInPolygon(screenPoint,item.poly));if(hitOpening)target=els().find(el=>el.id===hitOpening.id)||null}
  }
- if(!target){$("status").textContent=wantsPick?"Pick Up mode · click directly on a source element":"Inject mode · click a compatible "+arqenvoPickedParameters?.type+" element";event.preventDefault();event.stopImmediatePropagation();return}
+ if(!target){$("status").textContent=wantsPick?"Pick Up · hover an element and Option-click it":"Inject · hover a compatible target and Option+Command-click it";event.preventDefault();event.stopImmediatePropagation();return}
  event.preventDefault();event.stopImmediatePropagation();
- if(wantsPick){arqenvoPickMode=false;$("pickUpParameters")?.classList.remove("active");arqenvoPickParameters(target);return}
- if(target.type!==arqenvoPickedParameters?.type){$("status").textContent="Inject expects "+arqenvoPickedParameters?.type+"; clicked "+target.type;return}
- if(target.id===arqenvoPickedParameters?.sourceId){$("status").textContent="Source element · click another compatible target";return}
+ if(wantsPick){
+  arqenvoPickMode=false;
+  $("pickUpParameters")?.classList.remove("active");
+  arqenvoPickParameters(target);
+  return;
+ }
+ if(!arqenvoPickedParameters){$("status").textContent="Inject: Option-click a source element first";return}
+ if(target.type!==arqenvoPickedParameters.type){$("status").textContent="Inject expects "+arqenvoPickedParameters.type+"; clicked "+target.type;return}
+ if(target.id===arqenvoPickedParameters.sourceId){$("status").textContent="Source element · Option+Command-click another compatible target";return}
  arqenvoInjectIntoElement(target);
-},true);
-document.addEventListener("keydown",event=>{
+},true);document.addEventListener("keydown",event=>{
  if(/INPUT|TEXTAREA|SELECT/.test(event.target?.tagName||"")||event.target?.isContentEditable)return;
  if(event.key==="Escape"&&(arqenvenvoInjectMode||arqenvoPickMode)){event.preventDefault();event.stopPropagation();arqenvoPickMode=false;$("pickUpParameters")?.classList.remove("active");arqenvoCancelInjectMode();return}
  if(event.altKey&&event.key.toLowerCase()==="c"){event.preventDefault();arqenvoPickMode=true;arqenvenvoInjectMode=false;$("pickUpParameters")?.classList.add("active");$("status").textContent="Pick Up mode · click a source element"}
