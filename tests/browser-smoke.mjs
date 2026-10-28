@@ -347,9 +347,12 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("committed") || document.querySelector("#undo")?.disabled === false);
   await openingPage.locator('[data-tool="door"]').click();
   assert.equal(await openingPage.locator("#openingAlignment").inputValue(),"center","Door anchor should default to Center");
+  assert.equal(await openingPage.locator("#openingLibraryType").inputValue(),"single-leaf","Door library should default to Single Leaf");
+  await openingPage.locator("#openingLibraryType").selectOption("double-leaf");
   await modelPoint(0, wallY);
   const openingPreview=await openingPage.evaluate(()=>window.__arqenvoDebug?.getOpeningPlacement());
   assert.equal(openingPreview?.anchor,"center","Opening preview should preserve the chosen Center anchor mode");
+  assert.equal(openingPreview?.libraryType,"double-leaf","Door placement preview should preserve Double Leaf library selection");
   assert.ok(Math.abs((openingPreview?.offset||0)+ (openingPreview?.width||0)/2-4)<0.2,`Center anchor should align the opening midpoint with x=0, which is 4 m from the host wall start at x=-4; preview=${JSON.stringify(openingPreview)}, diagnostics=${JSON.stringify(await openingPage.evaluate(()=>window.__arqenvoDebug?.getSettings()))}`);
   await modelPoint(0, wallY + .8, "move");
   await modelPoint(1.7, wallY + 1.2); // Blank paper click confirms cursor-selected opening orientation.
@@ -357,6 +360,7 @@ try {
   await openingPage.waitForFunction(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return !!(els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door"))},{},{timeout:3000});
   const placedDoor=await openingPage.evaluate(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return els.find(e=>e.type==="door")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="door")});
   assert.ok(placedDoor,"Door should be stored after a paper-space confirmation click");
+  assert.equal(placedDoor.libraryType,"double-leaf","Saved Door should retain its Double Leaf library type");
   assert.ok(Math.abs((placedDoor.offset+placedDoor.width/2)-4)<0.2,`Default Center anchor should centre the opening at x=0 (4 m along a wall starting at x=-4); found distance from wall start=${placedDoor.offset+placedDoor.width/2}, offset=${placedDoor.offset}, width=${placedDoor.width}`);
   assert.equal(placedDoor.swingDirection,"inside","Cursor placed on the positive side of the wall should choose inside swing");
   // Anchor selector exposes usable edge modes and keeps Center as the default.
@@ -374,6 +378,16 @@ try {
   assert.ok(Math.abs((rightPreview?.offset||0)+ (rightPreview?.width||0)-8)<1e-6,"Right anchor at the host-wall end should end the opening at the host-wall end");
   await openingPage.keyboard.press("Escape");
   await openingPage.locator("#openingAlignment").selectOption("center");
+
+  // Window shares the same configurable library system and persists its own double-leaf geometry.
+  await openingPage.locator('[data-tool="window"]').click();
+  assert.equal(await openingPage.locator("#openingLibraryType").inputValue(),"double-leaf","Window tool should retain the selected library mode");
+  await modelPoint(2.2, wallY);
+  await modelPoint(2.2, wallY + .8, "move");
+  await modelPoint(3.2, wallY + 1.2);
+  await openingPage.waitForFunction(() => document.querySelector("#status")?.textContent.includes("Window placed"), null, { timeout: 8000 });
+  const placedWindow=await openingPage.evaluate(()=>{const els=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return els.find(e=>e.type==="window")||els.flatMap(w=>w.openings||[]).find(e=>e.type==="window")});
+  assert.equal(placedWindow?.libraryType,"double-leaf","Saved Window should retain its Double Leaf library type");
 
   await openingPage.locator('[data-tool="select"]').click();
   // Clear any selection left by placement using a genuine browser pointer sequence
