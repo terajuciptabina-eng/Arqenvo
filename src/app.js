@@ -342,7 +342,7 @@ function render3DScene(ctx,items,project3d,options={}){
   // then a true endpoint join, then the most transverse host wall. The old
   // first-nearest-only search depended on element order when distances tied.
   const neighborInfo=[...candidates].sort((a,b)=>{
-   const score=v=>v.distance+(v.isT?.0025:0)+(1-v.alignment)*.002;
+   const score=v=>v.distance+(v.isT ? 0.0025 : 0)+(1-v.alignment)*0.002;
    return score(a)-score(b);
   })[0];
   const {neighbor,neighborT,closest,isT}=neighborInfo;
