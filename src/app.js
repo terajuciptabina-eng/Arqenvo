@@ -542,45 +542,12 @@ for(const face of orderedFaces){
   const normal=wallFaceNormals.get(face);
   const edgeVec={x:b.x-a.x,y:b.y-a.y,z:(b.depth||0)-(a.depth||0)};
   const edgeLength=Math.hypot(edgeVec.x,edgeVec.y,edgeVec.z)||1;
-  const sharedCoplanarEdge=orderedFaces.some(other=>{
-   if(other===face||other.material!=="wall"||other.topFace)return false;
+  // Use the prebuilt exact-edge incidence index. Scanning every face for
+  // every edge made 3D redraw quadratic and could freeze the whole workspace.
+  const sharedCoplanarEdge=owners.some(other=>{
+   if(other===face)return false;
    const otherNormal=wallFaceNormals.get(other);
-   if(!otherNormal||!normal||Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)<.999)return false;
-   for(let j=0;j<other.poly.length;j++){
-    const c=other.poly[j],d=other.poly[(j+1)%other.poly.length];
-    const ov={x:d.x-c.x,y:d.y-c.y,z:(d.depth||0)-(c.depth||0)},ol=Math.hypot(ov.x,ov.y,ov.z)||1;
-    const crossDir={x:edgeVec.y*ov.z-edgeVec.z*ov.y,y:edgeVec.z*ov.x-edgeVec.x*ov.z,z:edgeVec.x*ov.y-edgeVec.y*ov.x};
-    if(Math.hypot(crossDir.x,crossDir.y,crossDir.z)/(edgeLength*ol)>.001)continue;
-    const rel={x:c.x-a.x,y:c.y-a.y,z:(c.depth||0)-(a.depth||0)};
-    const crossLine={x:rel.y*edgeVec.z-rel.z*edgeVec.y,y:rel.z*edgeVec.x-rel.x*edgeVec.z,z:rel.x*edgeVec.y-rel.y*edgeVec.x};
-    if(Math.hypot(crossLine.x,crossLine.y,crossLine.z)/edgeLength>.002)continue;
-    const t0=(rel.x*edgeVec.x+rel.y*edgeVec.y+rel.z*edgeVec.z)/(edgeLength*edgeLength);
-    const t1=t0+(ov.x*edgeVec.x+ov.y*edgeVec.y+ov.z*edgeVec.z)/(edgeLength*edgeLength);
-    if(Math.min(t0,t1)<=.002&&Math.max(t0,t1)>=.998)return true;
-   }
-   // A wall split can leave an edge wholly inside a larger coplanar wall face.
-   // It is not a shared edge in that case, so test containment in the face itself.
-   const midpoint={x:(a.x+b.x)/2,y:(a.y+b.y)/2,depth:((a.depth||0)+(b.depth||0))/2};
-   const origin=other.poly[0],planeDistance=Math.abs((midpoint.x-origin.x)*otherNormal.x+(midpoint.y-origin.y)*otherNormal.y+(midpoint.depth-(origin.depth||0))*otherNormal.z);
-   if(planeDistance>.75)continue;
-   const dropAxis=Math.abs(otherNormal.x)>Math.abs(otherNormal.y)?(Math.abs(otherNormal.x)>Math.abs(otherNormal.z)?"x":"z"):(Math.abs(otherNormal.y)>Math.abs(otherNormal.z)?"y":"z");
-   const uv=pt=>dropAxis==="x"?[pt.y,pt.depth||0]:dropAxis==="y"?[pt.x,pt.depth||0]:[pt.x,pt.y];
-   const pointInFace=pt=>{
-    const [px,py]=uv(pt);let inside=false;
-    for(let k=0,j=other.poly.length-1;k<other.poly.length;j=k++){
-     const [xi,yi]=uv(other.poly[k]),[xj,yj]=uv(other.poly[j]);
-     const crosses=((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/((yj-yi)||1e-12)+xi);
-     if(crosses)inside=!inside;
-    }
-    return inside;
-   };
-   const epsilon=0.75;
-   const nearBoundary=pt=>other.poly.some((p,k)=>{
-    const q=other.poly[(k+1)%other.poly.length],v={x:q.x-p.x,y:q.y-p.y,z:(q.depth||0)-(p.depth||0)},w={x:pt.x-p.x,y:pt.y-p.y,z:(pt.z??pt.depth??0)-(p.depth||0)},ll=v.x*v.x+v.y*v.y+v.z*v.z||1,t=Math.max(0,Math.min(1,(w.x*v.x+w.y*v.y+w.z*v.z)/ll)),dx=w.x-v.x*t,dy=w.y-v.y*t,dz=w.z-v.z*t;return Math.hypot(dx,dy,dz)<=epsilon;
-   });
-   const endpointA={x:a.x,y:a.y,depth:a.depth||0},endpointB={x:b.x,y:b.y,depth:b.depth||0};
-   if([endpointA,midpoint,endpointB].every(pt=>pointInFace(pt)||nearBoundary(pt)))return true;
-   return false;
+   return !!otherNormal&&!!normal&&Math.abs(normal.x*otherNormal.x+normal.y*otherNormal.y+normal.z*otherNormal.z)>.999;
   });
   if(sharedCoplanarEdge)continue;
   ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
