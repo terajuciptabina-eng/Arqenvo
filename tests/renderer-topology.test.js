@@ -28,3 +28,11 @@ test("3D edge renderer delegates complete coplanar coverage to the geometric pre
   assert.match(source, /segmentCoveredByPolygon2D\(start2,end2,other\.poly\.map\(uv\),\{tolerance:\.001\}\)/);
   assert.match(source, /wallEndNeighbors\.get\(endpointKey\)\|\|\[\]/);
 });
+
+test("3D wall top-face renderer suppresses only fully covered coplanar cap edges", () => {
+  assert.match(source, /const topFaces=orderedFaces\.filter\(face=>face\.topFace&&face\.poly\.length>=3\)/);
+  assert.match(source, /const topFaceEdgeCovered=\(face,a,b\)=>/);
+  assert.match(source, /Math\.abs\(other\.poly\[0\]\.worldZ-a\.worldZ\)>.001/);
+  assert.match(source, /if\(topFaceEdgeCovered\(face,a,b\)\)continue/);
+  assert.match(source, /face\.skipTopEdges\?\.includes\(i\)/);
+});
