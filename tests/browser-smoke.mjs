@@ -759,7 +759,7 @@ try {
     await input.fill(value);
     await input.press("Enter");
   }
-  await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return r?.pitch===25&&r?.elevation===3.4&&r?.offset===2.75&&r?.thickness===.22});
+  await roofPage.waitForFunction(()=>{const r=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof");return Number(r?.pitch)===25&&Number(r?.elevation)===3.4&&Number(r?.offset)===2.75&&Number(r?.thickness)===.22}).catch(async error=>{const diag=await roofPage.evaluate(()=>({roof:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"),inputs:[...document.querySelectorAll('#elementProperties [data-prop]')].map(e=>({prop:e.dataset.prop,value:e.value})) ,status:document.querySelector("#status")?.textContent}));throw new Error("Roof property values were not persisted; "+JSON.stringify(diag)+"; "+error.message)});
   // Verify the same offset changes the 3D roof base elevation.
   await roofPage.locator("#threeTab").click();
   const baseZ=await roofPage.evaluate(()=>{const p=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}"),roof=p.elements.find(e=>e.type==="roof");return (p.stories.find(s=>s.id===roof.storyId)?.elevation||0)+roof.elevation+roof.offset});
