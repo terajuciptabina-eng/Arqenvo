@@ -388,7 +388,11 @@ function render3DScene(ctx,items,project3d,options={}){
     den=cross(ray,otherRay);
    }
    if(Math.abs(den)<1e-7)continue;
-   const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den,hit={x:a.x+ray.x*t,y:a.y+ray.y*t};
+   const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den;
+   // A valid corner intersection must lie along the outward ray from this wall end.
+   // Intersections behind the endpoint create long, inverted miters and exposed wall caps.
+   if(!Number.isFinite(t)||t < -endpointTolerance)continue;
+   const hit={x:a.x+ray.x*t,y:a.y+ray.y*t};
    const hitDistance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
    if(!Number.isFinite(hit.x)||!Number.isFinite(hit.y)||hitDistance>Math.max(half,nhalf)*8)continue;
    const score=hitDistance+info.distance*.1+(isT?-0.001:0)+(1-Math.max(0,Math.min(1,info.alignment)))*0.0001;
