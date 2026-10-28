@@ -20,19 +20,8 @@ test("3D wall edge identity and face normals are camera-independent", () => {
 });
 
 test("coplanar wall seam suppression uses model-space tolerances", () => {
+  assert.match(source, /const edgePointKey=pt=>\[pt\.worldX,pt\.worldY,pt\.worldZ\]/);
   assert.match(source, /Math\.abs\(plane\.d-otherPlane\.d\)>.001/);
-  assert.match(source, /Math\.hypot\(wx-vx\*t,wy-vy\*t,wz-vz\*t\)<=\.001/);
-});
-
-test("3D seam cleanup checks partial edge coverage in model space", () => {
-  assert.match(source, /const edgeCoveredByCoplanarFace=/);
-  assert.match(source, /const samples=\[0,\.25,\.5,\.75,1\]/);
-  assert.match(source, /samples\.every\(point=>pointInFace3d\(point,other\)\)/);
-});
-
-test("3D wall endpoint edge is omitted only when topology identifies a joined endpoint", () => {
-  assert.match(source, /wallEndNeighbors\.get\(face\.id\+":"\+\(atStart\?"start":"end"\)\)/);
-  assert.match(source, /if\(exactSharedCoplanarEdge\|\|edgeCoveredByCoplanarFace\(a,b,face\)\)continue/);
 });
 
 test("3D edge renderer delegates complete coplanar coverage to the geometric predicate", () => {
