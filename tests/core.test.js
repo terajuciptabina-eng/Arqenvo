@@ -118,3 +118,45 @@ test("Roof persists its wall-derived boundary and parameters",()=>{
  const loaded=deserializeProject(serializeProject(p));assert.deepEqual(loaded.elements[0].boundary,boundary);assert.equal(loaded.elements[0].pitch,30);
  assert.throws(()=>createRoof([{x:0,y:0},{x:1,y:0}],{}),/boundary/);
 });
+
+
+test("normalization re-hosts an opening without stale or duplicate wall records", () => {
+ const p=createProject("Re-host opening");
+ const first=createWall({x:0,y:0},{x:4,y:0},{id:"wall-a",storyId:p.stories[0].id});
+ const second=createWall({x:0,y:2},{x:4,y:2},{id:"wall-b",storyId:p.stories[0].id});
+ const door={id:"door-a",type:"door",hostWallId:first.id,storyId:first.storyId,offset:1,width:.9,height:2.1,sill:0};
+ first.openings=[{...door},{...door}]; second.openings=[{...door}];
+ p.elements.push(first,second,{...door,hostWallId:second.id,offset:2});
+ const loaded=deserializeProject(JSON.stringify(p));
+ assert.equal(loaded.elements.find(e=>e.id==="wall-a").openings.some(o=>o.id==="door-a"),false);
+ assert.equal(loaded.elements.find(e=>e.id==="wall-b").openings.filter(o=>o.id==="door-a").length,1);
+ assert.equal(loaded.elements.filter(e=>e.id==="door-a").length,1);
+ assert.equal(loaded.elements.find(e=>e.id==="door-a").hostWallId,"wall-b");
+ assert.equal(loaded.elements.find(e=>e.id==="door-a").offset,2);
+});
+
+test("normalization binds hosted opening story to its current host wall", () => {
+ const p=createProject("Host story");
+ p.stories.push({id:"story-upper",name:"Upper Floor",elevation:3,height:3});
+ const host=createWall({x:0,y:0},{x:4,y:0},{id:"wall-upper",storyId:"story-upper"});
+ const door={id:"door-upper",type:"door",hostWallId:host.id,storyId:p.stories[0].id,offset:1,width:.9,height:2.1,sill:0};
+ host.openings=[{...door}]; p.elements.push(host,{...door});
+ const loaded=deserializeProject(JSON.stringify(p));
+ assert.equal(loaded.elements.find(e=>e.id==="door-upper").storyId,"story-upper");
+ assert.equal(validateProject(loaded).valid,true);
+});
+
+test("validation rejects hosted opening dimension/story mismatch and duplicates", () => {
+ const makeFixture=()=>{
+  const p=createProject("Invalid hosted opening");
+  const wall=createWall({x:0,y:0},{x:4,y:0},{id:"wall-host"});
+  const door={id:"door-host",type:"door",hostWallId:wall.id,storyId:wall.storyId,offset:1,width:.9,height:2.1,sill:0};
+  wall.openings=[{...door}]; p.elements.push(wall,{...door}); return p;
+ };
+ for (const change of [{offset:NaN},{offset:3.5},{width:NaN},{width:0},{height:NaN},{sill:-.1},{storyId:"other-story"}]) {
+  const p=makeFixture(); Object.assign(p.elements.find(e=>e.type==="door"),change);
+  assert.equal(validateProject(p).valid,false);
+ }
+ const p=makeFixture(); p.elements.find(e=>e.type==="wall").openings.push({...p.elements.find(e=>e.type==="door")});
+ assert.ok(validateProject(p).errors.some(error=>error.includes("duplicate hosted opening id")));
+});

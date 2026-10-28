@@ -94,3 +94,16 @@ test("roof model preserves editable pitch, eaves elevation, thickness and wall r
  assert.equal(roof.thickness,.22);
  assert.deepEqual(roof.sourceWallIds,["w1","w2","w3","w4"]);
 });
+
+
+test("hosted 3D opening rejects non-finite offsets, dimensions and invalid sill", () => {
+  const wall = { start:{x:0,y:0}, end:{x:4,y:0}, thickness:.15 };
+  const valid = { type:"door", offset:1, width:.9, height:2.1, sill:0 };
+  for (const changes of [
+    {offset:NaN},{offset:Infinity},{width:NaN},{width:Infinity},
+    {height:NaN},{height:Infinity},{sill:NaN},{sill:-.1},
+    {offset:-.01},{width:0},{height:0},{offset:3.2,width:1}
+  ]) assert.throws(() => hostedOpening3dGeometry(wall,{...valid,...changes}), /Opening must fit/);
+  assert.throws(() => hostedOpening3dGeometry({...wall,start:{x:NaN,y:0}},valid), /finite/);
+  assert.throws(() => hostedOpening3dGeometry(wall,valid,{leafThickness:0}), /thicknesses/);
+});

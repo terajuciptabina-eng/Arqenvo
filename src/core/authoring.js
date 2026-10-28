@@ -110,37 +110,39 @@ export function doorSwingGeometry(p1, p2, { hingeSide = "left", swingDirection =
 export function hostedOpening3dGeometry(wall, opening, { leafThickness = 0.035, paneThickness = 0.025 } = {}) {
   if (!wall?.start || !wall?.end || !opening) throw new TypeError("A host wall and opening are required");
   const dx = wall.end.x - wall.start.x, dy = wall.end.y - wall.start.y;
+  if (![wall.start.x, wall.start.y, wall.end.x, wall.end.y].every(Number.isFinite)) throw new TypeError("Host wall endpoints must be finite");
   const length = Math.hypot(dx, dy);
   if (length <= 1e-9) throw new RangeError("Host wall length must be positive");
-  if (!(opening.width > 0) || !(opening.height > 0) || opening.offset < 0 || opening.offset + opening.width > length + 1e-8) {
-    throw new RangeError("Opening must fit within the host wall");
+  const offset = opening.offset, width = opening.width, height = opening.height, sill = opening.sill ?? 0;
+  if (![offset,width,height,sill].every(Number.isFinite) || offset < 0 || width <= 0 || height <= 0 || sill < 0 || offset + width > length + 1e-8) {
+    throw new RangeError("Opening must fit within the host wall and have finite, positive dimensions");
+  }
+  if (!["door","window","opening"].includes(opening.type)) throw new TypeError("Hosted 3D opening must be a door, window or opening");
+  if (!Number.isFinite(leafThickness) || leafThickness <= 0 || !Number.isFinite(paneThickness) || paneThickness <= 0) {
+    throw new RangeError("Opening component thicknesses must be positive");
   }
   const ux = dx / length, uy = dy / length, nx = -uy, ny = ux;
-  const a = { x: wall.start.x + ux * opening.offset, y: wall.start.y + uy * opening.offset };
-  const b = { x: a.x + ux * opening.width, y: a.y + uy * opening.width };
+  const start = { x: wall.start.x + ux * offset, y: wall.start.y + uy * offset };
+  const finish = { x: start.x + ux * width, y: start.y + uy * width };
   let boundary;
   if (opening.type === "door") {
-    const hinge = opening.hingeSide === "right" ? b : a;
+    const hinge = opening.hingeSide === "right" ? finish : start;
     const side = opening.swingDirection === "outside" ? -1 : 1;
-    const free = { x: hinge.x + nx * side * opening.width, y: hinge.y + ny * side * opening.width };
+    const free = { x: hinge.x + nx * side * width, y: hinge.y + ny * side * width };
     const tx = free.x - hinge.x, ty = free.y - hinge.y, n = Math.hypot(tx, ty);
     const px = -ty / n * leafThickness / 2, py = tx / n * leafThickness / 2;
     boundary = [
-      { x: hinge.x + px, y: hinge.y + py },
-      { x: free.x + px, y: free.y + py },
-      { x: free.x - px, y: free.y - py },
-      { x: hinge.x - px, y: hinge.y - py },
+      { x: hinge.x + px, y: hinge.y + py }, { x: free.x + px, y: free.y + py },
+      { x: free.x - px, y: free.y - py }, { x: hinge.x - px, y: hinge.y - py },
     ];
   } else {
     const half = (wall.thickness || 0.15) / 2 + paneThickness / 2;
     boundary = [
-      { x: a.x + nx * half, y: a.y + ny * half },
-      { x: b.x + nx * half, y: b.y + ny * half },
-      { x: b.x - nx * half, y: b.y - ny * half },
-      { x: a.x - nx * half, y: a.y - ny * half },
+      { x: start.x + nx * half, y: start.y + ny * half }, { x: finish.x + nx * half, y: finish.y + ny * half },
+      { x: finish.x - nx * half, y: finish.y - ny * half }, { x: start.x - nx * half, y: start.y - ny * half },
     ];
   }
-  return { type: opening.type, boundary, zOffset: opening.sill || 0, height: opening.height, thickness: opening.type === "door" ? leafThickness : paneThickness };
+  return { type: opening.type, boundary, zOffset: sill, height, thickness: opening.type === "door" ? leafThickness : paneThickness };
 }
 
 /**

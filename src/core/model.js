@@ -149,7 +149,10 @@ export function validateProject(data) {
     }
     if (el.type === "wall") {
       if (!positive(el.height) || !positive(el.thickness)) errors.push(`Wall ${el.id} has invalid height or thickness`);
+      const openingIds = new Set();
       for (const opening of el.openings ?? []) {
+        if (opening?.id && openingIds.has(opening.id)) errors.push(`Wall ${el.id} has duplicate hosted opening id: ${opening.id}`);
+        if (opening?.id) openingIds.add(opening.id);
         if (!["door","window","opening"].includes(opening.type) || !Number.isFinite(opening.offset) || !positive(opening.width) || !positive(opening.height) || !Number.isFinite(opening.sill ?? 0)) errors.push(`Wall ${el.id} has invalid opening data`);
         else if (opening.offset < 0 || opening.offset + opening.width > wallLength(el) + 1e-6 || (opening.sill ?? 0) < 0 || (opening.sill ?? 0) + opening.height > el.height + 1e-6) errors.push(`Opening ${opening.id ?? ""} exceeds wall ${el.id}`);
       }
@@ -161,7 +164,18 @@ export function validateProject(data) {
     if (["door","window"].includes(el.type)) {
       const host = (data?.elements ?? []).find(candidate => candidate.id === el.hostWallId && candidate.type === "wall");
       if (!host) errors.push(`Opening element ${el.id} has no host wall`);
-      else if (!(host.openings ?? []).some(opening => opening.id === el.id)) errors.push(`Opening element ${el.id} is missing from its host wall`);
+      else {
+        if (!(host.openings ?? []).some(opening => opening.id === el.id)) errors.push(`Opening element ${el.id} is missing from its host wall`);
+        if (el.storyId && host.storyId && el.storyId !== host.storyId) errors.push(`Opening element ${el.id} must belong to its host wall story`);
+        const sill = el.sill ?? 0;
+        if (![el.offset,el.width,el.height,sill].every(Number.isFinite) || el.offset < 0 || !(el.width > 0) || !(el.height > 0) || sill < 0 || el.offset + el.width > wallLength(host) + 1e-6 || sill + el.height > host.height + 1e-6) {
+          errors.push(`Opening element ${el.id} exceeds or has invalid dimensions for host wall ${host.id}`);
+        }
+        const hostOpening = (host.openings ?? []).find(opening => opening.id === el.id);
+        if (hostOpening && ["type","offset","width","height","sill"].some(key => (key === "sill" ? (el[key] ?? 0) : el[key]) !== (key === "sill" ? (hostOpening[key] ?? 0) : hostOpening[key]))) {
+          errors.push(`Opening element ${el.id} differs from its host wall opening data`);
+        }
+      }
     }
   }
   return { valid: errors.length === 0, errors };
@@ -170,22 +184,43 @@ export function normalizeHostedOpenings(project) {
   const elements = project.elements;
   const known = new Map(elements.filter(el => el.type === "door" || el.type === "window").map(el => [el.id, el]));
   const walls = elements.filter(el => el.type === "wall");
-  // The selectable opening element is the editable source of truth. Reconcile it
-  // into the host wall's opening list before rendering, validation, or serialization.
+  // Top-level opening elements are authoritative. Keep one nested record on the
+  // current host and remove old host copies to prevent duplicate void/frame geometry.
   for (const openingElement of [...known.values()]) {
     const wall = walls.find(candidate => candidate.id === openingElement.hostWallId);
     if (!wall) continue;
-    if (!Array.isArray(wall.openings)) wall.openings = [];
-    const index = wall.openings.findIndex(opening => opening?.id === openingElement.id);
-    openingElement.libraryType ??= "single-leaf";
+    for (const candidate of walls) {
+      if (!Array.isArray(candidate.openings)) candidate.openings = [];
+      if (candidate !== wall) candidate.openings = candidate.openings.filter(opening => opening?.id !== openingElement.id);
+    }
+    const previous = wall.openings.find(opening => opening?.id === openingElement.id) || {};
     const openingData = Object.fromEntries(
       ["id", "type", "offset", "width", "height", "sill", "hingeSide", "swingDirection", "libraryType", "revealSide", "alignment"]
         .filter(key => openingElement[key] !== undefined)
         .map(key => [key, openingElement[key]])
     );
-    if (index >= 0) wall.openings[index] = { ...wall.openings[index], ...openingData };
-    else wall.openings.push({ ...openingData });
-    openingElement.storyId ??= wall.storyId ?? project.stories?.[0]?.id;
+    const reconciled = { ...previous, ...openingData };
+    let retained = false;
+    wall.openings = wall.openings.filter(opening => {
+      if (opening?.id !== openingElement.id) return true;
+      if (retained) return false;
+      retained = true;
+      return true;
+    });
+    if (retained) wall.openings[wall.openings.findIndex(opening => opening?.id === openingElement.id)] = reconciled;
+    else wall.openings.push(reconciled);
+    openingElement.libraryType ??= "single-leaf";
+    openingElement.storyId = wall.storyId ?? project.stories?.[0]?.id;
+  }
+  // Deduplicate legacy wall-opening records before exposing them as selectable elements.
+  for (const wall of walls) {
+    const seenIds = new Set();
+    wall.openings = (wall.openings ?? []).filter(opening => {
+      if (!opening?.id) return true;
+      if (seenIds.has(opening.id)) return false;
+      seenIds.add(opening.id);
+      return true;
+    });
   }
   // Legacy projects may contain hosted openings only on the wall. Expose those
   // as selectable elements without creating duplicates.
