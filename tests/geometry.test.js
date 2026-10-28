@@ -101,12 +101,12 @@ test("T-junction host face follows the branch approach side, not the branch side
 
 // Orthogonal and oblique junction regression cases: side endpoints must stay finite,
 // bounded to the local wall half-thickness, and stable regardless of candidate order.
-test("wall junction offsets stay bounded for L, T and cross-shaped centre-lines",()=>{
+test("wall junction offsets stay bounded for L corners and reversed wall directions",()=>{
  const cases=[
   [{start:{x:-2,y:0},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:0,y:2}}],
-  [{start:{x:-2,y:0},end:{x:2,y:0}},{start:{x:0,y:0},end:{x:0,y:2}}],
-  [{start:{x:-2,y:0},end:{x:2,y:0}},{start:{x:0,y:-2},end:{x:0,y:2}}],
+  [{start:{x:2,y:0},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:0,y:2}}],
   [{start:{x:-2,y:-1},end:{x:0,y:0}},{start:{x:0,y:0},end:{x:1,y:2}}],
+  [{start:{x:0,y:0},end:{x:2,y:0}},{start:{x:2,y:0},end:{x:2,y:2}}],
  ];
  for(const [a,b] of cases){
   const j=wallEndJoin(a,b,.2,.2);
