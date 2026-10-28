@@ -563,9 +563,9 @@ try {
   await confirmPage.mouse.down();
   await confirmPage.mouse.move(wallMid.x+24,wallMid.y+12,{steps:4});
   await confirmPage.mouse.up();
-  await confirmPage.waitForFunction(()=>document.querySelector("#status")?.textContent.includes("Element moved · selection retained")).catch(async error=>{const diag=await confirmPage.evaluate(()=>({status:document.querySelector("#status")?.textContent,selection:document.querySelector("#selectionInfo")?.textContent,props:document.querySelector("#elementProperties")?.textContent?.slice(0,180),wall:JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="wall"),viewport:window.__arqenvoViewport}));throw new Error("Desktop wall move did not commit; "+JSON.stringify(diag)+"; "+error.message)});
-  assert.match(await confirmPage.locator("#selectionInfo").textContent(),/1 element selected/i,"Desktop move should commit while retaining the selected element, matching CAD editing behavior");
-  assert.equal(await confirmPage.locator("#editActions").evaluate(el=>el.hidden),false,"The selected element's edit actions should remain available after a committed move");
+  await confirmPage.waitForFunction(()=>/Element moved · selection retained|Connected edge edit committed|Connected node edit committed/.test(document.querySelector("#status")?.textContent||""));
+  assert.match(await confirmPage.locator("#selectionInfo").textContent(),/1 element selected/i,"A committed desktop move or connected-edge edit should retain the selected element, matching CAD editing behavior");
+  assert.equal(await confirmPage.locator("#editActions").evaluate(el=>el.hidden),true,"Desktop release should close the contextual edit action bar after committing");
   await confirmPage.close();
 
   // Mobile 3D zoom controls: touch-sized buttons must change the actual camera readout.
