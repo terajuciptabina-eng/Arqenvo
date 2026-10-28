@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate } from "../src/core/geometry.js";
+import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide } from "../src/core/geometry.js";
 
 test("line intersection returns parameters and point",()=>{
  const hit=lineIntersection({x:0,y:0},{x:1,y:0},{x:2,y:-1},{x:0,y:1});
@@ -92,7 +92,6 @@ test("wall junction candidate resolution is deterministic and geometry-ranked",(
 
 
 test("T-junction host face follows the branch approach side, not the branch side normal",()=>{
- const {wallHostFaceSide}=await import("../src/core/geometry.js");
  assert.equal(wallHostFaceSide({x:0,y:-1},{x:0,y:1}),-1,"branch below a horizontal host meets its lower face");
  assert.equal(wallHostFaceSide({x:0,y:1},{x:0,y:1}),1,"branch above a horizontal host meets its upper face");
  assert.equal(wallHostFaceSide({x:-1,y:0},{x:0,y:1}),1,"parallel dot fallback is deterministic");
