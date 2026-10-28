@@ -476,7 +476,7 @@ try {
   await modelPoint(updatedDoorArcPoint.x,updatedDoorArcPoint.y);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:3000});
   await modelPoint((updatedDoorGeometry.a.x+updatedDoorGeometry.b.x)/2,(updatedDoorGeometry.a.y+updatedDoorGeometry.b.y)/2);
-  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:3000});
+  await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"), null, {timeout:3000}).catch(async error=>{const diag=await openingPage.evaluate(()=>({hitDebug:window.__arqenvoDebug?.getLastFloorSelectionDebug?.(),selection:document.querySelector("#selectionInfo")?.textContent,status:document.querySelector("#status")?.textContent,properties:document.querySelector("#elementProperties")?.textContent?.slice(0,220),tool:document.querySelector("#toolName")?.value}));throw new Error("Click inside hosted opening did not select Door; "+JSON.stringify(diag)+"; "+error.message)});
   const doorOffsetBeforeMove = Number(await openingPage.locator('[data-prop="offset"]').inputValue());
   const dragScreenPoint = async (wx, wy) => openingPage.evaluate(({wx,wy}) => { const canvas=document.querySelector("#canvas"),rect=canvas.getBoundingClientRect(),scale=Number(document.querySelector("#scaleSelect")?.value||36); return {x:rect.left+canvas.clientWidth/2+wx*scale,y:rect.top+canvas.clientHeight/2-wy*scale}; }, {wx,wy});
   const doorDragStart = await dragScreenPoint(-3.434, wallY + 0.566);
