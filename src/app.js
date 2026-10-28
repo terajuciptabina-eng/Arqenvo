@@ -501,7 +501,7 @@ for(const [low,high] of solids){
  // becomes the conspicuous vertical strip at the wall intersection.
  if(startCut){skipSides.push(3);skipTopEdges.push(3)}
  if(endCut){skipSides.push(1);skipTopEdges.push(1)}
- prism(e,poly,base+low,high-low,undefined,{skipSides,skipTopEdges,wallSegment:{lo,hi,zLow:low,zHigh:high,openings:openings.map(o=>({offset:Number(o.offset)||0,width:Number(o.width)||0,sill:Number(o.sill)||0,height:Number(o.height)||0}))}});
+ prism(e,poly,base+low,high-low,undefined,{skipSides,skipTopEdges,wallSegment:{lo,hi,length:len,zLow:low,zHigh:high,openings:openings.map(o=>({offset:Number(o.offset)||0,width:Number(o.width)||0,sill:Number(o.sill)||0,height:Number(o.height)||0}))}});
 } }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
 else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
 else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
@@ -566,19 +566,17 @@ for(const face of orderedFaces){
  }
  for(let i=0;i<face.poly.length;i++){
   const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];
-  // A wall face is split into solid bands around a hosted opening. Its
-  // vertical boundary edges above the lintel and below the sill are renderer
-  // seams, not physical edges; retain only the actual opening reveal.
+  // The wall skin is emitted as separate prisms for openings and junction
+  // cuts. Vertical edges at those internal stations are tessellation seams,
+  // not physical edges; opening frames/reveals and resolved junction geometry
+  // provide the real boundaries. Keep strokes only at actual source-wall ends.
   const ws=face.wallSegment,side=face.wallSideIndex;
   if(ws&&(side===0||side===2)&&(i===1||i===3)){
    const distance=side===0?(i===1?ws.hi:ws.lo):(i===1?ws.lo:ws.hi);
-   // The hosted opening is rendered as its own frame/reveal geometry. Do not
-   // stroke the wall's split-band boundary at the same station: it creates a
-   // false full-height seam beside windows and doors in the 3D elevation.
-   const atOpeningBoundary=ws.openings.some(o=>
-    Math.abs(distance-o.offset)<1e-4||Math.abs(distance-(o.offset+o.width))<1e-4
-   );
-   if(atOpeningBoundary)continue;
+   const endpointTolerance=1e-4;
+   const isPhysicalWallEnd=Math.abs(distance)<endpointTolerance||
+    Math.abs(distance-ws.length)<endpointTolerance;
+   if(!isPhysicalWallEnd)continue;
   }
   const owners=wallSideEdges.get(edgeKey(a,b))||[];
   const normal=wallFaceNormals.get(face);
