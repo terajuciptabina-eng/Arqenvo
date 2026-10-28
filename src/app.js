@@ -484,6 +484,14 @@ const cornerAt=(distance,side)=>{
 const crossingResolved=(distance)=>[-1,1].every(side=>wallCrossingResolvedCorners.has(crossingCornerKey(distance,side)));
 for(const [low,high] of solids){
  const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)],skipSides=[],skipTopEdges=[];
+ // Opening-boundary end caps are internal wall faces, not exterior surfaces.
+ // Suppress their vertical caps to avoid persistent full-height stripes.
+ const openingBoundaryAt=distance=>openings.some(o=>
+  Math.abs((Number(o.offset)||0)-distance)<1e-5||
+  Math.abs((Number(o.offset)||0)+(Number(o.width)||0)-distance)<1e-5
+ );
+ if(openingBoundaryAt(lo)){skipSides.push(3);skipTopEdges.push(3)}
+ if(openingBoundaryAt(hi)){skipSides.push(1);skipTopEdges.push(1)}
  if(lo<=endpointTolerance&&wallEndResolvedCorners.has(e.id+":start:1")&&wallEndResolvedCorners.has(e.id+":start:-1")){skipSides.push(3);skipTopEdges.push(3)}
  if(hi>=len-endpointTolerance&&wallEndResolvedCorners.has(e.id+":end:1")&&wallEndResolvedCorners.has(e.id+":end:-1")){skipSides.push(1);skipTopEdges.push(1)}
  const startCut=junctionCuts.find(cut=>Math.abs(lo-cut.end)<1e-5);
