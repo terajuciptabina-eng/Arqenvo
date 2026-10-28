@@ -2108,7 +2108,7 @@ $("injectParameters")?.addEventListener("click",arqenvoInjectParameters);
 // Capture before normal Select-tool handling so an Inject click edits its target directly without selecting it first.
 c.addEventListener("pointerdown",event=>{
  if(!arqenvenvoInjectMode||event.button!==0||layoutMode)return;
- if(event.target!==c)return;
+ if(!c.contains(event.target))return;
  const rect=c.getBoundingClientRect(),screenPoint={x:event.clientX-rect.left,y:event.clientY-rect.top};
  let target=null;
  if(view==="floor"){
