@@ -386,7 +386,7 @@ function render3DScene(ctx,items,project3d,options={}){
    }
    den=cross(outwardRay,otherRay);if(Math.abs(den)<1e-7)continue;
    const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den;
-   if(!Number.isFinite(t)||t < -endpointTolerance)continue;
+   if(!Number.isFinite(t)||(isT&&t < -endpointTolerance))continue;
    const hit={x:a.x+outwardRay.x*t,y:a.y+outwardRay.y*t},hitDistance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
    if(!Number.isFinite(hit.x)||!Number.isFinite(hit.y)||hitDistance>Math.max(half,nhalf)*8)continue;
    const score=hitDistance+info.distance*.1+(isT?-0.001:0)+(1-Math.max(0,Math.min(1,info.alignment)))*0.0001;
