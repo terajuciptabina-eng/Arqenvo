@@ -370,37 +370,39 @@ function render3DScene(ctx,items,project3d,options={}){
   if(!candidates?.length)return fallback;
   const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide},cross=(u,v)=>u.x*v.y-u.y*v.x;
   let best=null;
-  // Solve wall-end corners along the outward ray; inward intersections create diagonal wall faces.
+  // Resolve each wall side using forward-facing offset-line intersections.
+  // Choosing a neighbor side by nearest-point distance alone is ambiguous at
+  // 90-degree corners: both faces are equally distant and can create spikes.
   for(const info of candidates){
    const {neighbor,neighborT,closest,isT}=info;
    const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nhalf=(neighbor.thickness||.15)/2;
-   let b,otherRay,den;
+   const offsetOptions=[];
    if(isT){
     const nn={x:-nuy,y:nux},hostSide=wallHostFaceSide(inwardRay,nn);
-    b={x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide};otherRay={x:nux,y:nuy};
+    offsetOptions.push({b:{x:closest.x+nn.x*nhalf*hostSide,y:closest.y+nn.y*nhalf*hostSide},otherRay:{x:nux,y:nuy},requireForwardOther:false});
    }else{
     const neighborAtStart=neighborT<.5,neighborInwardRay={x:neighborAtStart?nux:-nux,y:neighborAtStart?nuy:-nuy};
     const neighborNormal={x:-neighborInwardRay.y,y:neighborInwardRay.x};
-    // The correct face on a corner is the neighbor offset closest to this
-    // wall's offset point. Reusing localSide fails when the two wall directions
-    // differ, causing protruding caps at L junctions.
-    const plus={x:joint.x+neighborNormal.x*nhalf,y:joint.y+neighborNormal.y*nhalf};
-    const minus={x:joint.x-neighborNormal.x*nhalf,y:joint.y-neighborNormal.y*nhalf};
-    const dPlus=Math.hypot(a.x-plus.x,a.y-plus.y),dMinus=Math.hypot(a.x-minus.x,a.y-minus.y);
-    b=dPlus<=dMinus?plus:minus;
-    otherRay={x:-neighborInwardRay.x,y:-neighborInwardRay.y};
+    const ray={x:-neighborInwardRay.x,y:-neighborInwardRay.y};
+    for(const sign of [-1,1]){
+     offsetOptions.push({b:{x:joint.x+neighborNormal.x*nhalf*sign,y:joint.y+neighborNormal.y*nhalf*sign},otherRay:ray,requireForwardOther:true});
+    }
    }
-   den=cross(outwardRay,otherRay);if(Math.abs(den)<1e-7)continue;
-   const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den;
-   if(!Number.isFinite(t)||(isT&&t < -endpointTolerance))continue;
-   const hit={x:a.x+outwardRay.x*t,y:a.y+outwardRay.y*t},hitDistance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
-   if(!Number.isFinite(hit.x)||!Number.isFinite(hit.y)||hitDistance>Math.max(half,nhalf)*8)continue;
-   const score=hitDistance+info.distance*.1+(isT?-0.001:0)+(1-Math.max(0,Math.min(1,info.alignment)))*0.0001;
-   if(!best||score<best.score)best={hit,score};
+   for(const option of offsetOptions){
+    const {b,otherRay,requireForwardOther}=option,den=cross(outwardRay,otherRay);
+    if(Math.abs(den)<1e-7)continue;
+    const delta={x:b.x-a.x,y:b.y-a.y},t=cross(delta,otherRay)/den,s=cross(delta,outwardRay)/den;
+    if(!Number.isFinite(t)||!Number.isFinite(s)||t < -endpointTolerance||(requireForwardOther&&s < -endpointTolerance))continue;
+    const hit={x:a.x+outwardRay.x*t,y:a.y+outwardRay.y*t},hitDistance=Math.hypot(hit.x-joint.x,hit.y-joint.y);
+    if(!Number.isFinite(hit.x)||!Number.isFinite(hit.y)||hitDistance>Math.max(half,nhalf)*8)continue;
+    const score=hitDistance+Math.max(0,t)*.001+info.distance*.1+(isT?-.001:0)+(1-Math.max(0,Math.min(1,info.alignment)))*.0001;
+    if(!best||score<best.score)best={hit,score};
+   }
   }
   if(best){wallEndResolvedCorners.add(wall.id+":"+(atStart?"start":"end")+":"+side);return best.hit}
   return fallback;
  };
+
 const materialColors={wall:"#d8e0e4",door:"#b88760",glass:"rgba(123,198,214,.46)",frame:"#5f737d",handle:"#aeb8bd",slab:"#c9d4d9",concrete:"#b9c6cd",roof:"#a97b5b"};
 const shadeHex=(hex,amount)=>{const value=parseInt(hex.slice(1),16),r=value>>16,g=(value>>8)&255,b=value&255,adjust=c=>Math.max(0,Math.min(255,Math.round(c+(amount>=0?(255-c)*amount:c*amount))));return "#"+[adjust(r),adjust(g),adjust(b)].map(c=>c.toString(16).padStart(2,"0")).join("")};
 const prism=(e,footprint,z0,height,material,geometryOptions={})=>{if(!Array.isArray(footprint)||footprint.length<3||!(height>0))return;const base=footprint.map(pt=>project3d(pt,z0)),top=footprint.map(pt=>project3d(pt,z0+height)),chosenElement=(!!options.interactive&&selected.has(e.id)),surface=material||({wall:"wall",door:"door",window:"glass",slab:"slab",column:"concrete",beam:"concrete",roof:"roof"}[e.type]||"wall");
