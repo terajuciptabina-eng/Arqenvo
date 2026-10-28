@@ -449,7 +449,34 @@ if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hyp
 else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
 else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
 prism(e,footprint,z0,height)
-}for(const face of faces3d.sort((a,b)=>a.depth-b.depth)){const base=materialColors[face.material]||materialColors.wall;ctx.fillStyle=face.selected?(face.topFace?"#bce3e6":"#9acbd0"):(base.startsWith("#")?shadeHex(base,face.shade||0):base);ctx.strokeStyle=face.selected?"#087e8b":face.material==="glass"?"#5896a5":face.material==="door"?"#876044":"#71808a";ctx.lineWidth=face.selected?1.6:face.material==="glass"?.7:.8;ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();ctx.stroke()}hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));
+}
+const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
+const wallSideEdges=new Map();
+const edgePointKey=pt=>[pt.x,pt.y,pt.depth].map(v=>Number(v).toFixed(3)).join(",");
+const edgeKey=(a,b)=>{const ka=edgePointKey(a),kb=edgePointKey(b);return ka<kb?ka+"|"+kb:kb+"|"+ka};
+for(const face of orderedFaces){
+ if(face.material!=="wall"||face.topFace)continue;
+ for(let i=0;i<face.poly.length;i++){
+  const key=edgeKey(face.poly[i],face.poly[(i+1)%face.poly.length]);
+  if(!wallSideEdges.has(key))wallSideEdges.set(key,new Set());
+  wallSideEdges.get(key).add(face.id);
+ }
+}
+for(const face of orderedFaces){
+ const base=materialColors[face.material]||materialColors.wall;
+ ctx.fillStyle=face.selected?(face.topFace?"#bce3e6":"#9acbd0"):(base.startsWith("#")?shadeHex(base,face.shade||0):base);
+ ctx.strokeStyle=face.selected?"#087e8b":face.material==="glass"?"#5896a5":face.material==="door"?"#876044":"#71808a";
+ ctx.lineWidth=face.selected?1.6:face.material==="glass"?.7:.8;
+ ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
+ ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();
+ if(face.material!=="wall"||face.topFace||face.selected){ctx.stroke();continue}
+ for(let i=0;i<face.poly.length;i++){
+  const a=face.poly[i],b=face.poly[(i+1)%face.poly.length],owners=wallSideEdges.get(edgeKey(a,b));
+  if(owners&&owners.size>1&&owners.has(face.id))continue;
+  ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+ }
+}
+hitPolys3d=faces3d.map(({id,poly,depth})=>({id,poly,depth}));
 }
 function renderFloorPlanElements(ctx,items,pointAt,scaleFactor,options={}){
 for(const e of items){const isSel=!!options.interactive&&selected.has(e.id),isHover=!!options.interactive&&hoveredElementId===e.id&&!isSel;ctx.strokeStyle=isSel?"#087e8b":isHover?"#d97706":e.type==="room"?"#6aa5a8":"#4b5660";ctx.fillStyle=e.type==="room"?"rgba(217,240,242,.28)":"#e9eef0";ctx.lineWidth=isSel?2:isHover?1.8:1;
