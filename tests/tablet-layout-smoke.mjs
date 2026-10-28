@@ -37,8 +37,10 @@ try{
   const header=document.querySelector("#toolbox .toolbox-title");
   const emit=(target,type,px,py)=>target.dispatchEvent(new PointerEvent(type,{bubbles:true,cancelable:true,pointerId:77,pointerType:"mouse",button:0,buttons:type==="pointerup"?0:1,clientX:px,clientY:py}));
   emit(header,"pointerdown",x,y);
-  emit(document,"pointermove",x+130,y+100);
-  emit(document,"pointerup",x+130,y+100);
+  // Move beyond the resized dock track and its hit tolerance so this
+  // scenario unambiguously tests floating rather than dropping back to dock.
+  emit(document,"pointermove",x+300,y+100);
+  emit(document,"pointerup",x+300,y+100);
  },{x:toolboxStart.x+Math.min(10,toolboxStart.width/2),y:toolboxStart.y+toolboxStart.height/2});
  await tablet.waitForFunction(()=>document.querySelector("#toolbox")?.classList.contains("arq-palette-floating"),null,{timeout:3000});
  const toolboxFloating=await tablet.evaluate(()=>{const e=document.querySelector("#toolbox"),r=e.getBoundingClientRect();return{left:r.left,top:r.top,width:r.width,mode:JSON.parse(localStorage.getItem("arqenvo-palette-toolbox")||"{}").mode,expanded:document.querySelector(".work").classList.contains("toolbox-expanded"),title:getComputedStyle(e.querySelector(".toolbox-title")).visibility}});
