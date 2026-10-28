@@ -558,6 +558,28 @@ for(const face of orderedFaces){
     const t1=t0+(ov.x*edgeVec.x+ov.y*edgeVec.y+ov.z*edgeVec.z)/(edgeLength*edgeLength);
     if(Math.min(t0,t1)<=.002&&Math.max(t0,t1)>=.998)return true;
    }
+   // A wall split can leave an edge wholly inside a larger coplanar wall face.
+   // It is not a shared edge in that case, so test containment in the face itself.
+   const midpoint={x:(a.x+b.x)/2,y:(a.y+b.y)/2,z:((a.depth||0)+(b.depth||0))/2};
+   const origin=other.poly[0],planeDistance=Math.abs((midpoint.x-origin.x)*otherNormal.x+(midpoint.y-origin.y)*otherNormal.y+(midpoint.z-(origin.depth||0))*otherNormal.z);
+   if(planeDistance>.75)continue;
+   const dropAxis=Math.abs(otherNormal.x)>Math.abs(otherNormal.y)?(Math.abs(otherNormal.x)>Math.abs(otherNormal.z)?"x":"z"):(Math.abs(otherNormal.y)>Math.abs(otherNormal.z)?"y":"z");
+   const uv=pt=>dropAxis==="x"?[pt.y,pt.depth||0]:dropAxis==="y"?[pt.x,pt.depth||0]:[pt.x,pt.y];
+   const pointInFace=pt=>{
+    const [px,py]=uv(pt);let inside=false;
+    for(let k=0,j=other.poly.length-1;k<other.poly.length;j=k++){
+     const [xi,yi]=uv(other.poly[k]),[xj,yj]=uv(other.poly[j]);
+     const crosses=((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/((yj-yi)||1e-12)+xi);
+     if(crosses)inside=!inside;
+    }
+    return inside;
+   };
+   const epsilon=0.75;
+   const nearBoundary=pt=>other.poly.some((p,k)=>{
+    const q=other.poly[(k+1)%other.poly.length],v={x:q.x-p.x,y:q.y-p.y,z:(q.depth||0)-(p.depth||0)},w={x:pt.x-p.x,y:pt.y-p.y,z:(pt.z??pt.depth??0)-(p.depth||0)},ll=v.x*v.x+v.y*v.y+v.z*v.z||1,t=Math.max(0,Math.min(1,(w.x*v.x+w.y*v.y+w.z*v.z)/ll)),dx=w.x-v.x*t,dy=w.y-v.y*t,dz=w.z-v.z*t;return Math.hypot(dx,dy,dz)<=epsilon;
+   });
+   const endpointA={x:a.x,y:a.y,depth:a.depth||0},endpointB={x:b.x,y:b.y,depth:b.depth||0};
+   if([endpointA,midpoint,endpointB].every(pt=>pointInFace(pt)||nearBoundary(pt)))return true;
    return false;
   });
   if(sharedCoplanarEdge)continue;
