@@ -572,9 +572,11 @@ for(const face of orderedFaces){
   const ws=face.wallSegment,side=face.wallSideIndex;
   if(ws&&(side===0||side===2)&&(i===1||i===3)){
    const distance=side===0?(i===1?ws.hi:ws.lo):(i===1?ws.lo:ws.hi);
+   // The hosted opening is rendered as its own frame/reveal geometry. Do not
+   // stroke the wall's split-band boundary at the same station: it creates a
+   // false full-height seam beside windows and doors in the 3D elevation.
    const atOpeningBoundary=ws.openings.some(o=>
-    (Math.abs(distance-o.offset)<1e-5||Math.abs(distance-(o.offset+o.width))<1e-5)&&
-    (ws.zHigh<=o.sill+1e-5||ws.zLow>=o.sill+o.height-1e-5)
+    Math.abs(distance-o.offset)<1e-4||Math.abs(distance-(o.offset+o.width))<1e-4
    );
    if(atOpeningBoundary)continue;
   }
