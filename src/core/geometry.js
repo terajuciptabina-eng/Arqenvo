@@ -385,3 +385,84 @@ export function wallCrossingCut(wallA, wallB, { tolerance = 0.025, minSineAngle 
     sineAngle,
   };
 }
+
+/**
+ * Returns true only when the complete segment is contained by a simple
+ * polygon, including its boundary. Intersections partition the segment into
+ * intervals, so a small uncovered remainder cannot be hidden by sparse samples.
+ */
+export function segmentCoveredByPolygon2D(start, end, polygon, { tolerance = 1e-8 } = {}) {
+  const finitePoint = point => point && Number.isFinite(point.x) && Number.isFinite(point.y);
+  if (!finitePoint(start) || !finitePoint(end) || !Array.isArray(polygon) ||
+      polygon.length < 3 || !polygon.every(finitePoint)) {
+    throw new TypeError("Segment coverage needs finite endpoints and a polygon");
+  }
+  if (!Number.isFinite(tolerance) || tolerance < 0) {
+    throw new RangeError("Segment coverage tolerance must be non-negative");
+  }
+  const cross = (a, b) => a.x * b.y - a.y * b.x;
+  const dot = (a, b) => a.x * b.x + a.y * b.y;
+  const sub = (a, b) => ({ x: a.x - b.x, y: a.y - b.y });
+  const direction = sub(end, start);
+  const length = Math.hypot(direction.x, direction.y);
+  const distanceToSegment = (point, a, b) => {
+    const ab = sub(b, a), ap = sub(point, a), l2 = dot(ab, ab);
+    if (l2 <= tolerance * tolerance) return Math.hypot(ap.x, ap.y);
+    const t = Math.max(0, Math.min(1, dot(ap, ab) / l2));
+    return Math.hypot(point.x - (a.x + ab.x * t), point.y - (a.y + ab.y * t));
+  };
+  const pointCovered = point => {
+    if (polygon.some((vertex, i) => distanceToSegment(point, vertex, polygon[(i + 1) % polygon.length]) <= tolerance)) return true;
+    let inside = false;
+    for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+      const a = polygon[j], b = polygon[i];
+      if ((a.y > point.y) !== (b.y > point.y) &&
+          point.x < (b.x - a.x) * (point.y - a.y) / ((b.y - a.y) || 1e-12) + a.x) inside = !inside;
+    }
+    return inside;
+  };
+  if (length <= tolerance) return pointCovered(start);
+
+  // Work in the dimensionless parameter t where P(t) = start + t * direction.
+  const parameters = [0, 1];
+  const parameterTolerance = tolerance / length;
+  for (let i = 0; i < polygon.length; i++) {
+    const a = polygon[i], b = polygon[(i + 1) % polygon.length];
+    const edge = sub(b, a), offset = sub(a, start);
+    const denominator = cross(direction, edge);
+    if (Math.abs(denominator) > tolerance * Math.max(1, length, Math.hypot(edge.x, edge.y))) {
+      const t = cross(offset, edge) / denominator;
+      const u = cross(offset, direction) / denominator;
+      const edgeLength = Math.hypot(edge.x, edge.y);
+      const edgeParameterTolerance = edgeLength > 0 ? tolerance / edgeLength : 0;
+      if (t >= -parameterTolerance && t <= 1 + parameterTolerance &&
+          u >= -edgeParameterTolerance && u <= 1 + edgeParameterTolerance) {
+        parameters.push(Math.max(0, Math.min(1, t)));
+      }
+      continue;
+    }
+    // Collinear polygon edges can begin/end covering intervals without a
+    // transverse intersection; include their projected endpoints as splits.
+    if (Math.abs(cross(offset, direction)) > tolerance * length) continue;
+    const l2 = length * length;
+    for (const vertex of [a, b]) {
+      const rel = sub(vertex, start);
+      const t = dot(rel, direction) / l2;
+      if (t >= -parameterTolerance && t <= 1 + parameterTolerance) {
+        const clamped = Math.max(0, Math.min(1, t));
+        const projected = { x: start.x + direction.x * clamped, y: start.y + direction.y * clamped };
+        if (Math.hypot(projected.x - vertex.x, projected.y - vertex.y) <= tolerance) parameters.push(clamped);
+      }
+    }
+  }
+  parameters.sort((a, b) => a - b);
+  const unique = parameters.filter((value, index) => index === 0 || value - parameters[index - 1] > parameterTolerance);
+  if (!pointCovered(start) || !pointCovered(end)) return false;
+  for (let i = 0; i < unique.length - 1; i++) {
+    const a = unique[i], b = unique[i + 1];
+    if (b - a <= parameterTolerance) continue;
+    const t = (a + b) / 2;
+    if (!pointCovered({ x: start.x + direction.x * t, y: start.y + direction.y * t })) return false;
+  }
+  return true;
+}
