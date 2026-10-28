@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut } from "../src/core/geometry.js";
+import { lineIntersection, segmentIntersection, signedPolygonArea, validatePolygon, wallFootprint, normalizeIntervals, wallSolidIntervals, wallEndJoin, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut, segmentCoveredByPolygon2D } from "../src/core/geometry.js";
 
 test("line intersection returns parameters and point",()=>{
  const hit=lineIntersection({x:0,y:0},{x:1,y:0},{x:2,y:-1},{x:0,y:1});
@@ -183,4 +183,21 @@ test("wall cross cuts scale for oblique junctions and ignore endpoint, parallel 
  assert.equal(wallCrossingCut(host,{...oblique,start:{x:0,y:0}}),null,"endpoint joins must use endpoint resolver");
  assert.equal(wallCrossingCut(host,{...oblique,start:{x:0,y:-2},end:{x:6,y:.01}}),null,"near-parallel lines must not create very long cuts");
  assert.equal(wallCrossingCut(host,{...oblique,storyId:"other"}),null,"different stories must remain independent");
+});
+
+test("coplanar edge coverage distinguishes full, partial, concave and boundary overlap", () => {
+ const rectangle=[{x:0,y:0},{x:4,y:0},{x:4,y:2},{x:0,y:2}];
+ assert.equal(segmentCoveredByPolygon2D({x:1,y:1},{x:3,y:1},rectangle),true,"interior edge should be covered");
+ assert.equal(segmentCoveredByPolygon2D({x:-1,y:1},{x:5,y:1},rectangle),false,"edge partly outside is not fully covered");
+ assert.equal(segmentCoveredByPolygon2D({x:3,y:1},{x:1,y:1},rectangle),true,"direction reversal must preserve the result");
+ assert.equal(segmentCoveredByPolygon2D({x:0,y:0},{x:4,y:0},rectangle),true,"a coincident boundary edge is covered");
+ const concave=[{x:0,y:0},{x:4,y:0},{x:4,y:1},{x:1,y:1},{x:1,y:3},{x:0,y:3}];
+ assert.equal(segmentCoveredByPolygon2D({x:.25,y:2},{x:3,y:2},concave),false,"a segment crossing a concave cut-out must not be treated as covered");
+ assert.equal(segmentCoveredByPolygon2D({x:.25,y:2.5},{x:.75,y:2.5},concave),true);
+});
+
+test("segment coverage validates its geometric inputs", () => {
+ const polygon=[{x:0,y:0},{x:1,y:0},{x:1,y:1}];
+ assert.throws(()=>segmentCoveredByPolygon2D({x:NaN,y:0},{x:1,y:0},polygon),/finite endpoints/);
+ assert.throws(()=>segmentCoveredByPolygon2D({x:0,y:0},{x:1,y:0},polygon,{tolerance:-1}),/tolerance/);
 });
