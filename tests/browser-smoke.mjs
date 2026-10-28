@@ -523,12 +523,13 @@ try {
   await modelPoint(7, 3);
   await openingPage.waitForFunction(() => !(document.querySelector("#elementProperties input[readonly]")));
   await openingPage.waitForFunction(() => !document.querySelector("#elementProperties input[readonly]"));
-  // Window sash lines are offset from the host wall centreline in the rendered plan.
-  await modelPoint(2.6, wallY + 0.075);
+  // Pick from the persisted Window geometry; hard-coded coordinates drift when its anchor/alignment changes.
+  const windowPickPoint=await openingPage.evaluate(()=>{const elements=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[],windowElement=elements.find(e=>e.type==="window"),wall=elements.find(e=>e.type==="wall"&&e.id===windowElement?.hostWallId);if(!windowElement||!wall)throw new Error("Hosted Window or host Wall missing for selection test");const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1,along=(Number(windowElement.offset)||0)+(Number(windowElement.width)||0)/2;return{x:wall.start.x+dx*along/len,y:wall.start.y+dy*along/len}});
+  await modelPoint(windowPickPoint.x, wallY + 0.075);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·")).catch(async error=>{const diag=await openingPage.evaluate(()=>({hitDebug:window.__arqenvoDebug?.getLastFloorSelectionDebug?.(),selection:document.querySelector("#selectionInfo")?.textContent,status:document.querySelector("#status")?.textContent,properties:document.querySelector("#elementProperties")?.textContent?.slice(0,220),tool:document.querySelector("#toolName")?.value}));throw new Error("Click on Window sash did not select Window; "+JSON.stringify(diag)+"; "+error.message)});
   assert.match(await openingPage.locator("#elementProperties input[readonly]").inputValue(), /window ·/i,
     "Clicking a visible window sash should select Window rather than its host wall");
-  await modelPoint(2.6, wallY);
+  await modelPoint(windowPickPoint.x, wallY);
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("window ·"));
 
 
