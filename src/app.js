@@ -508,6 +508,18 @@ else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
 prism(e,footprint,z0,height)
 }
 const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
+// Top faces are independently emitted by each wall prism. At a junction their
+// coplanar footprints overlap or share a boundary, so blindly stroking every
+// top polygon draws false white seams across a continuous wall cap.
+const topFaces=orderedFaces.filter(face=>face.topFace&&face.poly.length>=3);
+const topFaceEdgeCovered=(face,a,b)=>{
+ const start={x:a.worldX,y:a.worldY},end={x:b.worldX,y:b.worldY};
+ for(const other of topFaces){
+  if(other===face||Math.abs(other.poly[0].worldZ-a.worldZ)>.001)continue;
+  if(segmentCoveredByPolygon2D(start,end,other.poly.map(pt=>({x:pt.worldX,y:pt.worldY})),{tolerance:.001}))return true;
+ }
+ return false;
+};
 const wallSideEdges=new Map();
 const edgePointKey=pt=>[pt.worldX,pt.worldY,pt.worldZ].map(v=>Number(v).toFixed(6)).join(",");
 const edgeKey=(a,b)=>{const ka=edgePointKey(a),kb=edgePointKey(b);return ka<kb?ka+"|"+kb:kb+"|"+ka};
@@ -559,8 +571,13 @@ for(const face of orderedFaces){
  ctx.shadowColor="transparent";ctx.shadowBlur=0;ctx.shadowOffsetX=0;ctx.shadowOffsetY=0;
  ctx.beginPath();face.poly.forEach((pt,i)=>i?ctx.lineTo(pt.x,pt.y):ctx.moveTo(pt.x,pt.y));ctx.closePath();ctx.fill();
  if(face.material!=="wall"||face.topFace||face.selected){
-  if(face.material==="wall"&&face.topFace&&!face.selected&&face.skipTopEdges?.length){
-   for(let i=0;i<face.poly.length;i++){if(face.skipTopEdges.includes(i))continue;const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke()}
+  if(face.material==="wall"&&face.topFace&&!face.selected){
+   for(let i=0;i<face.poly.length;i++){
+    if(face.skipTopEdges?.includes(i))continue;
+    const a=face.poly[i],b=face.poly[(i+1)%face.poly.length];
+    if(topFaceEdgeCovered(face,a,b))continue;
+    ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();
+   }
   }else ctx.stroke();
   continue
  }
