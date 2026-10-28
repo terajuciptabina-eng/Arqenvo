@@ -686,7 +686,7 @@ try {
   const roofResult=await roofPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="roof"));
   // Manual Roof regression: set offset before drawing, then create a four-point footprint.
   await roofPage.locator('[data-tool="roof"]').click();
-  await roofPage.locator("#roofOffset").fill("1.25");
+  await roofPage.locator("#roofOffset").fill("1.25").catch(async error=>{const diag=await roofPage.evaluate(()=>{const e=document.querySelector("#roofOffset"),w=document.querySelector("#roofOffsetControl"),r=e?.getBoundingClientRect();return{tool:document.querySelector("#toolName")?.value,status:document.querySelector("#status")?.textContent,controlHidden:w?.hidden,controlDisplay:w&&getComputedStyle(w).display,controlRect:w?.getBoundingClientRect().toJSON(),inputHidden:e?.hidden,inputDisplay:e&&getComputedStyle(e).display,inputRect:r?.toJSON(),context:document.querySelector(".context-toolbar")?.getBoundingClientRect().toJSON()}});throw new Error("Roof offset control unavailable; "+JSON.stringify(diag)+"; "+error.message)});
   const manualRoofPoints=[[-2.5,-1.5],[2.5,-1.5],[2.5,1.5],[-2.5,1.5]];
   for(const [wx,wy] of manualRoofPoints) await roofPoint(wx,wy);
   await roofPage.keyboard.press("Enter");
