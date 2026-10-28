@@ -320,3 +320,62 @@ export function resolveWallEndCorner(wall, atStart, side, candidates = [], {
   if (best) return { point: best.point, resolved: true, neighborId: best.neighborId };
   return { point: fallback, resolved: false, reason: candidates.length ? "no-valid-intersection" : "isolated-end" };
 }
+
+
+/**
+ * Compute the cut interval needed when one wall crosses through the interior
+ * of another wall. The preferred host remains continuous; the crossing wall
+ * is trimmed to the two host faces. Returns null for endpoint/T joins (handled
+ * by resolveWallEndCorner), different stories, near-parallel lines, or a cut
+ * that would swallow an endpoint.
+ *
+ * Candidate ordering is deterministic: thicker host, then longer host, then
+ * lexicographically smaller id. This avoids element-array order changing the
+ * 3D geometry between redraws.
+ */
+export function wallCrossingCut(wallA, wallB, { tolerance = 0.025, minSineAngle = 0.05 } = {}) {
+  const validWall = wall => wall && finitePoint(wall.start) && finitePoint(wall.end);
+  if (!validWall(wallA) || !validWall(wallB)) throw new TypeError("Wall crossing needs finite wall endpoints");
+  if (wallA.id != null && wallA.id === wallB.id) return null;
+  if (wallA.storyId !== wallB.storyId) return null;
+  if (!Number.isFinite(tolerance) || tolerance < 0 || !Number.isFinite(minSineAngle) ||
+      minSineAngle <= 0 || minSineAngle >= 1) throw new RangeError("Wall crossing tolerances are invalid");
+
+  const hit = segmentIntersection(wallA.start, wallA.end, wallB.start, wallB.end, { tolerance });
+  if (!hit || hit.endpointA || hit.endpointB) return null;
+
+  const vectorA = sub(wallA.end, wallA.start), vectorB = sub(wallB.end, wallB.start);
+  const lengthA = norm(vectorA), lengthB = norm(vectorB);
+  if (lengthA <= EPS || lengthB <= EPS) return null;
+  const sineAngle = Math.abs(cross(vectorA, vectorB)) / (lengthA * lengthB);
+  if (!Number.isFinite(sineAngle) || sineAngle < minSineAngle) return null;
+
+  const thicknessA = Number.isFinite(wallA.thickness) && wallA.thickness > 0 ? wallA.thickness : 0.15;
+  const thicknessB = Number.isFinite(wallB.thickness) && wallB.thickness > 0 ? wallB.thickness : 0.15;
+  const preferredHost = (a, b) => {
+    if (Math.abs(thicknessA - thicknessB) > EPS) return thicknessA > thicknessB;
+    if (Math.abs(lengthA - lengthB) > EPS) return lengthA > lengthB;
+    return String(a.id ?? "").localeCompare(String(b.id ?? "")) < 0;
+  };
+  const hostWall = preferredHost(wallA, wallB) ? wallA : wallB;
+  const cutWall = hostWall === wallA ? wallB : wallA;
+  const cutLength = hostWall === wallA ? lengthB : lengthA;
+  const cutParameter = hostWall === wallA ? hit.u : hit.t;
+  const centerDistance = cutParameter * cutLength;
+  const hostThickness = Number.isFinite(hostWall.thickness) && hostWall.thickness > 0 ? hostWall.thickness : 0.15;
+  const halfSpan = hostThickness / (2 * sineAngle);
+  const start = centerDistance - halfSpan, end = centerDistance + halfSpan;
+
+  // Near-end intersections should use the endpoint/T-junction path instead.
+  if (start <= tolerance || end >= cutLength - tolerance) return null;
+  return {
+    hostWall,
+    cutWall,
+    intersection: { x: hit.point.x, y: hit.point.y },
+    centerDistance,
+    start,
+    end,
+    halfSpan,
+    sineAngle,
+  };
+}
