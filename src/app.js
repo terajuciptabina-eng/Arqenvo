@@ -2046,11 +2046,11 @@ const arqenvoParameterKeys={
  dimension:["textSizeMm","buildingMaterial"],
  room:["name","number","buildingMaterial"]
 };
-function arqenvoPickParameters(){
- const list=chosen();
- if(list.length!==1){$("status").textContent="Pick Up: select exactly one source element first";return}
+function arqenvoPickParameters(sourceOverride=null){
+ const list=sourceOverride?[sourceOverride]:chosen();
+ if(list.length!==1){$("status").textContent="Pick Up: click a source element or select exactly one";return false}
  const source=list[0],keys=arqenvoParameterKeys[source.type]||[];
- arqenvoPickedParameters={type:source.type,values:Object.fromEntries(keys.filter(k=>source[k]!==undefined).map(k=>[k,structuredClone(source[k])]))};
+ arqenvoPickedParameters={type:source.type,values:Object.fromEntries(keys.filter(k=>source[k]!==undefined).map(k=>[k,structuredClone(source[k])])),sourceId:source.id,transferSet:arqenvoTransferSet};
  arqenvenvoInjectMode=true;
  $("injectParameters").disabled=false;
  $("injectParameters").setAttribute("aria-pressed","true");
