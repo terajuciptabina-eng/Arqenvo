@@ -316,7 +316,7 @@ function render3DScene(ctx,items,project3d,options={}){
  const visibleWalls=items.filter(v=>v.type==="wall"&&isLayerVisible(v));
  const cross2=(a,b)=>a.x*b.y-a.y*b.x;
  for(const wall of visibleWalls)for(const atStart of [true,false]){
-  const joint=atStart?wall.start:wall.end;let best=null,nearest=Infinity;
+  const joint=atStart?wall.start:wall.end,candidates=[];
   for(const candidate of visibleWalls){
    if(candidate.id===wall.id||candidate.storyId!==wall.storyId)continue;
    const vx=candidate.end.x-candidate.start.x,vy=candidate.end.y-candidate.start.y,l2=vx*vx+vy*vy;
@@ -324,21 +324,27 @@ function render3DScene(ctx,items,project3d,options={}){
    const tRaw=((joint.x-candidate.start.x)*vx+(joint.y-candidate.start.y)*vy)/l2;
    const t=Math.max(0,Math.min(1,tRaw)),q={x:candidate.start.x+vx*t,y:candidate.start.y+vy*t};
    const distance=Math.hypot(q.x-joint.x,q.y-joint.y);
-   // A wall endpoint can meet either another endpoint (L join) or the side
-   // of a continuous wall (T join). Restrict candidates to the same story.
    const tolerance=(candidate.thickness||.15)/2+endpointTolerance;
-   if(distance<=tolerance&&distance<nearest){
-    nearest=distance;best={neighbor:candidate,neighborT:t,closest:q,isT:t>.025&&t<.975};
+   if(distance<=tolerance){
+    const nlen=Math.sqrt(l2),alignment=Math.abs(cross2({x:wall.end.x-wall.start.x,y:wall.end.y-wall.start.y},{x:vx,y:vy}))/(Math.hypot(wall.end.x-wall.start.x,wall.end.y-wall.start.y)*nlen||1);
+    candidates.push({neighbor:candidate,neighborT:t,closest:q,isT:t>.025&&t<.975,distance,alignment});
    }
   }
-  if(best)wallEndNeighbors.set(wall.id+":"+(atStart?"start":"end"),best);
+  if(candidates.length)wallEndNeighbors.set(wall.id+":"+(atStart?"start":"end"),candidates);
  }
  const wallEndCorner=(wall,atStart,side)=>{
   const dx=wall.end.x-wall.start.x,dy=wall.end.y-wall.start.y,len=Math.hypot(dx,dy)||1,ux=dx/len,uy=dy/len;
   const joint=atStart?wall.start:wall.end,ray={x:atStart?ux:-ux,y:atStart?uy:-uy},normal={x:-ray.y,y:ray.x},localSide=side*(atStart?1:-1),half=(wall.thickness||.15)/2;
   const fallback={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
-  const neighborInfo=wallEndNeighbors.get(wall.id+":"+(atStart?"start":"end"));
-  if(!neighborInfo)return fallback;
+  const candidates=wallEndNeighbors.get(wall.id+":"+(atStart?"start":"end"));
+  if(!candidates?.length)return fallback;
+  // Resolve ambiguous T/cross junctions by preferring the closest candidate,
+  // then a true endpoint join, then the most transverse host wall. The old
+  // first-nearest-only search depended on element order when distances tied.
+  const neighborInfo=[...candidates].sort((a,b)=>{
+   const score=v=>v.distance+(v.isT?.0025:0)+(1-v.alignment)*.002;
+   return score(a)-score(b);
+  })[0];
   const {neighbor,neighborT,closest,isT}=neighborInfo;
   const a={x:joint.x+normal.x*half*localSide,y:joint.y+normal.y*half*localSide};
   const ndx=neighbor.end.x-neighbor.start.x,ndy=neighbor.end.y-neighbor.start.y,nlen=Math.hypot(ndx,ndy)||1,nux=ndx/nlen,nuy=ndy/nlen,nn={x:-nuy,y:nux},nhalf=(neighbor.thickness||.15)/2;
@@ -403,7 +409,7 @@ for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","do
  }
  continue
 }let footprint=[],z0=storyElevation,height=0;
-if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=e.openings||[],cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len}),cornerAt=(distance,side)=>distance<=endpointTolerance?wallEndCorner(e,true,side):len-distance<=endpointTolerance?wallEndCorner(e,false,side):(()=>{const q=at(distance);return{x:q.x+nx*(side),y:q.y+ny*(side)}})();for(const [low,high] of solids){const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)],skipSides=[];if(lo<=endpointTolerance&&wallEndNeighbors.has(e.id+":start"))skipSides.push(3);if(hi>=len-endpointTolerance&&wallEndNeighbors.has(e.id+":end"))skipSides.push(1);prism(e,poly,base+low,high-low,undefined,{skipSides})} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
+if(e.type==="wall"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.thickness/2,ny=dx/len*e.thickness/2,base=storyElevation+(e.baseOffset||0),openings=[...(e.openings||[])];for(const hosted of items){if((hosted.type==="door"||hosted.type==="window")&&hosted.hostWallId===e.id&&!openings.some(opening=>opening.id===hosted.id))openings.push(hosted)}const cuts=[0,len];for(const o of openings){cuts.push(Math.max(0,Math.min(len,o.offset)),Math.max(0,Math.min(len,o.offset+o.width)))}const positions=[...new Set(cuts.filter(Number.isFinite).sort((u,v)=>u-v).map(v=>Number(v.toFixed(6))))];for(let i=0;i<positions.length-1;i++){const lo=positions[i],hi=positions[i+1];if(hi-lo<1e-5)continue;const mid=(lo+hi)/2,holes=openings.filter(o=>o.offset<mid&&o.offset+o.width>mid).map(o=>[Math.max(0,o.sill||0),Math.min(e.height,(o.sill||0)+o.height)]).filter(v=>v[1]>v[0]).sort((u,v)=>u[0]-v[0]);const merged=[];for(const hole of holes){const last=merged[merged.length-1];if(last&&hole[0]<=last[1])last[1]=Math.max(last[1],hole[1]);else merged.push([...hole])}const solids=[];let z=0;for(const hole of merged){if(hole[0]>z)solids.push([z,hole[0]]);z=Math.max(z,hole[1])}if(z<e.height)solids.push([z,e.height]);const at=t=>({x:e.start.x+dx*t/len,y:e.start.y+dy*t/len}),cornerAt=(distance,side)=>distance<=endpointTolerance?wallEndCorner(e,true,side):len-distance<=endpointTolerance?wallEndCorner(e,false,side):(()=>{const q=at(distance);return{x:q.x+nx*(side),y:q.y+ny*(side)}})();for(const [low,high] of solids){const poly=[cornerAt(lo,1),cornerAt(hi,1),cornerAt(hi,-1),cornerAt(lo,-1)],skipSides=[];if(lo<=endpointTolerance&&wallEndNeighbors.has(e.id+":start"))skipSides.push(3);if(hi>=len-endpointTolerance&&wallEndNeighbors.has(e.id+":end"))skipSides.push(1);prism(e,poly,base+low,high-low,undefined,{skipSides})} }continue}else if(e.type==="beam"){const dx=e.end.x-e.start.x,dy=e.end.y-e.start.y,len=Math.hypot(dx,dy);if(len<1e-6)continue;const nx=-dy/len*e.width/2,ny=dx/len*e.width/2;footprint=[{x:e.start.x+nx,y:e.start.y+ny},{x:e.end.x+nx,y:e.end.y+ny},{x:e.end.x-nx,y:e.end.y-ny},{x:e.start.x-nx,y:e.start.y-ny}];z0+=e.elevation||0;height=e.depth}
 else if(e.type==="column"){const angle=e.rotation||0,cos=Math.cos(angle),sin=Math.sin(angle),hx=e.width/2,hy=e.depth/2;footprint=[[-hx,-hy],[hx,-hy],[hx,hy],[-hx,hy]].map(([u,v])=>({x:e.position.x+u*cos-v*sin,y:e.position.y+u*sin+v*cos}));height=e.height}
 else{footprint=e.boundary;z0+=e.elevation||0;height=e.thickness}
 prism(e,footprint,z0,height)
