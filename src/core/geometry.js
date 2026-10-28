@@ -157,3 +157,22 @@ export function wallEndJoin(wallA, wallB, thicknessA, thicknessB=thicknessA, {mi
   const left=resolveSide(1),right=resolveSide(-1);
   return {junction:joint,left,right,type:left.type==="miter"&&right.type==="miter"?"miter":"bevel"};
 }
+
+/**
+ * Select a stable host candidate for a wall-end junction.
+ * Candidates are pre-filtered by story and geometric proximity by the renderer.
+ * Exact distance ties must not depend on model element ordering: prefer a true
+ * endpoint join, then a more transverse wall for T/cross-junction resolution.
+ */
+export function selectWallJunctionCandidate(candidates) {
+  if (!Array.isArray(candidates) || candidates.length === 0) return null;
+  const score = candidate => {
+    if (!candidate || !Number.isFinite(candidate.distance) || !Number.isFinite(candidate.alignment)) {
+      throw new TypeError("Wall junction candidates need finite distance and alignment values");
+    }
+    const endpointPenalty = candidate.isT ? 0.0025 : 0;
+    const transversePenalty = (1 - Math.max(0, Math.min(1, candidate.alignment))) * 0.002;
+    return candidate.distance + endpointPenalty + transversePenalty;
+  };
+  return candidates.reduce((best, candidate) => score(candidate) < score(best) ? candidate : best, candidates[0]);
+}
