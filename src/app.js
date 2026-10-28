@@ -5,7 +5,7 @@ import {extractSection} from "./core/section.js";
 import {exportFloorPlanDxf} from "./core/dxf.js";
 import {createOpeningPlacement, openingOffsetForAnchor, openingPlacementDirection, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, findClosedWallLoops, mergeHostedOpeningRecords} from "./core/authoring.js";
 import {ModelHistory, transactModel} from "./core/transactions.js";
-import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut } from "./core/geometry.js";
+import {wallEndJoin, segmentIntersection, selectWallJunctionCandidate, wallHostFaceSide, resolveWallEndCorner, wallCrossingCut, segmentCoveredByPolygon2D } from "./core/geometry.js";
 import {normalizeUnitSystem,formatLength,formatArea} from "./core/units.js";
 const $=id=>document.getElementById(id), c=$("canvas"), x=c.getContext("2d");
 let gridVisible=true,hiddenLayers=new Set(),groupsSuspended=false;
@@ -596,26 +596,15 @@ for(const face of orderedFaces){
   let containedCoplanarEdge=false;
   if(!exactSharedCoplanarEdge){
    const plane=facePlaneKeys.get(face),candidates=plane?(coplanarWallFaceBuckets.get(plane.key)||[]):[];
-   const midpoint={worldX:(a.worldX+b.worldX)/2,worldY:(a.worldY+b.worldY)/2,worldZ:(a.worldZ+b.worldZ)/2};
-   const edgePointA={worldX:a.worldX,worldY:a.worldY,worldZ:a.worldZ},edgePointB={worldX:b.worldX,worldY:b.worldY,worldZ:b.worldZ};
+   const normal=wallFaceNormals.get(face);
+   const dropAxis=Math.abs(normal.x)>Math.abs(normal.y)?(Math.abs(normal.x)>Math.abs(normal.z)?"x":"z"):(Math.abs(normal.y)>Math.abs(normal.z)?"y":"z");
+   const uv=pt=>dropAxis==="x"?{x:pt.worldY,y:pt.worldZ}:dropAxis==="y"?{x:pt.worldX,y:pt.worldZ}:{x:pt.worldX,y:pt.worldY};
+   const start2=uv(a),end2=uv(b);
    for(const other of candidates){
     if(other===face)continue;
-    const otherPlane=facePlaneKeys.get(other);if(!otherPlane||Math.abs(plane.normal.x*otherPlane.normal.x+plane.normal.y*otherPlane.normal.y+plane.normal.z*otherPlane.normal.z)<.99999||Math.abs(plane.d-otherPlane.d)>.001)continue;
-    const dropAxis=Math.abs(otherPlane.normal.x)>Math.abs(otherPlane.normal.y)?(Math.abs(otherPlane.normal.x)>Math.abs(otherPlane.normal.z)?"x":"z"):(Math.abs(otherPlane.normal.y)>Math.abs(otherPlane.normal.z)?"y":"z");
-    const uv=pt=>dropAxis==="x"?[pt.worldY,pt.worldZ]:dropAxis==="y"?[pt.worldX,pt.worldZ]:[pt.worldX,pt.worldY];
-    const pointInFace=pt=>{
-     const [px,py]=uv(pt);let inside=false;
-     for(let k=0,j=other.poly.length-1;k<other.poly.length;j=k++){
-      const [xi,yi]=uv(other.poly[k]),[xj,yj]=uv(other.poly[j]);
-      if(((yi>py)!==(yj>py))&&(px<(xj-xi)*(py-yi)/((yj-yi)||1e-12)+xi))inside=!inside;
-     }
-     return inside;
-    };
-    const nearBoundary=pt=>other.poly.some((p,k)=>{
-     const q=other.poly[(k+1)%other.poly.length],vx=q.worldX-p.worldX,vy=q.worldY-p.worldY,vz=q.worldZ-p.worldZ,wx=pt.worldX-p.worldX,wy=pt.worldY-p.worldY,wz=pt.worldZ-p.worldZ,ll=vx*vx+vy*vy+vz*vz||1,t=Math.max(0,Math.min(1,(wx*vx+wy*vy+wz*vz)/ll));
-     return Math.hypot(wx-vx*t,wy-vy*t,wz-vz*t)<=.001;
-    });
-    if([edgePointA,midpoint,edgePointB].every(pt=>pointInFace(pt)||nearBoundary(pt))){containedCoplanarEdge=true;break}
+    const otherPlane=facePlaneKeys.get(other);
+    if(!otherPlane||Math.abs(plane.normal.x*otherPlane.normal.x+plane.normal.y*otherPlane.normal.y+plane.normal.z*otherPlane.normal.z)<.99999||Math.abs(plane.d-otherPlane.d)>.001)continue;
+    if(segmentCoveredByPolygon2D(start2,end2,other.poly.map(uv),{tolerance:.001})){containedCoplanarEdge=true;break}
    }
   }
   const sharedCoplanarEdge=exactSharedCoplanarEdge||containedCoplanarEdge;

@@ -20,6 +20,11 @@ test("3D wall edge identity and face normals are camera-independent", () => {
 });
 
 test("coplanar wall seam suppression uses model-space tolerances", () => {
-  assert.match(source, /Math\.abs\(plane\.d-otherPlane\.d\)>.001/);
-  assert.match(source, /Math\.hypot\(wx-vx\*t,wy-vy\*t,wz-vz\*t\)<=\.001/);
+  assert.match(source, /const edgePointKey=pt=>\[pt\.worldX,pt\.worldY,pt\.worldZ\]/);
+  assert.match(source, /segmentCoveredByPolygon2D\(start2,end2,other\.poly\.map\(uv\),\{tolerance:\.001\}\)/);
+});
+
+test("3D edge renderer delegates complete coplanar coverage to the geometric predicate", () => {
+  assert.match(source, /segmentCoveredByPolygon2D\(start2,end2,other\.poly\.map\(uv\),\{tolerance:\.001\}\)/);
+  assert.match(source, /wallEndNeighbors\.get\(endpointKey\)\|\|\[\]/);
 });
