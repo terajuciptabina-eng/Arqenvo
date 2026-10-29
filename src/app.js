@@ -1431,3 +1431,25 @@ function commitTextBoxGesture(source,event){
  });
  return true;
 }
+ // Release is handled once at window capture so it still commits if pointer capture
+ // changes the event target or the pointer leaves the canvas during a drag.
+ const commitTextBoxOnPointerRelease=(event,source)=>{
+  const gesture=textBoxGesture;
+  if(!gesture)return false;
+  if(Number.isFinite(event?.pointerId)&&gesture.pointerId!==event.pointerId)return false;
+  const rect=c.getBoundingClientRect();
+  if(Number.isFinite(event?.clientX)&&Number.isFinite(event?.clientY)){
+   gesture.currentScreen={x:event.clientX-rect.left,y:event.clientY-rect.top};
+   gesture.currentWorld=wpos(gesture.currentScreen);
+   gesture.didResize=gesture.didResize||Math.hypot(gesture.currentScreen.x-gesture.startScreen.x,gesture.currentScreen.y-gesture.startScreen.y)>=8;
+  }
+  return commitTextBoxGesture(source,event);
+ };
+ window.addEventListener("pointerup",event=>{commitTextBoxOnPointerRelease(event,"window-pointerup-capture")},true);
+ window.addEventListener("pointercancel",event=>{commitTextBoxOnPointerRelease(event,"window-pointercancel-capture")},true);
+ // Compatibility for environments that dispatch mouse release without pointerup.
+ window.addEventListener("mouseup",event=>{
+  if(!textBoxGesture)return;
+  commitTextBoxOnPointerRelease({...event,pointerId:textBoxGesture.pointerId,type:"mouseup"}, "window-mouseup-capture");
+ },true);
+
