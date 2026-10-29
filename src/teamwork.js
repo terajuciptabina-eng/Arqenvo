@@ -62,8 +62,14 @@
       panel.style.position="absolute";panel.style.left="auto";panel.style.right="14px";panel.style.top="10px";panel.style.bottom="auto";
       panel.style.width="min(360px,calc(100% - 20px))";panel.style.maxHeight="calc(100% - 20px)";panel.style.display="flex";
     }
+    // The inline display style outranks the browser's [hidden] rule. Keep
+    // visibility authoritative here so initialization cannot reveal the panel.
+    panel.style.display=panel.hidden?"none":"flex";
     try{localStorage.setItem("arqenvo-teamwork-palette-mode",mode)}catch{}
   };
+  // Always start hidden, regardless of a previously saved dock/float preference.
+  panel.hidden=true;
+  panel.style.display="none";
   try{const saved=localStorage.getItem("arqenvo-teamwork-palette-mode");applyPanelMode(saved==="left"||saved==="right"?saved:"float")}catch{applyPanelMode("float")}
   dockLeft.addEventListener("click",()=>applyPanelMode("left"));
   dockRight.addEventListener("click",()=>applyPanelMode("right"));
