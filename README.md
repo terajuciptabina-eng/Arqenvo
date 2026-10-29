@@ -44,6 +44,10 @@ The UI is connected to the schema-v2 model for its current drawing operations, b
 - Test features before claiming they work; label previews and incomplete tools honestly.
 - Independent code, assets, data and deployment. No integration with TerajuWorks or SunG Solution.
 
+## Local Network Teamwork
+
+The optional LAN host keeps a shared project on a Windows PC or Mac and serves Arqenvo to team devices on the same trusted network. See [Local Teamwork setup](./docs/LOCAL-TEAMWORK.md) for host startup, accounts, reservations, backup location and limitations. The host is not deployed to GitHub Pages.
+
 ## Local checks
 ```sh
 npm test
