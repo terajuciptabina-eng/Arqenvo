@@ -4,9 +4,9 @@
 const pair=(code,value)=>String(code)+"\n"+String(value)+"\n";
 const line=(layer,a,b)=>pair(0,"LINE")+pair(8,layer)+pair(10,a.x)+pair(20,a.y)+pair(30,0)+pair(11,b.x)+pair(21,b.y)+pair(31,0);
 const polyline=(layer,points)=>points.map((p,i)=>line(layer,p,points[(i+1)%points.length])).join("");
-const textEntity=(el)=>String(el.text??"Text").split("\n").map((value,index)=>pair(0,"TEXT")+pair(8,"A-TEXT")+pair(10,el.position.x)+pair(20,el.position.y-index*Math.max(.001,Number(el.textSizeMm)||2.5)/1000*1.25)+pair(30,0)+pair(40,Math.max(.001,Number(el.textSizeMm)||2.5)/1000)+pair(1,value.slice(0,255))).join("");
+const textEntity=(el,scaleDenominator)=>{const height=Math.max(.001,Number(el.textSizeMm)||2.5)/1000*Math.max(1,Number(scaleDenominator)||100),alignment=el.alignment==="center"?1:el.alignment==="right"?2:0;return String(el.text??"Text").split("\n").map((value,index)=>{const y=el.position.y-index*height*1.25;return pair(0,"TEXT")+pair(8,"A-TEXT")+pair(10,el.position.x)+pair(20,y)+pair(30,0)+pair(40,height)+pair(1,value.slice(0,255))+(alignment?pair(72,alignment)+pair(11,el.position.x)+pair(21,y)+pair(31,0):"")}).join("")};
 const rectangle=(cx,cy,width,depth,rotation=0)=>{const c=Math.cos(rotation),s=Math.sin(rotation);return [[-width/2,-depth/2],[width/2,-depth/2],[width/2,depth/2],[-width/2,depth/2]].map(([x,y])=>({x:cx+x*c-y*s,y:cy+x*s+y*c}))};
-export function exportFloorPlanDxf(project,{storyId=project?.stories?.[0]?.id}={}){
+export function exportFloorPlanDxf(project,{storyId=project?.stories?.[0]?.id,scaleDenominator=100}={}){
  if(!project||!Array.isArray(project.elements)||!Array.isArray(project.stories))throw new TypeError("A valid project model is required");
  if(!project.stories.some(s=>s.id===storyId))throw new RangeError("Requested story does not exist");
  let entities="";
@@ -16,7 +16,7 @@ export function exportFloorPlanDxf(project,{storyId=project?.stories?.[0]?.id}={
   else if(el.type==="slab"&&Array.isArray(el.boundary)&&el.boundary.length>=3)entities+=polyline("A-SLAB",el.boundary);
   else if(el.type==="column"&&el.position&&el.width>0&&el.depth>0)entities+=polyline("A-COLS",rectangle(el.position.x,el.position.y,el.width,el.depth,el.rotation||0));
   else if(el.type==="dimension"&&el.start&&el.end)entities+=line("A-DIMS",el.start,el.end);
-  else if(el.type==="text"&&el.position&&Number.isFinite(el.position.x)&&Number.isFinite(el.position.y))entities+=textEntity(el);
+  else if(el.type==="text"&&el.position&&Number.isFinite(el.position.x)&&Number.isFinite(el.position.y))entities+=textEntity(el,scaleDenominator);
   else if(el.type==="room"&&Array.isArray(el.boundary)&&el.boundary.length>=3)entities+=polyline("A-ROOM",el.boundary);
  }
  const header=pair(0,"SECTION")+pair(2,"HEADER")+pair(9,"$ACADVER")+pair(1,"AC1009")+pair(9,"$INSUNITS")+pair(70,6)+pair(0,"ENDSEC");
