@@ -38,6 +38,15 @@ try{
     assert.equal(initial.toolToggleHidden,false,"Toolbox toggle must be available");
     assert.equal(initial.navToggleHidden,false,"Navigator toggle must be available");
     if(phone)assert.ok(initial.bodyWidth>=initial.scrollWidth-1,"Phone layout must not overflow horizontally");
+    if(phone){
+      const infoBox=await page.evaluate(()=>{
+        const bar=document.querySelector("#contextToolbar");
+        const controls=[...bar.querySelectorAll(":scope > .context-control")].filter(e=>getComputedStyle(e).display!=="none"&&!e.hidden);
+        return{overflow:bar.scrollWidth>bar.clientWidth,controls:controls.map(e=>{const r=e.getBoundingClientRect();return{label:e.querySelector("label")?.textContent||e.id,left:r.left,right:r.right,width:r.width}})};
+      });
+      assert.ok(infoBox.overflow,"Phone Info Box must retain horizontal scrolling when controls exceed viewport width");
+      for(let i=1;i<infoBox.controls.length;i++)assert.ok(infoBox.controls[i].left>=infoBox.controls[i-1].right-1, "Phone Info Box controls must not overlap: "+infoBox.controls[i-1].label+" / "+infoBox.controls[i].label);
+    }
 
     await page.locator("#toolboxToggle").click({force:true});
     await page.waitForFunction(()=>document.querySelector(".work")?.classList.contains("toolbox-open"));

@@ -444,9 +444,11 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .context-identity small,.context-identity .info-box-label,.context-summary,.context-brand,.context-eyebrow{display:none!important}
  #mobileMagicWand,#mobileShiftToggle{min-height:30px;height:30px;padding:3px 7px;font-size:10px;gap:3px;flex:0 0 auto}
  .context-divider{height:24px;margin:0 1px}
- .context-control{min-width:0;gap:1px}
- .context-control label{font-size:8px}
- .context-control select{max-width:70px;min-height:26px;padding:2px 4px;font-size:10px}
+ .context-control{flex:0 0 max-content;min-width:max-content;gap:1px;align-items:flex-start}
+ .context-control label{font-size:8px;line-height:1;white-space:nowrap}
+ .context-control select{flex:0 0 auto;width:auto;max-width:none;min-height:26px;padding:2px 4px;font-size:10px}
+ .context-input{flex:0 0 auto;min-width:54px;box-sizing:border-box}
+ .context-input input{flex:0 0 38px;width:38px;min-width:38px}
  .canvaswrap{min-width:0;min-height:0;overflow:hidden!important}
  .work{position:relative;grid-template-columns:48px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;min-width:0;min-height:0;overflow:hidden}
  .work>#toolbox,.work>.tools{grid-column:1!important;grid-row:1!important;display:flex!important;min-width:0}
