@@ -72,9 +72,11 @@ try {
   assert.equal(await page.locator("#arqInlineTextEditor").count(), 1, "Text box release must open one inline editor");
   const textDiagnostic = await page.evaluate(() => ({
     gesture: window.__arqenvoTextGestureDebug,
-    textCount: JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.filter(e => e.type === "text").length || 0
+    editor: !!document.querySelector("#arqInlineTextEditor"),
+    textCount: window.arqenvoTeamworkAdapter?.getProject?.().elements?.filter(e => e.type === "text").length || 0
   }));
-  assert.equal(textDiagnostic.textCount, 1, "Text Tool must persist exactly one text element on release; diagnostics=" + JSON.stringify(textDiagnostic));
+  assert.equal(textDiagnostic.editor, true, "Text Tool must keep the inline editor open after release");
+  assert.equal(textDiagnostic.textCount, 1, "Text Tool must create exactly one live text element; diagnostics=" + JSON.stringify(textDiagnostic));
   await page.locator("#arqInlineTextValue").fill("Teamwork text regression");
   await page.locator("#arqInlineTextEditor button").filter({ hasText: "Finish" }).click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.some(e => e.type === "text" && e.text === "Teamwork text regression"));
