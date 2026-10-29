@@ -134,7 +134,7 @@ function clientInfo(req) {
   return { host: os.hostname(), platform: process.platform, port: PORT, lanAddresses: Object.values(os.networkInterfaces()).flat().filter(v => v && v.family === "IPv4" && !v.internal).map(v => v.address), projectRevision: currentProject().revision };
 }
 
-const server = http.createServer(async (req, res) => {
+const handler = async (req, res) => {
   try {
     const url = new URL(req.url, "http://localhost");
     const route = url.pathname;
@@ -249,12 +249,12 @@ const server = http.createServer(async (req, res) => {
     if (!res.headersSent) json(res, error.status || 500, { error:error.status ? error.message : "Internal Teamwork host error" });
     else res.destroy();
   }
-});
+};
+const server = http.createServer(handler);
 
 const cert = process.env.ARQENVO_TEAMWORK_TLS_CERT, key = process.env.ARQENVO_TEAMWORK_TLS_KEY;
 if (cert && key) {
-  const tlsServer = https.createServer({ cert:fs.readFileSync(path.resolve(cert)), key:fs.readFileSync(path.resolve(key)) }, server.listeners("request")[0]);
-  server.close();
+  const tlsServer = https.createServer({ cert:fs.readFileSync(path.resolve(cert)), key:fs.readFileSync(path.resolve(key)) }, handler);
   tlsServer.listen(PORT, HOST, () => console.log("ARQENVO Teamwork HTTPS host listening on " + HOST + ":" + PORT));
 } else {
   server.listen(PORT, HOST, () => {
