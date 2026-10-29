@@ -1199,7 +1199,7 @@ function initToolboxCompactMode(){
  originals.forEach(original=>{
   const key=original.dataset.tool,label=original.querySelector("span")?.textContent?.trim()||original.getAttribute("aria-label")||key;
   const item=document.createElement("div");item.className="toolbox-popover-item";
-  const clone=original.cloneNode(true);clone.removeAttribute("id");clone.dataset.toolboxPopoverCopy="true";clone.setAttribute("aria-label",label);clone.title=label+" — double-click to activate";
+  const clone=original.cloneNode(true);clone.removeAttribute("id");clone.removeAttribute("data-tool");clone.dataset.toolboxPopoverCopy="true";clone.dataset.toolboxKey=key;clone.setAttribute("aria-label",label);clone.title=label+" — double-click to activate";
   const description=document.createElement("div");description.className="toolbox-popover-description";description.textContent=original.title||descriptions[key]||("Activate the "+label+" tool.");
   item.append(clone,description);popover.append(item);
  });
@@ -1208,11 +1208,10 @@ function initToolboxCompactMode(){
  let minimized=false,longPressTimer=0,longPressButton=null,infoTimer=0;
  const isSmall=()=>window.matchMedia("(max-width:760px)").matches;
  const setGridWidth=width=>{
-  const current=getComputedStyle(work).gridTemplateColumns;
-  if(!current||current==="none")return;
-  const updated=current.replace(/^\s*[^\s]+/,width+"px");
-  work.style.setProperty("grid-template-columns",updated,"important");
+  // Keep the existing dock manager as the single owner of grid-template-columns.
+  // Writing an !important template here blocks the splitter from resizing the real track.
   work.style.setProperty("--toolbox-width",width+"px");
+  work.style.setProperty("--palette-toolbox-w",width+"px");
  };
  const closePopover=()=>{popover.classList.remove("is-open");popover.setAttribute("aria-hidden","true");toggle.setAttribute("aria-expanded","false")};
  const openPopover=()=>{popover.classList.add("is-open");popover.setAttribute("aria-hidden","false");toggle.setAttribute("aria-expanded","true")};
@@ -1229,19 +1228,18 @@ function initToolboxCompactMode(){
  });
  close.addEventListener("click",closePopover);
  popover.addEventListener("click",event=>{
-  const button=event.target.closest("button[data-tool]");
-  if(!button)return;
-  closePopover();
-  if(event.detail>=2)setTool(button.dataset.tool);
+  const button=event.target.closest("button[data-toolbox-key]");
+  if(button)closePopover();
  });
  toolbox.addEventListener("dblclick",event=>{
-  const button=event.target.closest("button[data-tool]");
+  const button=event.target.closest("button[data-tool],button[data-toolbox-key]");
   if(!button||button===toggle)return;
-  if(button.dataset.tool)setTool(button.dataset.tool);
+  const key=button.dataset.tool||button.dataset.toolboxKey;
+  if(key)setTool(key);
   closePopover();
  });
  const showToolInfo=(button,x,y)=>{
-  const key=button.dataset.tool,label=button.querySelector("span")?.textContent?.trim()||button.getAttribute("aria-label")||key;
+  const key=button.dataset.tool||button.dataset.toolboxKey,label=button.querySelector("span")?.textContent?.trim()||button.getAttribute("aria-label")||key;
   info.textContent=label+": "+(button.title&&!button.title.includes("double-click")?button.title:descriptions[key]||("Activate the "+label+" tool."));
   info.classList.add("is-visible");
   info.style.left=Math.max(8,Math.min(window.innerWidth-288,x+12))+"px";
@@ -1249,7 +1247,7 @@ function initToolboxCompactMode(){
   clearTimeout(infoTimer);infoTimer=setTimeout(()=>info.classList.remove("is-visible"),2600);
  };
  toolbox.addEventListener("pointerdown",event=>{
-  const button=event.target.closest("button[data-tool]");
+  const button=event.target.closest("button[data-tool],button[data-toolbox-key]");
   if(!button||event.pointerType==="mouse"||button===toggle)return;
   longPressButton=button;clearTimeout(longPressTimer);
   longPressTimer=setTimeout(()=>{if(!longPressButton)return;toolboxLongPressConsumed=true;showToolInfo(button,event.clientX,event.clientY)},560);
