@@ -59,3 +59,12 @@ test("reservation prevents another team member from taking the same element",asy
   const write=await request("/api/teamwork/project",{token:memberToken,method:"PUT",body:{expectedRevision:2,project:{format:"ARQENVO-PROJECT",version:2,project:{id:"p1"},stories:[{id:"s1",name:"Ground",elevation:0,height:3}],elements:[{id:"wall-1",type:"wall"}]},changedElementIds:["wall-1"]}});
   assert.equal(write.status,423);
 });
+
+test("viewer accounts cannot publish changes",async()=>{
+  const created=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"viewer1",password:"Viewer-Password-1234",role:"viewer"}});
+  assert.equal(created.status,201);
+  const login=await request("/api/teamwork/login",{method:"POST",body:{username:"viewer1",password:"Viewer-Password-1234"}});
+  assert.equal(login.status,200);
+  const denied=await request("/api/teamwork/project",{token:login.data.token,method:"PUT",body:{expectedRevision:2,project:{format:"ARQENVO-PROJECT",version:2,project:{id:"p1"},stories:[{id:"s1",name:"Ground",elevation:0,height:3}],elements:[]},changedElementIds:[]}});
+  assert.equal(denied.status,403);
+});
