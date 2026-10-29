@@ -18,7 +18,7 @@ test("DXF respects selected story and rejects unknown story",()=>{
 
 test("DXF exports editable text annotations as native TEXT entities",()=>{
  const p=createProject();
- p.elements.push({id:"text-a",type:"text",storyId:p.stories[0].id,position:{x:1.25,y:2.5},text:"Lobby\\nReception",textSizeMm:2.5});
+ p.elements.push({id:"text-a",type:"text",storyId:p.stories[0].id,position:{x:1.25,y:2.5},text:"Lobby\nReception",textSizeMm:2.5});
  const dxf=exportFloorPlanDxf(p);
  assert.ok(dxf.includes("A-TEXT"));
  assert.ok(dxf.includes("0\nTEXT\n"));
