@@ -511,16 +511,35 @@ const orderedFaces=faces3d.sort((a,b)=>a.depth-b.depth);
 // Top faces are independently emitted by each wall prism. At a junction their
 // coplanar footprints overlap or share a boundary, so blindly stroking every
 // top polygon draws false white seams across a continuous wall cap.
-const topFacesByElevation=new Map();
-for(const face of orderedFaces){
- if(face.material!=="wall"||!face.topFace||face.poly.length<3)continue;
+// Index top faces in model-space cells so cap-edge visibility checks only
+// inspect nearby faces instead of rescanning every wall cap at the same level.
+// This keeps redraw/orbit cost bounded as models gain more walls and openings.
+const topFaceGridSize=4,topFaceSpatialBuckets=new Map();
+const topFaceCellKey=(elevation,x,y)=>elevation+":"+x+":"+y;
+const topFaceCellRange=(min,max)=>[Math.floor((min-.001)/topFaceGridSize),Math.floor((max+.001)/topFaceGridSize)];
+const indexTopFace=(face)=>{
  const elevation=Math.round(face.poly[0].worldZ*1000);
- if(!topFacesByElevation.has(elevation))topFacesByElevation.set(elevation,[]);
- topFacesByElevation.get(elevation).push(face);
+ const xs=face.poly.map(pt=>pt.worldX),ys=face.poly.map(pt=>pt.worldY);
+ const [minX,maxX]=topFaceCellRange(Math.min(...xs),Math.max(...xs));
+ const [minY,maxY]=topFaceCellRange(Math.min(...ys),Math.max(...ys));
+ for(let ix=minX;ix<=maxX;ix++)for(let iy=minY;iy<=maxY;iy++){
+  const key=topFaceCellKey(elevation,ix,iy);
+  if(!topFaceSpatialBuckets.has(key))topFaceSpatialBuckets.set(key,[]);
+  topFaceSpatialBuckets.get(key).push(face);
+ }
+};
+for(const face of orderedFaces){
+ if(face.material==="wall"&&face.topFace&&face.poly.length>=3)indexTopFace(face);
 }
 const topFaceEdgeCovered=(face,a,b)=>{
- const start={x:a.worldX,y:a.worldY},end={x:b.worldX,y:b.worldY};
- for(const other of topFacesByElevation.get(Math.round(a.worldZ*1000))||[]){
+ const elevation=Math.round(a.worldZ*1000),start={x:a.worldX,y:a.worldY},end={x:b.worldX,y:b.worldY};
+ const [minX,maxX]=topFaceCellRange(Math.min(start.x,end.x),Math.max(start.x,end.x));
+ const [minY,maxY]=topFaceCellRange(Math.min(start.y,end.y),Math.max(start.y,end.y));
+ const candidates=new Set();
+ for(let ix=minX;ix<=maxX;ix++)for(let iy=minY;iy<=maxY;iy++){
+  for(const other of topFaceSpatialBuckets.get(topFaceCellKey(elevation,ix,iy))||[])candidates.add(other);
+ }
+ for(const other of candidates){
   if(other===face||Math.abs(other.poly[0].worldZ-a.worldZ)>.001)continue;
   if(segmentCoveredByPolygon2D(start,end,other.poly.map(pt=>({x:pt.worldX,y:pt.worldY})),{tolerance:.001}))return true;
  }
