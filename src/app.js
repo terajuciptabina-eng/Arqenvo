@@ -1403,35 +1403,56 @@ if(tool==="door"||tool==="window"){if(pendingOpeningPlacement){commitPendingOpen
 if(tool==="slab"||tool==="roof"||tool==="zone"){if(draft.length)q=constrain(draft[draft.length-1],q,e);draft.push(q);$("status").textContent=(tool==="zone"?"Zone":tool==="roof"?"Roof":"Slab")+" boundary point "+draft.length+" set · click next point, then press Enter to finish";redraw();return}
 if(["wall","beam","dimension","gridline"].includes(tool)){if(tool==="dimension"){draft.push({x:q.x,y:q.y});floorDrawGesture=null;$("status").textContent="Dimension point "+draft.length+" set · click more points, then press Enter";redraw();return}if(draft.length){const a=draft[0],length=Math.hypot(q.x-a.x,q.y-a.y);if(length<.01){$("status").textContent="Line too short — choose a farther endpoint";return}if(length>30){$("status").textContent="Drawing cancelled: segment exceeds 30 m";draft=[];redraw();return}hist();if(tool==="wall")els().push(createWall(a,q,{storyId:story().id,height:+$("height").value||3,thickness:+$("thickness").value||.15}));else if(tool==="beam")els().push(createBeam(a,q,{storyId:story().id}));else if(tool==="gridline"){const n=els().filter(v=>v.type==="gridline").length;els().push({id:crypto.randomUUID(),type:"gridline",start:a,end:q,label:String.fromCharCode(65+(n%26)),storyId:story().id})}else els().push({id:crypto.randomUUID(),type:"dimension",start:a,end:q,storyId:story().id});draft=[];floorDrawGesture=null;$("status").textContent=tool.charAt(0).toUpperCase()+tool.slice(1)+" created";renderProperties();redraw();return}floorDrawGesture={pointerId:e.pointerId,tool,startScreen:{x:e.clientX,y:e.clientY},anchor:q,isStart:true,pointerWorld:{x:q.x,y:q.y}};try{if(e.isTrusted&&c.setPointerCapture)c.setPointerCapture(e.pointerId)}catch{};draft=[q];$("status").textContent=(tool==="wall"?"Wall":tool==="beam"?"Beam":"Dimension")+" start point set — click endpoint or drag";redraw();return}});
 
-c.addEventListener("pointerup",e=>{if(textBoxGesture&&textBoxGesture.pointerId===e.pointerId){const g=textBoxGesture;textBoxGesture=null;if(!g.didResize){$("status").textContent="Text box not created · drag to define its width and height";redraw();return}const left=Math.min(g.startWorld.x,g.currentWorld.x),top=Math.max(g.startWorld.y,g.currentWorld.y),right=Math.max(g.startWorld.x,g.currentWorld.x),bottom=Math.min(g.startWorld.y,g.currentWorld.y),width=Math.max(.08,right-left),height=Math.max(.04,top-bottom),element={id:crypto.randomUUID(),type:"text",position:{x:left,y:top},text:"",textWidthMm:Math.max(2,width*1000/drawingScaleDenominator),textBoxHeightMm:Math.max(2,height*1000/drawingScaleDenominator),textSizeMm:Number(arqenvoTextDefaults?.textSizeMm)||2.5,color:arqenvoTextDefaults?.color||"#263640",storyId:story().id};hist("Create Text Box");els().push(element);selected=new Set([element.id]);renderProperties();scheduleAutoSave();redraw();$("status").textContent="Text box sized · type directly in the original box";window.__arqenvoPendingTextEditorId=element.id;requestAnimationFrame(()=>{try{startInlineTextEditor(element)}finally{if(window.__arqenvoPendingTextEditorId===element.id)window.__arqenvoPendingTextEditorId=null}});return}if(roomLabelMoveGesture&&roomLabelMoveGesture.pointerId===e.pointerId){const g=roomLabelMoveGesture;roomLabelMoveGesture=null;if(g.didMove){scheduleAutoSave();renderProperties();$("status").textContent="Room name and area repositioned together";updateEditActions()}redraw();return}});
-// Final safety net: some host/Safari combinations lose pointerup and mouseup after capture.
- // The first pointermove reporting buttons=0 is definitive release; normalize it to pointerup.
- window.addEventListener("pointermove",e=>{
-  if(!textBoxGesture||textBoxGesture.pointerId!==e.pointerId||e.buttons!==0)return;
-  const rect=c.getBoundingClientRect();
-  textBoxGesture.currentScreen={x:e.clientX-rect.left,y:e.clientY-rect.top};
-  textBoxGesture.currentWorld=wpos(textBoxGesture.currentScreen);
-  textBoxGesture.didResize=textBoxGesture.didResize||Math.hypot(textBoxGesture.currentScreen.x-textBoxGesture.startScreen.x,textBoxGesture.currentScreen.y-textBoxGesture.startScreen.y)>=8;
-  c.dispatchEvent(new PointerEvent("pointerup",{pointerId:e.pointerId,clientX:e.clientX,clientY:e.clientY,button:e.button,buttons:0,bubbles:true,cancelable:true}));
- },true);
-// Teamwork host compatibility: Safari may complete a captured mouse drag as mouseup without
-// delivering pointerup to the canvas. Route that release through the existing canvas commit handler.
-window.addEventListener("mouseup",e=>{
- if(!textBoxGesture)return;
- const pointerId=textBoxGesture.pointerId;
- c.dispatchEvent(new PointerEvent("pointerup",{pointerId,clientX:e.clientX,clientY:e.clientY,button:e.button,buttons:0,bubbles:true,cancelable:true}));
-},true);
-// Safari can deliver pointerup outside the canvas despite pointer capture. Finalize the text-box gesture at window level as a fallback, after canvas handlers have had first chance.
-window.addEventListener("pointerup",e=>{
- if(!textBoxGesture||textBoxGesture.pointerId!==e.pointerId)return;
+function commitTextBoxGesture(source,event){
+ if(!textBoxGesture||(event?.pointerId!==undefined&&textBoxGesture.pointerId!==event.pointerId))return false;
  const g=textBoxGesture;textBoxGesture=null;
- if(!g.didResize){$("status").textContent="Text box not created · drag to define its width and height";redraw();return}
+ if(!g.didResize){$("status").textContent="Text box not created · drag to define its width and height";window.__arqenvoLastTextDiagnostic={source,at:new Date().toISOString(),reason:"gesture-too-small",elementCount:els().length};redraw();return true}
  const left=Math.min(g.startWorld.x,g.currentWorld.x),top=Math.max(g.startWorld.y,g.currentWorld.y),right=Math.max(g.startWorld.x,g.currentWorld.x),bottom=Math.min(g.startWorld.y,g.currentWorld.y),width=Math.max(.08,right-left),height=Math.max(.04,top-bottom);
  const element={id:crypto.randomUUID(),type:"text",position:{x:left,y:top},text:"",textWidthMm:Math.max(2,width*1000/drawingScaleDenominator),textBoxHeightMm:Math.max(2,height*1000/drawingScaleDenominator),textSizeMm:Number(arqenvoTextDefaults?.textSizeMm)||2.5,color:arqenvoTextDefaults?.color||"#263640",storyId:story().id};
  hist("Create Text Box");els().push(element);selected=new Set([element.id]);renderProperties();scheduleAutoSave();redraw();$("status").textContent="Text box sized · opening text editor…";
  window.__arqenvoPendingTextEditorId=element.id;
- requestAnimationFrame(()=>{if(!els().some(item=>item.id===element.id))return;const opened=startInlineTextEditor(element);if(!opened)$("status").textContent="Text box created, but editor could not open. Double-click the box to edit.";if(window.__arqenvoPendingTextEditorId===element.id)window.__arqenvoPendingTextEditorId=null;});
- return;
+ requestAnimationFrame(()=>{
+  const exists=els().some(item=>item.id===element.id);
+  const opened=exists?openInlineTextEditorWithDiagnostics(element,source):false;
+  if(!exists||!opened)$("status").textContent=exists?"Text box created but editor refused to open · diagnostic saved":"Text box was replaced before editor opened · diagnostic saved";
+  if(window.__arqenvoPendingTextEditorId===element.id)window.__arqenvoPendingTextEditorId=null;
+ });
+ return true;
+}
+function openInlineTextEditorWithDiagnostics(element,source){
+ const before={view,tool,elementExists:els().some(item=>item.id===element.id),activeStoryId,elementStoryId:element.storyId,elementCount:els().length};
+ const opened=startInlineTextEditor(element);
+ window.__arqenvoLastTextDiagnostic={source,at:new Date().toISOString(),before,opened,after:{view,tool,activeStoryId,elementExists:els().some(item=>item.id===element.id),selected:[...selected],editor:!!document.getElementById("arqInlineTextEditor"),editingId:window.__arqInlineTextEditingId||null,elementCount:els().length,status:$("status")?.textContent||""}};
+ console.info("[Arqenvo Text Tool]",window.__arqenvoLastTextDiagnostic);
+ if(!opened)console.error("[Arqenvo Text Tool] Editor activation refused",window.__arqenvoLastTextDiagnostic);
+ return opened;
+}
+c.addEventListener("pointerup",e=>{if(textBoxGesture&&textBoxGesture.pointerId===e.pointerId){commitTextBoxGesture("canvas-pointerup",e);return}if(roomLabelMoveGesture&&roomLabelMoveGesture.pointerId===e.pointerId){const g=roomLabelMoveGesture;roomLabelMoveGesture=null;if(g.didMove){scheduleAutoSave();renderProperties();$("status").textContent="Room name and area repositioned together";updateEditActions()}redraw();return}});
+// All text gesture release paths share one idempotent commit routine. Synthetic pointerup redispatch is removed.
+window.addEventListener("pointermove",e=>{
+ if(!textBoxGesture||textBoxGesture.pointerId!==e.pointerId||e.buttons!==0)return;
+ const rect=c.getBoundingClientRect();
+ textBoxGesture.currentScreen={x:e.clientX-rect.left,y:e.clientY-rect.top};
+ textBoxGesture.currentWorld=wpos(textBoxGesture.currentScreen);
+ textBoxGesture.didResize=textBoxGesture.didResize||Math.hypot(textBoxGesture.currentScreen.x-textBoxGesture.startScreen.x,textBoxGesture.currentScreen.y-textBoxGesture.startScreen.y)>=8;
+ commitTextBoxGesture("pointermove-buttons-zero",e);
+},true);
+window.addEventListener("mouseup",e=>{
+ if(!textBoxGesture)return;
+ const rect=c.getBoundingClientRect();
+ textBoxGesture.currentScreen={x:e.clientX-rect.left,y:e.clientY-rect.top};
+ textBoxGesture.currentWorld=wpos(textBoxGesture.currentScreen);
+ textBoxGesture.didResize=textBoxGesture.didResize||Math.hypot(e.clientX-textBoxGesture.startScreen.x,e.clientY-textBoxGesture.startScreen.y)>=8;
+ commitTextBoxGesture("window-mouseup",e);
+},true);
+// Window capture runs before canvas bubbling; it owns releases outside the canvas too.
+window.addEventListener("pointerup",e=>{
+ if(!textBoxGesture||textBoxGesture.pointerId!==e.pointerId)return;
+ const rect=c.getBoundingClientRect();
+ textBoxGesture.currentScreen={x:e.clientX-rect.left,y:e.clientY-rect.top};
+ textBoxGesture.currentWorld=wpos(textBoxGesture.currentScreen);
+ textBoxGesture.didResize=textBoxGesture.didResize||Math.hypot(textBoxGesture.currentScreen.x-textBoxGesture.startScreen.x,textBoxGesture.currentScreen.y-textBoxGesture.startScreen.y)>=8;
+ commitTextBoxGesture("window-pointerup-capture",e);
 },true);
 c.addEventListener("pointerup",e=>{if(genericNodeMoveGesture&&genericNodeMoveGesture.pointerId===e.pointerId){
  const g=genericNodeMoveGesture,touch=e.pointerType==="touch";
