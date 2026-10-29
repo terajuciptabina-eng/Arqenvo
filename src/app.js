@@ -1412,7 +1412,12 @@ function commitTextBoxGesture(source,event){
  if(!g.didResize){$("status").textContent="Text box not created · drag to define its width and height";window.__arqenvoLastTextDiagnostic={source,at:new Date().toISOString(),reason:"gesture-too-small",elementCount:els().length};redraw();return true}
  const left=Math.min(g.startWorld.x,g.currentWorld.x),top=Math.max(g.startWorld.y,g.currentWorld.y),right=Math.max(g.startWorld.x,g.currentWorld.x),bottom=Math.min(g.startWorld.y,g.currentWorld.y),width=Math.max(.08,right-left),height=Math.max(.04,top-bottom);
  const element={id:crypto.randomUUID(),type:"text",position:{x:left,y:top},text:"",textWidthMm:Math.max(2,width*1000/drawingScaleDenominator),textBoxHeightMm:Math.max(2,height*1000/drawingScaleDenominator),textSizeMm:Number(arqenvoTextDefaults?.textSizeMm)||2.5,color:arqenvoTextDefaults?.color||"#263640",storyId:story().id};
- hist("Create Text Box");els().push(element);selected=new Set([element.id]);renderProperties();scheduleAutoSave();redraw();$("status").textContent="Text box sized · opening text editor…";
+ hist("Create Text Box");
+ const textElementsBefore=els().length,elementCollection=els();
+ elementCollection.push(element);
+ window.__arqenvoTextGestureDebug={...window.__arqenvoTextGestureDebug,phase:"element-created",source,createdId:element.id,collectionLengthBefore:textElementsBefore,collectionLengthAfter:elementCollection.length,modelElementCount:p.elements?.length??null,elementsCount:els().length,at:new Date().toISOString()};
+ console.info("[Arqenvo Text Tool] element created",window.__arqenvoTextGestureDebug);
+ selected=new Set([element.id]);renderProperties();scheduleAutoSave();redraw();$("status").textContent="Text box sized · opening text editor…";
  window.__arqenvoPendingTextEditorId=element.id;
  requestAnimationFrame(()=>{
   const exists=els().some(item=>item.id===element.id);
