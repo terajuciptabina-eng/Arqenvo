@@ -9,8 +9,7 @@
   };
   const el=(tag,attrs={},text="")=>{const node=document.createElement(tag);for(const [key,value] of Object.entries(attrs)){if(key==="class")node.className=value;else if(["id","type","placeholder","autocomplete","title","href","download"].includes(key))node.setAttribute(key,value);else if(key==="hidden")node.hidden=value;}if(text)node.textContent=text;return node;};
   const style=el("style");
-  style.textContent="#arqenvoTeamworkPanel{position:fixed;right:14px;top:126px;bottom:auto;z-index:1401;width:min(360px,calc(100vw - 20px));max-height:calc(100dvh - 150px);overflow:auto;background:#f8fafb;color:#26313b;border:1px solid #bcc6ce;border-radius:8px;box-shadow:0 12px 36px #0003;padding:12px;font:13px/1.4 Inter,Arial,sans-serif}#arqenvoTeamworkPanel.tw-docked-left,#arqenvoTeamworkPanel.tw-docked-right{top:83px;bottom:24px;max-height:none;border-radius:0}#arqenvoTeamworkPanel.tw-docked-left{left:0;right:auto;border-left:0}#arqenvoTeamworkPanel.tw-docked-right{right:0;left:auto;border-right:0}#arqenvoTeamworkTitlebar{display:flex;align-items:center;gap:5px;margin:-12px -12px 10px;padding:8px 10px;background:#e8ecef;border-bottom:1px solid #c7cfd5;cursor:move;touch-action:none;user-select:none}#arqenvoTeamworkTitlebar h3{flex:1;margin:0!important}#arqenvoTeamworkTitlebar button{min-height:26px;padding:3px 7px;font-size:11px;white-space:nowrap}#arqenvoTeamworkPanel.tw-docked-left,#arqenvoTeamworkPanel.tw-docked-right{width:min(360px,42vw)}"+
-  "#arqenvoTeamworkPanel[hidden]{display:none}#arqenvoTeamworkPanel h3{font-size:15px;margin:0 0 5px}#arqenvoTeamworkPanel p{margin:5px 0 10px;color:#596773}#arqenvoTeamworkPanel .tw-row{display:flex;gap:7px;margin:8px 0}#arqenvoTeamworkPanel .tw-row>*{min-width:0;flex:1}#arqenvoTeamworkPanel input,#arqenvoTeamworkPanel select{width:100%;min-height:34px;border:1px solid #b8c2cb;border-radius:5px;padding:7px;background:#fff;color:#26313b}#arqenvoTeamworkPanel button{min-height:34px;border:1px solid #b8c2cb;border-radius:5px;padding:7px 9px;background:#fff;color:#26313b;font:inherit}#arqenvoTeamworkPanel button:disabled{opacity:.45}#arqenvoTeamworkPanel .tw-primary{background:#087e8b;color:white;border-color:#087e8b}#arqenvoTeamworkStatus{padding:9px;border-radius:6px;background:#edf1f4;color:#34424e;white-space:pre-wrap;overflow-wrap:anywhere}#arqenvoTeamworkStatus[data-kind=error]{background:#fff0ee;color:#9b2d22}#arqenvoTeamworkStatus[data-kind=ok]{background:#e7f5ee;color:#17633c}#arqenvoTeamworkPanel .tw-small{font-size:11px;color:#687580}#arqenvoTeamworkPanel .tw-sep{border:0;border-top:1px solid #d8dee3;margin:12px 0}@media(max-width:600px){#arqenvoTeamworkPanel{right:8px;top:112px;bottom:auto;max-height:calc(100dvh - 124px);width:calc(100vw - 16px)}#arqenvoTeamworkPanel.tw-docked-left,#arqenvoTeamworkPanel.tw-docked-right{left:0;right:0;top:82px;bottom:24px;width:100%;max-height:none}}";
+  style.textContent="#arqenvoTeamworkPanel{box-sizing:border-box;display:flex;flex-direction:column;min-width:0;min-height:0;overflow:auto;background:#f4f5f6;color:#26313b;border:1px solid #c5cbd1;padding:0;font:12px/1.4 Inter,\"Segoe UI\",Arial,sans-serif}#arqenvoTeamworkPanel[hidden]{display:none}#arqenvoTeamworkPanel.tw-floating{position:absolute;right:14px;top:10px;z-index:1401;width:min(360px,calc(100% - 20px));max-height:calc(100% - 20px);border-radius:5px;box-shadow:0 8px 28px #15233135}#arqenvoTeamworkTitlebar{display:flex;align-items:center;gap:5px;flex:0 0 auto;margin:0;padding:7px 8px;background:#edf0f2;border-bottom:1px solid #cbd2d8;cursor:grab;touch-action:none;user-select:none;color:#596671;font-size:10px;font-weight:700;letter-spacing:.1em}#arqenvoTeamworkTitlebar h3{flex:1;margin:0!important;color:#596671;font-size:10px!important;font-weight:700;letter-spacing:.1em;text-transform:uppercase}#arqenvoTeamworkTitlebar button{min-height:27px;padding:3px 6px;border:1px solid #c3c9ce;border-radius:3px;background:linear-gradient(#fff,#f1f3f5);color:#36414a;font-size:11px;white-space:nowrap}#arqenvoTeamworkPanel .tw-content{padding:10px;overflow:auto;min-height:0}#arqenvoTeamworkPanel p{margin:5px 0 10px;color:#596773}#arqenvoTeamworkPanel .tw-row{display:flex;gap:7px;margin:8px 0}#arqenvoTeamworkPanel .tw-row>*{min-width:0;flex:1}#arqenvoTeamworkPanel input,#arqenvoTeamworkPanel select{width:100%;min-height:34px;border:1px solid #b8c2cb;border-radius:3px;padding:7px;background:#fff;color:#26313b}#arqenvoTeamworkPanel button{min-height:32px;border:1px solid #bcc3ca;border-radius:3px;padding:6px 8px;background:#f9fafb;color:#26313b;font:inherit}#arqenvoTeamworkPanel button:hover{border-color:#72aeb3;background:#e1f0f1}#arqenvoTeamworkPanel button:disabled{opacity:.45}#arqenvoTeamworkPanel .tw-primary{background:#087e8b;color:white;border-color:#087e8b}#arqenvoTeamworkStatus{padding:9px;border-radius:4px;background:#edf1f4;color:#34424e;white-space:pre-wrap;overflow-wrap:anywhere}#arqenvoTeamworkStatus[data-kind=error]{background:#fff0ee;color:#9b2d22}#arqenvoTeamworkStatus[data-kind=ok]{background:#e7f5ee;color:#17633c}#arqenvoTeamworkPanel .tw-small{font-size:11px;color:#687580}#arqenvoTeamworkPanel .tw-sep{border:0;border-top:1px solid #d8dee3;margin:12px 0}@media(max-width:600px){#arqenvoTeamworkPanel.tw-floating{max-width:calc(100% - 8px)}}";
   document.head.append(style);
   const panel=el("section",{id:"arqenvoTeamworkPanel",hidden:true});
   const title=el("h3",{},"Teamwork");const titlebar=el("div",{id:"arqenvoTeamworkTitlebar"});const dockLeft=el("button",{type:"button",title:"Dock palette left"},"◧←"),dockRight=el("button",{type:"button",title:"Dock palette right"},"→◨"),floatPanel=el("button",{type:"button",title:"Float palette"},"↗");titlebar.append(title,dockLeft,dockRight,floatPanel);
@@ -25,10 +24,56 @@
   for(const [v,label] of [["member","Architect / Editor"],["viewer","Viewer"],["admin","Admin"]]){const option=el("option",{},label);option.value=v;memberRole.append(option)}
   const addMember=el("button",{type:"button"},"Add member");const memberRow1=el("div",{class:"tw-row"});memberRow1.append(memberName,memberRole);const memberRow2=el("div",{class:"tw-row"});memberRow2.append(memberPassword,addMember);
   memberBox.append(el("hr",{class:"tw-sep"}),memberHeading,memberRow1,memberRow2,memberListButton,memberList);
-  panel.append(titlebar,intro,status,loginBox,authControls);loginBox.append(user,pass,loginRow);
-  let panelMode="float",dragStart=null;const applyPanelMode=mode=>{panelMode=mode;panel.classList.remove("tw-docked-left","tw-docked-right");if(mode==="left")panel.classList.add("tw-docked-left");if(mode==="right")panel.classList.add("tw-docked-right");if(mode==="float"){panel.style.left="";panel.style.right="14px";panel.style.top="126px";panel.style.width="";}else{panel.style.left="";panel.style.right="";panel.style.top="";panel.style.width="";}try{localStorage.setItem("arqenvo-teamwork-palette-mode",mode)}catch{};};try{const saved=localStorage.getItem("arqenvo-teamwork-palette-mode");if(saved==="left"||saved==="right")applyPanelMode(saved)}catch{};dockLeft.addEventListener("click",()=>applyPanelMode("left"));dockRight.addEventListener("click",()=>applyPanelMode("right"));floatPanel.addEventListener("click",()=>applyPanelMode("float"));titlebar.addEventListener("pointerdown",event=>{if(event.target.closest("button")||panelMode!=="float")return;dragStart={x:event.clientX,y:event.clientY,left:panel.getBoundingClientRect().left,top:panel.getBoundingClientRect().top};titlebar.setPointerCapture?.(event.pointerId)});titlebar.addEventListener("pointermove",event=>{if(!dragStart||panelMode!=="float")return;panel.style.left=Math.max(0,Math.min(window.innerWidth-panel.offsetWidth,dragStart.left+event.clientX-dragStart.x))+"px";panel.style.right="auto";panel.style.top=Math.max(28,Math.min(window.innerHeight-90,dragStart.top+event.clientY-dragStart.y))+"px"});const finishPanelDrag=()=>{if(!dragStart)return;dragStart=null;if(panel.getBoundingClientRect().left<24)applyPanelMode("left");else if(window.innerWidth-panel.getBoundingClientRect().right<24)applyPanelMode("right");};titlebar.addEventListener("pointerup",finishPanelDrag);titlebar.addEventListener("pointercancel",finishPanelDrag);
+  const panelContent=el("div",{class:"tw-content"});panelContent.append(intro,status,loginBox,authControls);panel.append(titlebar,panelContent);loginBox.append(user,pass,loginRow);
+  let panelMode="float",dragStart=null;
+  const work=document.querySelector(".work"),toolbox=document.getElementById("toolbox"),nav=work?.querySelector(":scope > .navigator"),workspace=work?.querySelector(":scope > .workspace"),inspector=work?.querySelector(":scope > .inspector");
+  const clearGridOverrides=()=>{work?.classList.remove("teamwork-docked");work?.style.removeProperty("grid-template-columns");[toolbox,nav,workspace,inspector].forEach(node=>{node?.style.removeProperty("grid-column");node?.style.removeProperty("grid-row")});};
+  const applyPanelMode=mode=>{
+    panelMode=mode;
+    panel.classList.remove("tw-docked-left","tw-docked-right","tw-floating");
+    clearGridOverrides();
+    if(mode==="left"||mode==="right"){
+      if(!work||!toolbox||!workspace||!nav){mode="float";panelMode="float";}
+      else{
+        panel.classList.add("tw-docked-"+mode);
+        panel.style.position="relative";panel.style.left="";panel.style.right="";panel.style.top="";panel.style.bottom="";
+        panel.style.width="auto";panel.style.maxHeight="none";panel.style.alignSelf="stretch";panel.style.display="flex";
+        const toolW=Math.round(toolbox.getBoundingClientRect().width)||142;
+        const navVisible=getComputedStyle(nav).display!=="none";
+        const navW=navVisible?(Math.round(nav.getBoundingClientRect().width)||218):0;
+        const inspectorVisible=inspector&&getComputedStyle(inspector).display!=="none";
+        const insW=inspectorVisible?(Math.round(inspector.getBoundingClientRect().width)||238):0;
+        const twW=280;
+        const cols=mode==="left"
+          ?[toolW+"px",twW+"px","minmax(0,1fr)",...(navVisible?[navW+"px"]:[]),...(insW?[insW+"px"]:[])]
+          :[toolW+"px","minmax(0,1fr)",twW+"px",...(navVisible?[navW+"px"]:[]),...(insW?[insW+"px"]:[])];
+        work.classList.add("teamwork-docked");
+        work.style.setProperty("grid-template-columns",cols.join(" "),"important");
+        toolbox.style.setProperty("grid-column","1","important");toolbox.style.setProperty("grid-row","1","important");
+        workspace.style.setProperty("grid-column",mode==="left"?"3":"2","important");workspace.style.setProperty("grid-row","1","important");
+        panel.style.setProperty("grid-column",mode==="left"?"2":"3","important");panel.style.setProperty("grid-row","1","important");
+        let col=4;
+        if(navVisible){nav.style.setProperty("grid-column",String(col++),"important");nav.style.setProperty("grid-row","1","important")}
+        if(insW){inspector.style.setProperty("grid-column",String(col),"important");inspector.style.setProperty("grid-row","1","important")}
+      }
+    }
+    if(mode==="float"){
+      panel.classList.add("tw-floating");
+      panel.style.position="absolute";panel.style.left="auto";panel.style.right="14px";panel.style.top="10px";panel.style.bottom="auto";
+      panel.style.width="min(360px,calc(100% - 20px))";panel.style.maxHeight="calc(100% - 20px)";panel.style.display="flex";
+    }
+    try{localStorage.setItem("arqenvo-teamwork-palette-mode",mode)}catch{}
+  };
+  try{const saved=localStorage.getItem("arqenvo-teamwork-palette-mode");applyPanelMode(saved==="left"||saved==="right"?saved:"float")}catch{applyPanelMode("float")}
+  dockLeft.addEventListener("click",()=>applyPanelMode("left"));
+  dockRight.addEventListener("click",()=>applyPanelMode("right"));
+  floatPanel.addEventListener("click",()=>applyPanelMode("float"));
+  titlebar.addEventListener("pointerdown",event=>{if(event.target.closest("button")||panelMode!=="float")return;dragStart={x:event.clientX,y:event.clientY,left:panel.getBoundingClientRect().left,top:panel.getBoundingClientRect().top};titlebar.setPointerCapture?.(event.pointerId)});
+  titlebar.addEventListener("pointermove",event=>{if(!dragStart||panelMode!=="float")return;panel.style.left=Math.max(0,Math.min(window.innerWidth-panel.offsetWidth,dragStart.left+event.clientX-dragStart.x))+"px";panel.style.right="auto";panel.style.top=Math.max(28,Math.min(window.innerHeight-90,dragStart.top+event.clientY-dragStart.y))+"px"});
+  const finishPanelDrag=()=>{if(!dragStart)return;dragStart=null;if(panel.getBoundingClientRect().left<24)applyPanelMode("left");else if(window.innerWidth-panel.getBoundingClientRect().right<24)applyPanelMode("right")};
+  titlebar.addEventListener("pointerup",finishPanelDrag);titlebar.addEventListener("pointercancel",finishPanelDrag);
   authControls.append(who,row1,row2,row3,memberBox,row4,el("hr",{class:"tw-sep"}),el("div",{class:"tw-small"},"Reservation leases expire after 90 seconds without a heartbeat. Project writes use revision checks; conflicting changes are not silently overwritten."));
-  document.body.append(panel);
+  (document.querySelector(".work")||document.body).append(panel);
   const showStatus=(message,kind="info")=>{status.textContent=message;status.dataset.kind=kind;};
   const model=()=>window.arqenvoTeamworkAdapter?.getProject?.();
   const applyRemote=project=>{if(!project)throw new Error("The host does not have a shared project yet.");window.arqenvoTeamworkAdapter.applyProject(project);state.syncedProject=structuredClone(project);state.dirty=false;};
