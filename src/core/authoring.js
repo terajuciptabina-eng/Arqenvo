@@ -21,6 +21,35 @@ export function openingOffsetForAnchor(hostLength, openingWidth, anchor = "cente
   return Math.max(0, Math.min(available, offset));
 }
 
+
+/** Resolve edits to an existing hosted door/window from persistent geometry. */
+export function resolveHostedOpeningEdit({hostLength, hostHeight, current, changes, changedKey}) {
+  if (!current || !changes || typeof current !== "object" || typeof changes !== "object") throw new TypeError("Opening edit requires current values and changes");
+  if (!Number.isFinite(hostLength) || hostLength <= 0) throw new RangeError("Host wall length must be positive");
+  const oldWidth = Number(current.width), oldOffset = Number(current.offset);
+  const oldHeight = Number(current.height), oldSill = Number(current.sill ?? 0);
+  const width = Number(changes.width ?? current.width);
+  const height = Number(changes.height ?? current.height);
+  const sill = Number(changes.sill ?? current.sill ?? 0);
+  const offsetInput = Number(changes.offset ?? current.offset);
+  const oldAlignment = String(current.alignment || "center").toLowerCase();
+  const alignment = String(changes.alignment ?? oldAlignment).toLowerCase();
+  if (!["left", "center", "right"].includes(oldAlignment) || !["left", "center", "right"].includes(alignment)) throw new TypeError("Opening anchor must be left, center or right");
+  if (![oldWidth, oldOffset, oldHeight, oldSill].every(Number.isFinite) || oldWidth <= 0 || oldOffset < 0 || oldHeight <= 0 || oldSill < 0) throw new RangeError("Current opening geometry is invalid");
+  if (!Number.isFinite(width) || width <= 0 || width > hostLength + 1e-8) throw new RangeError("Opening width must be positive and fit within the host wall");
+  if (!Number.isFinite(height) || height <= 0 || !Number.isFinite(sill) || sill < 0) throw new RangeError("Opening height and sill must be valid");
+  if (Number.isFinite(hostHeight) && sill + height > hostHeight + 1e-8) throw new RangeError("Opening height and sill exceed the host wall height");
+  const anchorPosition = oldOffset + (oldAlignment === "left" ? 0 : oldAlignment === "right" ? oldWidth : oldWidth / 2);
+  let offset;
+  if (changedKey === "offset") offset = offsetInput;
+  else if (changedKey === "width" || changedKey === "propAlignment") offset = openingOffsetForAnchor(hostLength, width, alignment, anchorPosition);
+  else offset = oldOffset;
+  if (!Number.isFinite(offset) || offset < -1e-8 || offset + width > hostLength + 1e-8) throw new RangeError("Opening cannot fit on the host wall at this position");
+  offset = Math.max(0, Math.min(hostLength - width, offset));
+  const actualAnchorPosition = offset + (alignment === "left" ? 0 : alignment === "right" ? width : width / 2);
+  return { offset, width, height, sill, alignment, anchorPosition: actualAnchorPosition };
+}
+
 export function openingPlacementDirection(wallStart, wallEnd, cursor) {
   const dx = wallEnd.x - wallStart.x;
   const dy = wallEnd.y - wallStart.y;

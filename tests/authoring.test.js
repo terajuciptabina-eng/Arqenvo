@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoof } from "../src/core/model.js";
-import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, openingPlacementDirection, findClosedWallLoops, mergeHostedOpeningRecords, openingOffsetForAnchor } from "../src/core/authoring.js";
+import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, openingPlacementDirection, findClosedWallLoops, mergeHostedOpeningRecords, openingOffsetForAnchor, resolveHostedOpeningEdit } from "../src/core/authoring.js";
 
 test("door swing geometry pivots at the hinge and uses opening width as radius", () => {
   const g = doorSwingGeometry({x:10,y:20},{x:11,y:20},{hingeSide:"left",swingDirection:"inside"});
@@ -183,4 +183,18 @@ test("opening anchor calculation preserves the requested reference coordinate du
  assert.equal(1.25+1.5/2,2,"center anchor coordinate remains fixed");
  assert.equal(openingOffsetForAnchor(4,1.5,"left",1),1);
  assert.equal(openingOffsetForAnchor(4,1.5,"right",3),1.5);
+});
+
+
+test("existing hosted opening edits preserve anchor geometry and apply height and sill",()=>{
+ const current={offset:1,width:1,height:2,sill:0,alignment:"center"};
+ const resized=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:1,width:1.4,height:2.1,sill:.2,alignment:"center"},changedKey:"width"});
+ assert.equal(resized.width,1.4);assert.equal(resized.height,2.1);assert.equal(resized.sill,.2);
+ assert.ok(Math.abs(resized.anchorPosition-1.5)<1e-9,"resizing preserves the old centre anchor");
+ const aligned=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:1,width:1,height:2,sill:0,alignment:"left"},changedKey:"propAlignment"});
+ assert.equal(aligned.offset,1.5,"switching anchor mode keeps the previous physical reference coordinate");assert.equal(aligned.alignment,"left");
+ const moved=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:2,width:1,height:2.2,sill:.3,alignment:"center"},changedKey:"offset"});
+ assert.equal(moved.offset,2);assert.equal(moved.height,2.2);assert.equal(moved.sill,.3);
+ assert.throws(()=>resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:4.5,width:1,height:2,sill:0,alignment:"center"},changedKey:"offset"}),/fit/);
+ assert.throws(()=>resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:1,width:1,height:2.8,sill:.3,alignment:"center"},changedKey:"height"}),/exceed/);
 });
