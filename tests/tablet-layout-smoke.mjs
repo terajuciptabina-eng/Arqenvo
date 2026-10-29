@@ -71,7 +71,7 @@ try{
  assert.equal(hidden.nav,"none");assert.equal(hidden.inspector,"none");assert.ok(hidden.workspaceWidth>100&&hidden.workspaceWidth>before.workspace.width&&!hidden.toggleHidden,"Hiding Navigator must collapse its track and return space to the canvas");
  await tablet.locator("#navigatorToggle").click({force:true});await tablet.waitForFunction(()=>!document.querySelector(".work")?.classList.contains("navigator-hidden"));
  const after=await tablet.evaluate(()=>{const r=document.querySelector(".navigator").getBoundingClientRect();return{x:r.x,width:r.width,display:getComputedStyle(document.querySelector(".navigator")).display}});
- assert.equal(after.display,"block");assert.equal(Math.round(after.x),Math.round(before.nav.x));assert.equal(Math.round(after.width),Math.round(before.nav.width));
+ assert.equal(after.display,"flex");assert.equal(Math.round(after.x),Math.round(before.nav.x));assert.equal(Math.round(after.width),Math.round(before.nav.width));
  // Docked Navigator splitter must resize the panel in its actual layout direction (it is left of canvas on tablets).
  const navWidthBeforeResize=await tablet.locator(".navigator").evaluate(e=>e.getBoundingClientRect().width);
  const navGrip=await tablet.locator(".arq-dock-resize.navigator-resize").boundingBox();assert.ok(navGrip&&navGrip.width>=8,"Navigator dock splitter must be visible");
