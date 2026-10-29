@@ -170,5 +170,5 @@ test("text annotation is a valid serializable project element", () => {
  assert.equal(restored.elements[0].text,"Ground Floor\\nRevision A");
  assert.deepEqual(restored.elements[0].position,{x:1.25,y:2.5});
  const invalid=structuredClone(p);invalid.elements[0].position.x=NaN;
- assert.ok(validateProject(invalid).some(error=>error.includes("Text text-1 has invalid position")));
+ assert.ok(validateProject(invalid).errors.some(error=>error.includes("Text text-1 has invalid position")));
 });
