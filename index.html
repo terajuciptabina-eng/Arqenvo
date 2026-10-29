@@ -428,18 +428,48 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 /* Phone layout only. Keep the existing touch overlay behavior below 761px. */
 /* Phone-sized touch layouts: overlay Navigator instead of squeezing docked panels. */
 @media (max-width:600px) and (pointer:coarse){
- .app{grid-template-rows:27px 72px 42px minmax(0,1fr) 23px;min-height:0}
- .top{height:72px;min-height:72px;max-height:72px;padding:3px 4px}
- .context-toolbar{height:42px;min-height:42px;max-height:42px}
+ /* Phone workspace: compact chrome, a full-width drawing canvas, and one icon rail. */
+ .app{grid-template-rows:27px 58px 38px minmax(0,1fr) 22px;min-height:0;min-width:0}
+ .menu{min-width:0;gap:0;padding:0 4px;overflow-x:auto;overscroll-behavior-x:contain}
+ .menu-group summary{min-height:27px;padding:0 7px;font-size:10px}
+ .top{height:58px;min-height:58px;max-height:58px;padding:3px 4px;gap:2px}
+ .top .ribbon-group>small{font-size:7px}
+ .top .ribbon-buttons{height:39px}
+ .top .ribbon-buttons button{height:36px;min-width:32px;padding:2px 3px}
+ .top .ribbon-buttons button span{font-size:8px}
+ .context-toolbar{height:38px;min-height:38px;max-height:38px;gap:5px;padding:2px 5px}
+ .context-identity{min-width:0!important;flex:0 0 auto;gap:4px}
+ .context-identity>strong{width:27px;height:27px;font-size:17px}
+ .context-identity b{font-size:10px;white-space:nowrap}
+ .context-identity small,.context-identity .info-box-label,.context-summary,.context-brand,.context-eyebrow{display:none!important}
+ #mobileMagicWand,#mobileShiftToggle{min-height:30px;height:30px;padding:3px 7px;font-size:10px;gap:3px;flex:0 0 auto}
+ .context-divider{height:24px;margin:0 1px}
+ .context-control{min-width:0;gap:1px}
+ .context-control label{font-size:8px}
+ .context-control select{max-width:70px;min-height:26px;padding:2px 4px;font-size:10px}
  .canvaswrap{min-width:0;min-height:0;overflow:hidden!important}
- .tools{width:48px;min-width:48px;max-width:48px;padding:4px 2px;overflow-x:hidden}
- #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none!important;visibility:hidden}
- #toolbox .tool{display:flex;align-items:center;justify-content:center;width:42px;min-width:42px;max-width:42px;min-height:42px;margin:2px auto;padding:4px;gap:0;font-size:0;line-height:1;white-space:nowrap}
- #toolbox .tool b{display:block;flex:0 0 auto;width:auto;margin:0;font-size:22px;line-height:1;visibility:visible}
- #toolbox .tool b svg{width:25px;height:25px;stroke-width:1.8}
  .work{position:relative;grid-template-columns:48px minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;min-width:0;min-height:0;overflow:hidden}
- .work>#toolbox{grid-column:1!important;grid-row:1!important;display:flex!important;min-width:0}
- .work>.workspace{grid-column:2!important;grid-row:1!important;min-width:0;min-height:0;width:100%;max-width:100%;overflow:hidden}.work>.inspector{display:none!important}
+ .work>#toolbox,.work>.tools{grid-column:1!important;grid-row:1!important;display:flex!important;min-width:0}
+ .work>.workspace{grid-column:2!important;grid-row:1!important;min-width:0;min-height:0;width:100%;max-width:100%;overflow:hidden}
+ .work>.inspector{display:none!important}
+ #toolbox .toolbox-title,#toolbox .tool-group-label,#toolbox .tool-note,#toolbox .tool span{display:none!important;visibility:hidden}
+ #toolbox .tool{display:flex;align-items:center;justify-content:center;width:42px;min-width:42px;max-width:42px;min-height:40px;margin:2px auto;padding:4px;gap:0;font-size:0;line-height:1;white-space:nowrap}
+ #toolbox .tool b{display:block;flex:0 0 auto;width:auto;margin:0;font-size:21px;line-height:1;visibility:visible}
+ #toolbox .tool b svg{width:24px;height:24px;stroke-width:1.8}
+ .workspace{grid-template-rows:30px minmax(0,1fr) 28px!important}
+ .tabs{min-width:0;gap:2px;padding:2px 4px;overflow-x:auto;overflow-y:hidden;scrollbar-width:none}
+ .tabs::-webkit-scrollbar{display:none}
+ .tabs button,.tabs select{min-height:26px!important;max-height:27px;font-size:10px!important;padding:2px 5px!important}
+ .quick-options{height:28px;min-height:28px;padding:2px 4px;gap:4px}
+ .quick-options label{font-size:9px}
+ .quick-options select{max-width:58px;min-height:23px;font-size:9px}
+ .quick-options button{min-height:23px;padding:2px 5px;font-size:9px}
+ .status{height:22px;min-height:22px;gap:5px;padding:0 5px;font-size:8px;line-height:1;white-space:nowrap;overflow:hidden}
+ .status>*{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .status .right{display:none}
+ .hint{display:none!important}
+ .dynamic-tracker{left:5px!important;right:5px;width:auto;max-width:none}
+ .app>.edit-actions{bottom:calc(env(safe-area-inset-bottom,0px) + 34px)}
 }
 
 /* Canonical palette visibility and responsive workspace layout. */
