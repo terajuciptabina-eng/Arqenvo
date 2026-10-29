@@ -51,4 +51,16 @@ fi
 echo "Starting the LAN host. Keep this Terminal window open while the team is working."
 echo "Use the LAN URL printed below on this Mac and other devices on the same trusted Wi-Fi."
 echo "Do not expose port 8080 to the public internet."
-exec npm run teamwork:host
+while true; do
+  set +e
+  npm run teamwork:host
+  HOST_EXIT_CODE=$?
+  set -e
+  if [ "$HOST_EXIT_CODE" -eq 75 ]; then
+    echo
+    echo "Host restart requested from the admin panel. Restarting..."
+    continue
+  fi
+  echo "Teamwork host stopped (exit code $HOST_EXIT_CODE)."
+  exit "$HOST_EXIT_CODE"
+done
