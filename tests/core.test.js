@@ -164,7 +164,7 @@ test("validation rejects hosted opening dimension/story mismatch and duplicates"
 test("text annotation is a valid serializable project element", () => {
  const p=createProject("Text Annotation");
  p.elements.push({id:"text-1",type:"text",position:{x:1.25,y:2.5},text:"Ground Floor\\nRevision A",textSizeMm:2.5,storyId:p.stories[0].id});
- assert.deepEqual(validateProject(p),[]);
+ assert.deepEqual(validateProject(p),{valid:true,errors:[]});
  const restored=deserializeProject(serializeProject(p));
  assert.equal(restored.elements[0].type,"text");
  assert.equal(restored.elements[0].text,"Ground Floor\\nRevision A");
