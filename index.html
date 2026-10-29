@@ -1,9 +1,17 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>ARQENVO — Building Information Modeling</title>
 <meta name="description" content="ARQENVO independent Building Information Modeling software.">
+<meta name="theme-color" content="#e9ecef">
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="./assets/arqenvo-app-icon.svg">
+<link rel="apple-touch-icon" href="./assets/assets/arqenvo-logo.png">
+<meta name="apple-mobile-web-app-title" content="ARQENVO">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>
 
 :root{--ui:#e8eaed;--panel:#f7f8f9;--line:#c6cbd1;--ink:#26313b;--muted:#65717d;--accent:#087e8b;--select:#d9f0f2}
@@ -895,6 +903,23 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.mobile-panels .tabs>span[style*="flex:1"]{display:none!important}
  .work.mobile-panels>.tools .toolbox-title{display:flex!important;align-items:center;justify-content:space-between!important}
  .work.mobile-panels>.tools .tool-group-label,.work.mobile-panels>.tools .tool-note{display:block!important}
+}
+
+/* Installed iOS/iPadOS web app: use the safe area without changing browser-tab layout. */
+@media (display-mode: standalone), (display-mode: fullscreen) {
+ html,body{width:100%;height:100%;height:100dvh;min-height:0;overflow:hidden}
+ body{overscroll-behavior:none}
+ .app{
+  height:100%;height:100dvh;min-height:0;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-right:env(safe-area-inset-right,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:env(safe-area-inset-left,0px);
+ }
+}
+@media (display-mode: standalone) and (max-width:760px) {
+ .app{min-width:0}
+ .menu,.top,.context-toolbar,.tabs,.quick-options{overscroll-behavior:contain}
 }
 </style></head>
 <body><div class="app">

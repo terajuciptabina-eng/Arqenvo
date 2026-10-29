@@ -1,0 +1,20 @@
+{
+  "name": "ARQENVO — Building Information Modeling",
+  "short_name": "ARQENVO",
+  "description": "ARQENVO browser-based BIM and CAD workspace.",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#e9ecef",
+  "theme_color": "#e9ecef",
+  "icons": [
+    {
+      "src": "./assets/arqenvo-app-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

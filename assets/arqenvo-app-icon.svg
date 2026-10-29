@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+<rect width="512" height="512" rx="104" fill="#e9ecef"/>
+<path d="M78 374 218 103h72l144 271h-87L253 193 163 374Z" fill="#087e8b"/>
+<path d="m253 193 39 73h-76l-39 73h154l43 35h60L290 103h-72Z" fill="#263b4a"/>
+<path d="m218 103 72 0-38 90-42 73-47 82-85 26Z" fill="#0d9ec2"/>
+<path d="M169 344h191l22 30H153Z" fill="#263b4a"/>
+<text x="256" y="439" text-anchor="middle" font-family="Arial,sans-serif" font-size="48" font-weight="700" letter-spacing="5" fill="#263b4a">ARQENVO</text>
+</svg>
