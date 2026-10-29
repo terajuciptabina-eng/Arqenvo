@@ -337,6 +337,8 @@ try {
   let tp=await touchPoint(-2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
   tp=await touchPoint(2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
   await touchPage.waitForTimeout(800);
+  await touchPage.locator("#toolboxToggle").click({force:true});
+  await touchPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
   await touchPage.locator('[data-tool="select"]').click();
   const before=await touchPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements?.find(e=>e.type==="gridline"));
   assert.ok(before,"Touch test must create a Gridline");

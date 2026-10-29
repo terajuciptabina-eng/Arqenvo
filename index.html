@@ -847,6 +847,11 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work.mobile-panels>.tools,.work.mobile-panels>.navigator,.work.mobile-panels>.inspector{display:none!important;position:absolute!important;top:0!important;bottom:0!important;height:auto!important;min-height:0!important;max-height:none!important;z-index:1300!important;box-sizing:border-box!important;overflow:auto!important;background:#f4f5f6!important;color:#26313b!important;box-shadow:0 8px 26px #17212b38!important;overscroll-behavior:contain!important}
  .work.mobile-panels.toolbox-open>.tools{display:flex!important;flex-direction:column!important;align-items:stretch!important;left:0!important;right:auto!important;width:min(200px,72vw)!important;max-width:72vw!important;min-width:0!important;padding:8px 7px!important;gap:4px!important;border-right:1px solid #aeb8c0!important}
  .work.mobile-panels.toolbox-open>.tools{grid-column:auto!important;grid-row:auto!important}
+ .work.mobile-panels.navigator-open>#toolbox,.work.mobile-panels.inspector-open>#toolbox{display:none!important}
+ @media(max-width:600px){
+  .work.mobile-panels.navigator-open>#toolbox,.work.mobile-panels.inspector-open>#toolbox{display:flex!important}
+ }
+
  .work.mobile-panels.navigator-open>.navigator{grid-column:auto!important;grid-row:auto!important}
  .work.mobile-panels.inspector-open>.inspector{grid-column:auto!important;grid-row:auto!important}
  /* A temporary touch overlay owns the top layer; dock/floating splitters must not sit above it. */

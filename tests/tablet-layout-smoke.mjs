@@ -64,7 +64,7 @@ try{
     });
     assert.notEqual(navOpen.display,"none","Navigator must open from its tab button");
     assert.ok(navOpen.width>100,"Navigator overlay must have a useful width");
-    assert.equal(navOpen.toolbox,"none","Navigator and Toolbox overlays must be mutually exclusive");
+    if(phone)assert.notEqual(navOpen.toolbox,"none","Phone keeps the fixed Toolbox icon rail visible beside Navigator");else assert.equal(navOpen.toolbox,"none","Tablet Navigator and Toolbox overlays must be mutually exclusive");
     assert.equal(navOpen.inspector,"none","Navigator and Properties overlays must be mutually exclusive");
     assert.equal(navOpen.grips,0,"Dock splitters must be hidden while Navigator is open");
     if(phone)assert.ok(navOpen.x>=navOpen.toolboxRight-1,"Phone Navigator must start after the fixed Toolbox rail");
@@ -75,7 +75,7 @@ try{
     await page.waitForFunction(()=>document.querySelector(".work")?.classList.contains("inspector-open"));
     const propsOpen=await page.evaluate(()=>({display:getComputedStyle(document.querySelector(".inspector")).display,toolbox:getComputedStyle(document.querySelector("#toolbox")).display,nav:getComputedStyle(document.querySelector(".navigator")).display,grips:[...document.querySelectorAll(".arq-dock-resize")].filter(e=>getComputedStyle(e).display!=="none").length}));
     assert.notEqual(propsOpen.display,"none","Properties must open from its tab button");
-    assert.equal(propsOpen.toolbox,"none");assert.equal(propsOpen.nav,"none");assert.equal(propsOpen.grips,0);
+    if(phone)assert.notEqual(propsOpen.toolbox,"none","Phone keeps the fixed Toolbox icon rail beside Properties");else assert.equal(propsOpen.toolbox,"none");assert.equal(propsOpen.nav,"none");assert.equal(propsOpen.grips,0);
     await page.locator("#propsToggle").click({force:true});
     await page.waitForFunction(()=>!document.querySelector(".work")?.classList.contains("inspector-open"));
     await page.close();
