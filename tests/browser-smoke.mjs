@@ -51,6 +51,12 @@ try {
   // This runs with src/teamwork.js loaded, so the shared model adapter is present as it is on the LAN host.
   await page.locator('[data-tool="text"]').click();
   await page.waitForTimeout(80);
+  const toolState = await page.evaluate(() => ({
+    activeButton: document.querySelector("[data-tool].active")?.dataset.tool || null,
+    selectorValue: document.querySelector("#toolName")?.value || null,
+    canvas: !!document.querySelector("#canvas")
+  }));
+  assert.equal(toolState.activeButton, "text", "Clicking Text Tool must activate the text tool; state=" + JSON.stringify(toolState));
   let textRect = await canvas.boundingBox();
   assert.ok(textRect, "Canvas must be visible for Text Tool");
   const textStart = { x: textRect.x + textRect.width * 0.36, y: textRect.y + textRect.height * 0.38 };
