@@ -1159,6 +1159,15 @@ function commitProvisionalDrawing(){provisionalDrawingSnapshot=null;provisionalD
 function cancelProvisionalDrawing(){if(!provisionalDrawingActive)return false;const baseline=JSON.stringify(provisionalDrawingSnapshot);if(pendingHistorySnapshot){pendingHistorySnapshot=null;historyCommitQueued=false}let guard=0;while(JSON.stringify(p)!==baseline&&modelHistory.canUndo&&guard++<100){const previous=modelHistory.undo(p);if(!previous)break;p=previous}if(JSON.stringify(p)!==baseline){p=structuredClone(provisionalDrawingSnapshot);modelHistory.clear()}activeStoryId=p.stories.some(v=>v.id===activeStoryId)?activeStoryId:p.stories[0].id;selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;trackerDistanceOverride=null;trackerAngleOverride=null;commitProvisionalDrawing();refreshStories();renderProperties();redraw();updateHistoryButtons();scheduleAutoSave();return true}
 $("marqueeGeometryMethod")?.addEventListener("change",e=>{marqueeGeometryMethod=e.target.value;marqueeDraftPoints=[];marqueePreviewPoint=null;selectionBoxGesture=null;lastMarqueeRect=null;lastMarqueePolygon=null;redraw();$("status").textContent="Marquee Geometry Method: "+e.target.options[e.target.selectedIndex].text;});
 function setTool(t){marqueeDraftPoints=[];marqueePreviewPoint=null;if(spaceMagicWandActive){spaceMagicWandActive=false;spaceMagicWandReturnTool=null;spaceHeld=false}if(releasedTouchEditPending)commitAndDeselect("Tool change");if(provisionalDrawingActive)cancelProvisionalDrawing();if(pendingOpeningPlacement){openingPlacement.cancel();pendingOpeningPlacement=null}tool=t;draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;trackerDistanceOverride=null;trackerAngleOverride=null;updateContextUI();document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===t));$("toolName").value=t;document.querySelectorAll("[data-tool-command]").forEach(b=>b.classList.toggle("active",b.dataset.toolCommand===t));redraw()}
+// One delegated toolbar handler is the single source of truth for every authoring tool.
+// Keep commands such as Grid System (which has no data-tool) on their dedicated handlers.
+document.querySelector("#toolbox")?.addEventListener("click",event=>{
+ const button=event.target.closest("button[data-tool]");
+ if(!button||!event.currentTarget.contains(button))return;
+ const nextTool=button.dataset.tool;
+ if(!nextTool)return;
+ setTool(nextTool);
+});
 
 function activeEditGesture(){return gridlineMoveGesture||openingMoveGesture||genericNodeMoveGesture||genericEdgeMoveGesture||genericMoveGesture}
 function hasActiveDrawing(){return !!(provisionalDrawingActive||draft.length>0||wallChainHasSegment||pendingOpeningPlacement)}
