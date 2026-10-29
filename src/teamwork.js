@@ -55,7 +55,7 @@
       const data=await api("project",{method:"PUT",body:JSON.stringify({expectedRevision:state.revision,project,changedElementIds:changedIds(state.syncedProject,project)})});
       state.revision=data.revision;state.syncedProject=structuredClone(project);state.dirty=false;showStatus("Changes saved to host · revision "+state.revision+".","ok");
     }catch(error){
-      if(error.status===409){state.revision=error.data.revision;showStatus("Revision conflict: host advanced to revision "+state.revision+". Local changes remain here and were not uploaded. Receive host project only if you intend to discard them.","error");}
+      if(error.status===409){showStatus("Revision conflict: host advanced to revision "+error.data.revision+". Local changes remain here and were not uploaded. Sending again is blocked until you explicitly resolve the conflict by receiving the host project or saving a local copy.","error");}
       else showStatus("Could not send changes: "+error.message,"error");
     }finally{state.syncing=false;}
   }
