@@ -13,9 +13,10 @@ const server = createServer(async (req,res)=>{
     const requested=pathname==="/"?"/index.html":pathname;
     const file=path.resolve(root,"."+requested);
     if(file!==root&&!file.startsWith(root+path.sep)){res.writeHead(403).end("Forbidden");return}
-    res.writeHead(200,{"content-type":mime[path.extname(file)]||"application/octet-stream"});
-    res.end(await readFile(file));
-  } catch {res.writeHead(404).end("Not found")}
+    const body=await readFile(file);
+    if(!res.headersSent)res.writeHead(200,{"content-type":mime[path.extname(file)]||"application/octet-stream"});
+    res.end(body);
+  } catch {if(!res.headersSent)res.writeHead(404);if(!res.writableEnded)res.end("Not found")}
 });
 await new Promise(resolve=>server.listen(0,"127.0.0.1",resolve));
 const address=server.address();
