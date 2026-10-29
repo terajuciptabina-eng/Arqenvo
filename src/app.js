@@ -2658,7 +2658,36 @@ renderProperties=function(){
 };
 
 
-// Narrow adapter for the optional Local Teamwork client. The CAD/BIM model remains authoritative in this module.
+// Teamwork must never replace the model in the middle of ANY canvas interaction.
+ // Track pointer gestures centrally instead of relying on a per-element tool list:
+ // walls, openings, dimensions, text boxes, marquee, node/edge edits, grid tools,
+ // and future tools all share this protection.
+ const arqenvoTeamworkActivePointers=new Set();
+ const arqenvoTeamworkPointerReleaseTimers=new Map();
+ window.addEventListener("pointerdown",event=>{
+  if(!c||!c.contains(event.target))return;
+  const id=event.pointerId;
+  const timer=arqenvoTeamworkPointerReleaseTimers.get(id);
+  if(timer)clearTimeout(timer);
+  arqenvoTeamworkPointerReleaseTimers.delete(id);
+  arqenvoTeamworkActivePointers.add(id);
+ },true);
+ const releaseTeamworkPointerAfterCommit=event=>{
+  const id=event.pointerId;
+  if(!arqenvoTeamworkActivePointers.has(id))return;
+  const old=arqenvoTeamworkPointerReleaseTimers.get(id);
+  if(old)clearTimeout(old);
+  // Canvas pointer handlers commit geometry during bubbling; leave a short grace
+  // period so an async poll cannot apply a host snapshot before those handlers finish.
+  arqenvoTeamworkPointerReleaseTimers.set(id,setTimeout(()=>{
+   arqenvoTeamworkPointerReleaseTimers.delete(id);
+   arqenvoTeamworkActivePointers.delete(id);
+  },600));
+ };
+ window.addEventListener("pointerup",releaseTeamworkPointerAfterCommit,true);
+ window.addEventListener("pointercancel",releaseTeamworkPointerAfterCommit,true);
+
+ // Narrow adapter for the optional Local Teamwork client. The CAD/BIM model remains authoritative in this module.
 window.arqenvoTeamworkAdapter={
  getProject:()=>JSON.parse(serializeProject(p)),
  applyProject(remoteProject){
@@ -2673,5 +2702,5 @@ window.arqenvoTeamworkAdapter={
   redraw();renderProperties();window.dispatchEvent(new Event("resize"));
  },
  getSelectedElementIds:()=>[...selected],
- hasActiveEdit:()=>hasActiveDrawing()||!!activeEditGesture()||!!floorDrawGesture||!!selectionBoxGesture||!!textBoxGesture||!!pendingOpeningPlacement||!!wallChainStart||wallChainHasSegment||!!window.__arqInlineTextEditingId||!!document.getElementById("arqInlineTextEditor")
+ hasActiveEdit:()=>arqenvoTeamworkActivePointers.size>0||hasActiveDrawing()||!!activeEditGesture()||!!gridlineMoveGesture||!!openingMoveGesture||!!genericNodeMoveGesture||!!genericEdgeMoveGesture||!!genericMoveGesture||!!floorDrawGesture||!!selectionBoxGesture||!!textBoxGesture||!!pendingOpeningPlacement||!!wallChainStart||wallChainHasSegment||!!marqueeDraftPoints.length||!!marqueePreviewPoint||!!window.__arqInlineTextEditingId||!!document.getElementById("arqInlineTextEditor")||!!pendingHistorySnapshot||historyCommitQueued
 };
