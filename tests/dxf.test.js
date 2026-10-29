@@ -21,8 +21,8 @@ test("DXF exports editable text annotations as native TEXT entities",()=>{
  p.elements.push({id:"text-a",type:"text",storyId:p.stories[0].id,position:{x:1.25,y:2.5},text:"Lobby\\nReception",textSizeMm:2.5});
  const dxf=exportFloorPlanDxf(p);
  assert.ok(dxf.includes("A-TEXT"));
- assert.ok(dxf.includes("\\nTEXT\\n"));
- assert.ok(dxf.includes("\\nLobby\\n"));
- assert.ok(dxf.includes("\\nReception\\n"));
- assert.ok(dxf.includes("\\n1.25\\n"));
+ assert.ok(dxf.includes("0\\nTEXT\\n"));
+ assert.ok(dxf.includes("1\\nLobby\\n"));
+ assert.ok(dxf.includes("1\\nReception\\n"));
+ assert.ok(dxf.includes("10\\n1.25\\n"));
 });
