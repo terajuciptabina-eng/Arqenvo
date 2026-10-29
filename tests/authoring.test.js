@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createRoof } from "../src/core/model.js";
-import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, openingPlacementDirection, findClosedWallLoops, mergeHostedOpeningRecords } from "../src/core/authoring.js";
+import { createOpeningPlacement, doorSwingGeometry, hostedOpening3dGeometry, hostedDoorLeaf3dGeometry, openingPlacementDirection, findClosedWallLoops, mergeHostedOpeningRecords, openingOffsetForAnchor } from "../src/core/authoring.js";
 
 test("door swing geometry pivots at the hinge and uses opening width as radius", () => {
   const g = doorSwingGeometry({x:10,y:20},{x:11,y:20},{hingeSide:"left",swingDirection:"inside"});
@@ -174,4 +174,14 @@ test("door leaf remains on wall plane for reversed and vertical hosts",()=>{
    assert.ok(Math.abs(signed)<=.04,"closed door thickness must remain close to the wall centreline");
   }
  }
+});
+
+
+test("opening resize keeps its selected anchor fixed and rejects a position that cannot fit",()=>{
+ assert.equal(openingOffsetForAnchor(4,1,"center",2),1.5);
+ assert.equal(openingOffsetForAnchor(4,1.5,"center",2),1.25);
+ assert.equal(openingOffsetForAnchor(4,1.5,"left",1),1);
+ assert.equal(openingOffsetForAnchor(4,1.5,"right",3),1.5);
+ assert.throws(()=>openingOffsetForAnchor(4,2.5,"center",1),/fit within the host wall/);
+ assert.throws(()=>openingOffsetForAnchor(4,1.5,"left",3),/fit within the host wall/);
 });
