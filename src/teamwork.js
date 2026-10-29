@@ -27,7 +27,7 @@
   const panelContent=el("div",{class:"tw-content"});panelContent.append(intro,status,loginBox,authControls);panel.append(titlebar,panelContent);loginBox.append(user,pass,loginRow);
   let panelMode="float",dragStart=null;
   const work=document.querySelector(".work"),toolbox=document.getElementById("toolbox"),nav=work?.querySelector(":scope > .navigator"),workspace=work?.querySelector(":scope > .workspace"),inspector=work?.querySelector(":scope > .inspector");
-  const clearGridOverrides=()=>{work?.classList.remove("teamwork-docked");work?.style.removeProperty("grid-template-columns");[toolbox,nav,workspace,inspector].forEach(node=>{node?.style.removeProperty("grid-column");node?.style.removeProperty("grid-row")});};
+  const clearGridOverrides=()=>{work?.classList.remove("teamwork-docked");work?.style.removeProperty("grid-template-columns");[panel,toolbox,nav,workspace,inspector].forEach(node=>{node?.style.removeProperty("grid-column");node?.style.removeProperty("grid-row")});};
   const applyPanelMode=mode=>{
     panelMode=mode;
     panel.classList.remove("tw-docked-left","tw-docked-right","tw-floating");
@@ -117,7 +117,7 @@
       startPolling();
     }catch(error){showStatus("Sign in failed: "+error.message+" If this page is on GitHub Pages, open the host PC's http://LAN-IP:8080 address instead.","error");}
   }
-  login.addEventListener("click",signIn);pass.addEventListener("keydown",event=>{if(event.key==="Enter")signIn()});const teamworkMenu=document.getElementById("teamworkMenuGroup");teamworkMenu?.querySelector("summary")?.addEventListener("click",event=>{event.preventDefault();const willOpen=panel.hidden;document.querySelectorAll(".menu-group[open]").forEach(menu=>menu.removeAttribute("open"));panel.hidden=!willOpen;panel.style.display=willOpen?"flex":"none";teamworkMenu.setAttribute("aria-expanded",String(willOpen));});
+  login.addEventListener("click",signIn);pass.addEventListener("keydown",event=>{if(event.key==="Enter")signIn()});const teamworkMenu=document.getElementById("teamworkMenuGroup");teamworkMenu?.querySelector("summary")?.addEventListener("click",event=>{event.preventDefault();const willOpen=panel.hidden;document.querySelectorAll(".menu-group[open]").forEach(menu=>menu.removeAttribute("open"));if(willOpen){panel.hidden=false;applyPanelMode(panelMode);}else{panel.hidden=true;panel.style.display="none";if(panelMode==="left"||panelMode==="right"){clearGridOverrides();panel.classList.remove("tw-docked-left","tw-docked-right");}}teamworkMenu.setAttribute("aria-expanded",String(willOpen));});
   load.addEventListener("click",async()=>{if(state.dirty&&!confirm("Discard this browser's unsent edits and replace them with the host project? Download a local copy first if needed."))return;try{const data=await api("project");if(!data.project)return showStatus("No shared project exists on host yet.","error");applyRemote(data.project);state.revision=data.revision;state.conflictRevision=null;state.reservations=data.reservations||{};showStatus("Host project received · revision "+state.revision+". Sync resumed.","ok");}catch(error){showStatus("Receive failed: "+error.message,"error");}});
   publish.addEventListener("click",async()=>{if(state.revision!==0||state.syncedProject)return showStatus("The host already has a project. Use Receive host project or Send changes.","error");if(!confirm("Create the host's shared project from the model currently open in this browser? This becomes the authoritative project for the team."))return;await sendProject();});
   send.addEventListener("click",sendProject);
