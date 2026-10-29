@@ -152,6 +152,13 @@ const handler = async (req, res) => {
         const session = auth(req, res); if (!session) return;
         sessions.delete(session.token); return json(res, 200, { ok:true });
       }
+      if (req.method === "POST" && route === "/api/teamwork/restart") {
+        const session = auth(req, res, ["admin"]); if (!session) return;
+        json(res, 202, { ok:true, restarting:true });
+        // The launcher catches exit code 75 and starts a fresh host process.
+        setTimeout(() => process.exit(75), 250).unref();
+        return;
+      }
       if (req.method === "GET" && route === "/api/teamwork/session") {
         const session = auth(req, res); if (!session) return;
         return json(res, 200, { user:publicUser(session.user), ...clientInfo(req) });
