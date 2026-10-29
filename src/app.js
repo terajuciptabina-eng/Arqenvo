@@ -1159,12 +1159,111 @@ function commitProvisionalDrawing(){provisionalDrawingSnapshot=null;provisionalD
 function cancelProvisionalDrawing(){if(!provisionalDrawingActive)return false;const baseline=JSON.stringify(provisionalDrawingSnapshot);if(pendingHistorySnapshot){pendingHistorySnapshot=null;historyCommitQueued=false}let guard=0;while(JSON.stringify(p)!==baseline&&modelHistory.canUndo&&guard++<100){const previous=modelHistory.undo(p);if(!previous)break;p=previous}if(JSON.stringify(p)!==baseline){p=structuredClone(provisionalDrawingSnapshot);modelHistory.clear()}activeStoryId=p.stories.some(v=>v.id===activeStoryId)?activeStoryId:p.stories[0].id;selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;trackerDistanceOverride=null;trackerAngleOverride=null;commitProvisionalDrawing();refreshStories();renderProperties();redraw();updateHistoryButtons();scheduleAutoSave();return true}
 $("marqueeGeometryMethod")?.addEventListener("change",e=>{marqueeGeometryMethod=e.target.value;marqueeDraftPoints=[];marqueePreviewPoint=null;selectionBoxGesture=null;lastMarqueeRect=null;lastMarqueePolygon=null;redraw();$("status").textContent="Marquee Geometry Method: "+e.target.options[e.target.selectedIndex].text;});
 function setTool(t){marqueeDraftPoints=[];marqueePreviewPoint=null;if(spaceMagicWandActive){spaceMagicWandActive=false;spaceMagicWandReturnTool=null;spaceHeld=false}if(releasedTouchEditPending)commitAndDeselect("Tool change");if(provisionalDrawingActive)cancelProvisionalDrawing();if(pendingOpeningPlacement){openingPlacement.cancel();pendingOpeningPlacement=null}tool=t;draft=[];floorDrawGesture=null;wallChainStart=null;wallChainPoints=[];wallChainHasSegment=false;trackerDistanceOverride=null;trackerAngleOverride=null;updateContextUI();document.querySelectorAll("[data-tool]").forEach(b=>b.classList.toggle("active",b.dataset.tool===t));$("toolName").value=t;document.querySelectorAll("[data-tool-command]").forEach(b=>b.classList.toggle("active",b.dataset.toolCommand===t));redraw()}
+let toolboxLongPressConsumed=false;
 document.querySelector("#toolbox")?.addEventListener("click",event=>{
  const button=event.target.closest("button[data-tool]");
  if(!button||!event.currentTarget.contains(button))return;
+ if(toolboxLongPressConsumed){toolboxLongPressConsumed=false;event.preventDefault();event.stopImmediatePropagation();return;}
  const nextTool=button.dataset.tool;
  if(nextTool)setTool(nextTool);
 });
+function initToolboxCompactMode(){
+ const toolbox=document.getElementById("toolbox"),work=document.querySelector(".work");
+ if(!toolbox||!work||toolbox.dataset.compactReady==="true")return;
+ toolbox.dataset.compactReady="true";
+ const title=toolbox.querySelector(".toolbox-title");
+ if(!title)return;
+ const titleText=document.createElement("span");titleText.className="toolbox-title-text";titleText.textContent="TOOLBOX";
+ title.textContent="";title.append(titleText);
+ const toggle=document.createElement("button");toggle.type="button";toggle.id="toolboxCollapseToggle";toggle.setAttribute("aria-controls","toolbox");toggle.setAttribute("aria-label","Minimize Toolbox");toggle.title="Minimize Toolbox";toggle.textContent="‹";title.append(toggle);
+ const popover=document.createElement("div");popover.className="toolbox-mobile-popover";popover.setAttribute("role","dialog");popover.setAttribute("aria-label","Tool selector");popover.setAttribute("aria-hidden","true");
+ const popHeading=document.createElement("div");popHeading.className="toolbox-popover-heading";const headingLabel=document.createElement("span");headingLabel.textContent="TOOL SELECTOR";const close=document.createElement("button");close.type="button";close.className="toolbox-popover-close";close.setAttribute("aria-label","Close tool selector");close.textContent="×";popHeading.append(headingLabel,close);popover.append(popHeading);
+ const descriptions={
+  select:"Select, inspect and edit model elements.",
+  marquee:"Select a rectangular region of elements.",
+  wall:"Draw walls and connect wall junctions.",
+  slab:"Create a slab or floor plate.",
+  zone:"Create and identify a room or area.",
+  column:"Place a structural or architectural column.",
+  beam:"Place a beam between points.",
+  door:"Insert a door into a compatible wall.",
+  window:"Insert a window into a compatible wall.",
+  roof:"Create a roof element following a defined footprint.",
+  magicwand:"Create matching geometry from an existing element or boundary.",
+  dimension:"Create linear dimensions and dimension chains.",
+  text:"Draw a text box, then enter annotation text.",
+  gridline:"Place a single grid line.",
+  gridsystem:"Create a coordinated grid system."
+ };
+ const originals=[...toolbox.querySelectorAll("button[data-tool]")];
+ originals.forEach(original=>{
+  const key=original.dataset.tool,label=original.querySelector("span")?.textContent?.trim()||original.getAttribute("aria-label")||key;
+  const item=document.createElement("div");item.className="toolbox-popover-item";
+  const clone=original.cloneNode(true);clone.removeAttribute("id");clone.dataset.toolboxPopoverCopy="true";clone.setAttribute("aria-label",label);clone.title=label+" — double-click to activate";
+  const description=document.createElement("div");description.className="toolbox-popover-description";description.textContent=original.title||descriptions[key]||("Activate the "+label+" tool.");
+  item.append(clone,description);popover.append(item);
+ });
+ toolbox.append(popover);
+ const info=document.createElement("div");info.className="toolbox-tool-info";info.setAttribute("role","status");toolbox.append(info);
+ let minimized=false,longPressTimer=0,longPressButton=null,infoTimer=0;
+ const isSmall=()=>window.matchMedia("(max-width:760px)").matches;
+ const setGridWidth=width=>{
+  const current=getComputedStyle(work).gridTemplateColumns;
+  if(!current||current==="none")return;
+  const updated=current.replace(/^\s*[^\s]+/,width+"px");
+  work.style.setProperty("grid-template-columns",updated,"important");
+  work.style.setProperty("--toolbox-width",width+"px");
+ };
+ const closePopover=()=>{popover.classList.remove("is-open");popover.setAttribute("aria-hidden","true");toggle.setAttribute("aria-expanded","false")};
+ const openPopover=()=>{popover.classList.add("is-open");popover.setAttribute("aria-hidden","false");toggle.setAttribute("aria-expanded","true")};
+ const setMinimized=value=>{
+  minimized=!!value;toolbox.classList.toggle("toolbox-is-minimized",minimized);
+  toggle.textContent=minimized?"›":"‹";toggle.setAttribute("aria-label",minimized?"Maximize Toolbox":"Minimize Toolbox");toggle.title=minimized?"Maximize Toolbox":"Minimize Toolbox";
+  if(!isSmall())setGridWidth(minimized?48:156);
+  if(!minimized)closePopover();
+ };
+ toggle.addEventListener("click",event=>{
+  event.preventDefault();event.stopPropagation();
+  if(isSmall()){if(popover.classList.contains("is-open"))closePopover();else openPopover();return}
+  setMinimized(!minimized);
+ });
+ close.addEventListener("click",closePopover);
+ popover.addEventListener("click",event=>{
+  const button=event.target.closest("button[data-tool]");
+  if(!button)return;
+  closePopover();
+  if(event.detail>=2)setTool(button.dataset.tool);
+ });
+ toolbox.addEventListener("dblclick",event=>{
+  const button=event.target.closest("button[data-tool]");
+  if(!button||button===toggle)return;
+  if(button.dataset.tool)setTool(button.dataset.tool);
+  closePopover();
+ });
+ const showToolInfo=(button,x,y)=>{
+  const key=button.dataset.tool,label=button.querySelector("span")?.textContent?.trim()||button.getAttribute("aria-label")||key;
+  info.textContent=label+": "+(button.title&&!button.title.includes("double-click")?button.title:descriptions[key]||("Activate the "+label+" tool."));
+  info.classList.add("is-visible");
+  info.style.left=Math.max(8,Math.min(window.innerWidth-288,x+12))+"px";
+  info.style.top=Math.max(8,Math.min(window.innerHeight-100,y+12))+"px";
+  clearTimeout(infoTimer);infoTimer=setTimeout(()=>info.classList.remove("is-visible"),2600);
+ };
+ toolbox.addEventListener("pointerdown",event=>{
+  const button=event.target.closest("button[data-tool]");
+  if(!button||event.pointerType==="mouse"||button===toggle)return;
+  longPressButton=button;clearTimeout(longPressTimer);
+  longPressTimer=setTimeout(()=>{if(!longPressButton)return;toolboxLongPressConsumed=true;showToolInfo(button,event.clientX,event.clientY)},560);
+ });
+ ["pointerup","pointercancel","pointermove","pointerleave"].forEach(type=>toolbox.addEventListener(type,event=>{
+  if(type==="pointermove"&&longPressButton&&Math.abs(event.movementX||0)+Math.abs(event.movementY||0)>12){clearTimeout(longPressTimer);longPressButton=null;return}
+  if(type!=="pointermove"){clearTimeout(longPressTimer);longPressButton=null}
+ }));
+ document.addEventListener("pointerdown",event=>{if(!toolbox.contains(event.target))closePopover()});
+ document.addEventListener("keydown",event=>{if(event.key==="Escape"){closePopover();info.classList.remove("is-visible")}});
+ window.addEventListener("resize",()=>{if(!isSmall()&&minimized)setGridWidth(48)});
+ setMinimized(isSmall());
+}
+if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",initToolboxCompactMode);else initToolboxCompactMode();
 
 function activeEditGesture(){return gridlineMoveGesture||openingMoveGesture||genericNodeMoveGesture||genericEdgeMoveGesture||genericMoveGesture}
 function hasActiveDrawing(){return !!(provisionalDrawingActive||draft.length>0||wallChainHasSegment||pendingOpeningPlacement)}
