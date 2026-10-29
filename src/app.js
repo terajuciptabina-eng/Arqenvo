@@ -1412,12 +1412,29 @@ function commitTextBoxGesture(source,event){
  if(!g.didResize){$("status").textContent="Text box not created · drag to define its width and height";window.__arqenvoLastTextDiagnostic={source,at:new Date().toISOString(),reason:"gesture-too-small",elementCount:els().length};redraw();return true}
  const left=Math.min(g.startWorld.x,g.currentWorld.x),top=Math.max(g.startWorld.y,g.currentWorld.y),right=Math.max(g.startWorld.x,g.currentWorld.x),bottom=Math.min(g.startWorld.y,g.currentWorld.y),width=Math.max(.08,right-left),height=Math.max(.04,top-bottom);
  const element={id:crypto.randomUUID(),type:"text",position:{x:left,y:top},text:"",textWidthMm:Math.max(2,width*1000/drawingScaleDenominator),textBoxHeightMm:Math.max(2,height*1000/drawingScaleDenominator),textSizeMm:Number(arqenvoTextDefaults?.textSizeMm)||2.5,color:arqenvoTextDefaults?.color||"#263640",storyId:story().id};
- hist("Create Text Box");
- const textElementsBefore=els().length,elementCollection=els();
- elementCollection.push(element);
- window.__arqenvoTextGestureDebug={...window.__arqenvoTextGestureDebug,phase:"element-created",source,createdId:element.id,collectionLengthBefore:textElementsBefore,collectionLengthAfter:elementCollection.length,modelElementCount:p.elements?.length??null,elementsCount:els().length,at:new Date().toISOString()};
+ const beforeTextCommit=structuredClone(p);
+ p.elements=[...els(),element];
+ selected=new Set([element.id]);
+ window.__arqenvoTextGestureDebug={...window.__arqenvoTextGestureDebug,phase:"element-created",source,createdId:element.id,modelElementCount:p.elements.length,elementsCount:els().length,at:new Date().toISOString()};
  console.info("[Arqenvo Text Tool] element created",window.__arqenvoTextGestureDebug);
- selected=new Set([element.id]);renderProperties();scheduleAutoSave();redraw();$("status").textContent="Text box sized · opening text editor…";
+ // Record the model transaction after insertion so the queued history callback cannot
+ // replace the newly-created text box with its stale pre-gesture snapshot.
+ if(!pendingHistorySnapshot)pendingHistorySnapshot=beforeTextCommit;
+ historyCommitQueued=true;
+ queueMicrotask(()=>{
+  const before=pendingHistorySnapshot;
+  pendingHistorySnapshot=null;historyCommitQueued=false;
+  if(!before)return;
+  try{
+   const transaction=transactModel(before,{label:"Create Text Box",mutate:draft=>{for(const key of Object.keys(draft))delete draft[key];Object.assign(draft,structuredClone(p));return {changedNodes:["model"]}},validate:draft=>validateProject(draft),history:modelHistory});
+   p=transaction.model;updateHistoryButtons();scheduleAutoSave();
+  }catch(error){
+   p=before;activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;
+   selected=new Set([...selected].filter(id=>els().some(el=>el.id===id)));
+   refreshStories();redraw();renderProperties();updateHistoryButtons();$("status").textContent="Text creation rejected: "+error.message;
+  }
+ });
+ renderProperties();scheduleAutoSave();redraw();$("status").textContent="Text box sized · opening text editor…";
  window.__arqenvoPendingTextEditorId=element.id;
  requestAnimationFrame(()=>{
   const exists=els().some(item=>item.id===element.id);
