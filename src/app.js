@@ -43,7 +43,7 @@ let camera3d={yaw:-Math.PI/4,pitch:Math.PI/5,zoom:1,panX:0,panY:0,targetZ:1.5};
 let orbiting=false,lastCameraPointer=null,pending3dPointer=null,hitPolys3d=[],shiftHeld=false,mobileShiftToggleActive=false,shiftAngleLock=null;
 // Floor-plan touch navigation: two fingers pan/zoom without creating geometry.
 const floorTouchPointers=new Map();let floorTouchGesture=null;const threeTouchPointers=new Map();let threeTouchGesture=null;
-function scheduleAutoSave(){if(autosaveTimer)clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch(error){$("status").textContent="Autosave unavailable: "+error.message}},700)}
+function scheduleAutoSave(){if(autosaveTimer)clearTimeout(autosaveTimer);autosaveTimer=setTimeout(()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch(error){$("status").textContent="Autosave unavailable: "+error.message}},700);window.arqenvoTeamwork?.markDirty?.()}
 function hist(label="Edit model"){if(!pendingHistorySnapshot)pendingHistorySnapshot=structuredClone(p);if(historyCommitQueued)return;historyCommitQueued=true;queueMicrotask(()=>{const before=pendingHistorySnapshot;pendingHistorySnapshot=null;historyCommitQueued=false;if(!before)return;try{if(JSON.stringify(before)===JSON.stringify(p)){updateHistoryButtons();return}const transaction=transactModel(before,{label,mutate:draft=>{for(const key of Object.keys(draft))delete draft[key];Object.assign(draft,structuredClone(p));return {changedNodes:["model"]}},validate:draft=>validateProject(draft),history:modelHistory});p=transaction.model;updateHistoryButtons();scheduleAutoSave()}catch(error){p=before;activeStoryId=p.stories.some(s=>s.id===activeStoryId)?activeStoryId:p.stories[0].id;selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));refreshStories();redraw();renderProperties();updateHistoryButtons();$("status").textContent="Edit rejected: "+error.message}})}
 function restore(json){p=deserializeProject(json);updateUnitButton();selected=new Set([...selected].filter(id=>els().some(e=>e.id===id)));redraw();renderProperties();updateHistoryButtons()}
 function updateHistoryButtons(){$("undo").disabled=!modelHistory.canUndo;$("redo").disabled=!modelHistory.canRedo}
@@ -2655,4 +2655,22 @@ const arqenvoOriginalRenderProperties=renderProperties;
 renderProperties=function(){
  arqenvoOriginalRenderProperties();
  arqenvoCanonicalizeSelectedProperties();
+};
+
+
+// Narrow adapter for the optional Local Teamwork client. The CAD/BIM model remains authoritative in this module.
+window.arqenvoTeamworkAdapter={
+ getProject:()=>JSON.parse(serializeProject(p)),
+ applyProject(remoteProject){
+  const next=deserializeProject(JSON.stringify(remoteProject));
+  const validation=validateProject(next);
+  if(!validation.valid)throw new Error("Received Teamwork project failed validation: "+(validation.errors||[]).join("; "));
+  p=next;
+  activeStoryId=p.stories.some(story=>story.id===activeStoryId)?activeStoryId:p.stories[0]?.id;
+  selected.clear();
+  pendingHistorySnapshot=null;historyCommitQueued=false;modelHistory.clear();
+  try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch{}
+  redraw();renderProperties();window.dispatchEvent(new Event("resize"));
+ },
+ getSelectedElementIds:()=>[...selected]
 };
