@@ -377,6 +377,8 @@ try {
   await touchPage.locator("#editActions").evaluate(el=>{el.hidden=true;el.setAttribute("aria-hidden","true")});
 
   // A first wall point is provisional. Cancel must clear it without adding a wall.
+  await touchPage.locator("#toolboxToggle").click({force:true});
+  await touchPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
   await touchPage.locator('[data-tool="wall"]').click();
   const canvasBoxTouch=await touchPage.locator("#canvas").boundingBox();
   await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-180,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
@@ -388,6 +390,8 @@ try {
   assert.equal(wallsAfterCancel,wallsBeforeCancel,"Cancel must not commit the provisional first wall point");
 
   // Finish a continuous wall chain. A later tap must not append geometry.
+  await touchPage.locator("#toolboxToggle").click({force:true});
+  await touchPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
   await touchPage.locator('[data-tool="wall"]').click();
   await touchPage.locator("#wallGeometryMethod").selectOption("continuous");
   await touchPage.mouse.click(canvasBoxTouch.x+canvasBoxTouch.width/2-180,canvasBoxTouch.y+canvasBoxTouch.height/2+100);
