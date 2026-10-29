@@ -146,6 +146,20 @@ test("door/window hosting rejects openings that cross the wall end",()=>{
  }
 });
 
+
+test("double-leaf 3D door leaves meet with only a small centre clearance",()=>{
+ const wall={start:{x:0,y:0},end:{x:4,y:0},thickness:.15};
+ const door={type:"door",offset:1,width:.8,height:2.1,sill:0,hingeSide:"left",swingDirection:"inside"};
+ const half=door.width/2,meetingGap=.003;
+ const first=hostedDoorLeaf3dGeometry(wall,{...door,width:half,hingeSide:"left"},{startInset:.065,endInset:meetingGap/2});
+ const second=hostedDoorLeaf3dGeometry(wall,{...door,offset:door.offset+half,width:half,hingeSide:"right"},{startInset:meetingGap/2,endInset:.065});
+ const firstEnd=Math.max(...first.boundary.map(p=>p.x));
+ const secondStart=Math.min(...second.boundary.map(p=>p.x));
+ assert.ok(Math.abs((secondStart-firstEnd)-meetingGap)<1e-9,"meeting edges should have only the designed 3 mm clearance");
+ assert.ok(Math.min(...first.boundary.map(p=>p.x))>=door.offset);
+ assert.ok(Math.max(...second.boundary.map(p=>p.x))<=door.offset+door.width);
+});
+
 test("door leaf remains on wall plane for reversed and vertical hosts",()=>{
  const hosts=[
   {start:{x:4,y:0},end:{x:0,y:0},thickness:.15},
