@@ -940,20 +940,52 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 <div class="menu-group"><button type="button" class="menu-trigger">Help</button><div class="menu-pop help-menu"><strong>ARQENVO BIM Workspace</strong><span>F2 Floor Plan · F3 3D Window</span><span>Space-drag / middle mouse: Pan</span><span>3D left-drag: Orbit · Wheel: Zoom</span><span>Esc: Finish / cancel command</span></div></div>
 </nav>
 <script>
-/* Explicit button-driven application menus. Native <details> is retained only
-   for Teamwork, which has its own visibility controller in src/teamwork.js. */
+/* Explicit menu popovers. On touch layouts, move the active popup to body so
+   the menu bar's horizontal scrolling viewport cannot clip it vertically. */
+const menuPortals=new Map();
+function closeAppMenus(){
+ document.querySelectorAll(".menu-group.is-open").forEach(group=>{
+  group.classList.remove("is-open");
+  const trigger=group.querySelector(".menu-trigger"),pop=menuPortals.get(group);
+  trigger?.setAttribute("aria-expanded","false");
+  if(pop){
+   group.append(pop);
+   pop.removeAttribute("style");
+   menuPortals.delete(group);
+  }
+ });
+}
 document.querySelectorAll(".menu-group").forEach(group=>{
- const trigger=group.querySelector(".menu-trigger");
- if(!trigger)return;
+ const trigger=group.querySelector(".menu-trigger"),pop=group.querySelector(".menu-pop");
+ if(!trigger||!pop)return;
+ trigger.setAttribute("aria-expanded","false");
  trigger.addEventListener("click",event=>{
   event.preventDefault();
   event.stopPropagation();
   const wasOpen=group.classList.contains("is-open");
-  document.querySelectorAll(".menu-group.is-open").forEach(other=>other.classList.remove("is-open"));
-  if(!wasOpen)group.classList.add("is-open");
-  trigger.setAttribute("aria-expanded",String(!wasOpen));
+  closeAppMenus();
+  if(wasOpen)return;
+  group.classList.add("is-open");
+  trigger.setAttribute("aria-expanded","true");
+  if(matchMedia("(pointer:coarse), (max-width:760px)").matches){
+   const rect=trigger.getBoundingClientRect();
+   pop.style.position="fixed";
+   pop.style.left=Math.max(6,Math.min(rect.left,window.innerWidth-220))+"px";
+   pop.style.top=Math.min(rect.bottom,window.innerHeight-120)+"px";
+   pop.style.right="auto";
+   pop.style.bottom="auto";
+   pop.style.width="max-content";
+   pop.style.minWidth=Math.min(220,window.innerWidth-12)+"px";
+   pop.style.maxWidth="calc(100vw - 12px)";
+   pop.style.maxHeight="calc(100dvh - "+Math.ceil(rect.bottom+12)+"px)";
+   pop.style.overflowY="auto";
+   document.body.append(pop);
+   menuPortals.set(group,pop);
+  }
  });
 });
+window.addEventListener("resize",closeAppMenus,{passive:true});
+window.addEventListener("orientationchange",closeAppMenus,{passive:true});
 document.getElementById("resetWorkspaceLayout")?.addEventListener("click",()=>{
  document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);document.querySelectorAll(".menu-group.is-open").forEach(group=>group.classList.remove("is-open"));
  if(!confirm("Reset Arqenvo workspace panels and UI layout to the first-open defaults? Your project and drawing will not be deleted."))return;
@@ -967,10 +999,10 @@ document.getElementById("resetWorkspaceLayout")?.addEventListener("click",()=>{
  location.reload();
 });
 document.addEventListener("pointerdown",event=>{
- if(!event.target.closest(".menu")){document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);document.querySelectorAll(".menu-group.is-open").forEach(group=>group.classList.remove("is-open"));}
+ if(!event.target.closest(".menu")&&!event.target.closest(".menu-pop")){document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);closeAppMenus();}
 });
 document.addEventListener("keydown",event=>{
- if(event.key==="Escape"){document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);document.querySelectorAll(".menu-group.is-open").forEach(group=>group.classList.remove("is-open"));}
+ if(event.key==="Escape"){document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);closeAppMenus();}
 });
 </script>
 <header class="top" aria-label="Main ribbon">
