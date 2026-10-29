@@ -139,7 +139,7 @@ export function validateProject(data) {
   for (const el of data?.elements ?? []) {
     if (!el.id || ids.has(el.id)) errors.push(`Missing or duplicate element id: ${el.id ?? "(missing)"}`);
     ids.add(el.id);
-    if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "gridline", "room", "roof"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
+    if (!["wall", "slab", "column", "beam", "door", "window", "object", "dimension", "gridline", "room", "roof", "text"].includes(el.type)) errors.push(`Unknown element type: ${el.type}`);
     if (data?.version === MODEL_VERSION && el.storyId && !storyIds.has(el.storyId)) errors.push(`Element ${el.id} references unknown story: ${el.storyId}`);
     const finitePoint = p => p && Number.isFinite(p.x) && Number.isFinite(p.y);
     const positive = n => Number.isFinite(n) && n > 0;
@@ -160,6 +160,7 @@ export function validateProject(data) {
     if (el.type === "slab" && (!Array.isArray(el.boundary) || el.boundary.length < 3 || el.boundary.some(v => !finitePoint(v)) || polygonArea(el.boundary) <= 1e-8 || !positive(el.thickness))) errors.push(`Slab ${el.id} has invalid boundary or thickness`);
     if (el.type === "roof" && (!Array.isArray(el.boundary) || el.boundary.length < 3 || el.boundary.some(v=>!finitePoint(v)) || polygonArea(el.boundary)<=1e-8 || !positive(el.thickness) || !Number.isFinite(el.elevation) || el.elevation<0 || !Number.isFinite(el.pitch) || el.pitch<0 || el.pitch>70)) errors.push(`Roof ${el.id} has invalid boundary or parameters`);
     if (el.type === "column" && (!finitePoint(el.position) || !positive(el.width) || !positive(el.depth) || !positive(el.height))) errors.push(`Column ${el.id} has invalid position or dimensions`);
+    if (el.type === "text" && (!finitePoint(el.position) || typeof el.text !== "string" || !Number.isFinite(el.textSizeMm) || el.textSizeMm <= 0)) errors.push(`Text ${el.id} has invalid position, content, or text size`);
     if (el.type === "beam" && (!positive(el.width) || !positive(el.depth))) errors.push(`Beam ${el.id} has invalid width or depth`);
     if (["door","window"].includes(el.type)) {
       const host = (data?.elements ?? []).find(candidate => candidate.id === el.hostWallId && candidate.type === "wall");
