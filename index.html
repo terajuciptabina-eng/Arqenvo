@@ -880,6 +880,9 @@ document.querySelectorAll(".menu-group").forEach(group=>{
   if(group.open)document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
  });
  group.querySelector("summary")?.addEventListener("click",event=>{
+  // Teamwork owns visibility in src/teamwork.js. Avoid a competing native
+  // <details> toggle, which caused the Teamwork panel to need two taps to close.
+  if(group.id==="teamworkMenuGroup"){event.preventDefault();return;}
   const wasOpen=group.open;
   document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
   if(wasOpen){event.preventDefault();group.open=false}
