@@ -46,6 +46,7 @@ try {
     const canvas = document.querySelector("#canvas");
     return canvas && canvas.clientWidth > 100 && canvas.clientHeight > 100;
   });
+  const canvas = page.locator("#canvas");
   // Text Tool regression: verify the real drag/release path creates one element and opens the inline editor.
   // This runs with src/teamwork.js loaded, so the shared model adapter is present as it is on the LAN host.
   await page.locator('[data-tool="text"]').click();
@@ -78,7 +79,6 @@ try {
   await page.locator("#arqInlineTextEditor button").filter({ hasText: "Finish" }).click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.some(e => e.type === "text" && e.text === "Teamwork text regression"));
   await page.locator('[data-tool="select"]').click();
-  const canvas = page.locator("#canvas");
   await page.locator('[data-tool="wall"]').click();
   await page.locator("#wallGeometryMethod").selectOption("single");
   // Tool selection can resize the workspace; calculate coordinates only after the UI settles.
