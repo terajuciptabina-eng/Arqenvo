@@ -550,7 +550,9 @@ try {
   await openingPage.waitForFunction(() => document.querySelector("#propSwing")?.value === "outside" && ["Opening updated","Door parameters updated"].includes(document.querySelector("#status")?.textContent));
   await openingPage.locator("#propAlignment").selectOption("left");
   await openingPage.waitForFunction(() => document.querySelector("#propAlignment")?.value === "left" && ["Opening updated","Door parameters updated"].includes(document.querySelector("#status")?.textContent));
-  assert.ok(Math.abs(Number(await openingPage.locator('[data-prop="offset"]').inputValue())) < 1e-8,
+  await openingPage.waitForFunction(()=>{const elements=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];const door=elements.find(e=>e.type==="door");return !!door&&door.alignment==="left"&&Math.abs(Number(door.offset)||0)<1e-8},null,{timeout:3000});
+  const leftAlignedDoor=await openingPage.evaluate(()=>{const elements=JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements||[];return elements.find(e=>e.type==="door")});
+  assert.ok(leftAlignedDoor&&Math.abs(Number(leftAlignedDoor.offset)||0)<1e-8,
     "Choosing Left should immediately move the door opening to the host wall start");
   await openingPage.locator('[data-prop="width"]').fill("1.2");
   await openingPage.locator('[data-prop="width"]').press("Enter");
