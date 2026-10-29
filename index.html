@@ -936,20 +936,33 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 <details class="menu-group"><summary>Help</summary><div class="menu-pop help-menu"><strong>ARQENVO BIM Workspace</strong><span>F2 Floor Plan · F3 3D Window</span><span>Space-drag / middle mouse: Pan</span><span>3D left-drag: Orbit · Wheel: Zoom</span><span>Esc: Finish / cancel command</span></div></details>
 </nav>
 <script>
-/* Keep the application menu mutually exclusive, like a desktop menu bar. */
+/* Touch-first menu handling for Safari/iOS standalone mode.
+   Use pointerup rather than relying on <summary>'s synthesized click/default toggle. */
 document.querySelectorAll(".menu-group").forEach(group=>{
  group.addEventListener("toggle",()=>{
   if(group.open)document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
  });
- group.querySelector("summary")?.addEventListener("click",event=>{
-  // Teamwork owns visibility in src/teamwork.js; do not toggle its native
-  // <details> state here. For every other menu, toggle explicitly rather than
-  // relying on Safari's native <summary> default action on touch.
-  if(group.id==="teamworkMenuGroup"){event.preventDefault();return;}
+ const summary=group.querySelector("summary");
+ if(!summary)return;
+ summary.style.touchAction="manipulation";
+ summary.addEventListener("pointerup",event=>{
+  if(group.id==="teamworkMenuGroup")return;
+  if(event.pointerType==="mouse"&&event.button!==0)return;
   event.preventDefault();
+  event.stopPropagation();
   const wasOpen=group.open;
   document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
   group.open=!wasOpen;
+ });
+ summary.addEventListener("click",event=>{
+  if(group.id==="teamworkMenuGroup"){event.preventDefault();return;}
+  // Pointer input is handled by pointerup above. Retain keyboard activation.
+  if(event.detail===0){
+   event.preventDefault();
+   const wasOpen=group.open;
+   document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
+   group.open=!wasOpen;
+  }else event.preventDefault();
  });
 });
 document.getElementById("resetWorkspaceLayout")?.addEventListener("click",()=>{
