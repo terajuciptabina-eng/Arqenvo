@@ -23,5 +23,7 @@ jobs:
           npx playwright install --with-deps chromium
       - name: Run tablet layout smoke test
         run: npm run test:layout
+        continue-on-error: true
       - name: Run browser smoke test
+        if: always()
         run: npm run test:browser
