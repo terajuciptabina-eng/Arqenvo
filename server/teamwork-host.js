@@ -219,7 +219,7 @@ const handler = async (req, res) => {
         const session = auth(req, res, ["admin"]); if (!session) return;
         const body = await readBody(req), username = String(body.username || "").trim(), password = String(body.password || "");
         if (!/^[a-zA-Z0-9._-]{3,40}$/.test(username)) return json(res, 400, { error:"Username must be 3-40 letters, numbers, dots, underscores or hyphens" });
-        if (password.length < 12) return json(res, 400, { error:"Password must contain at least 12 characters" });
+        if (password.length < 4) return json(res, 400, { error:"Password must contain at least 4 characters" });
         if (!["member","viewer","admin"].includes(body.role || "member")) return json(res, 400, { error:"Unsupported role" });
         const users = loadUsers();
         if (users.some(item => item.username.toLowerCase() === username.toLowerCase())) return json(res, 409, { error:"Username already exists" });
