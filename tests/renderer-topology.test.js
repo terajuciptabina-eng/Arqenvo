@@ -42,3 +42,11 @@ test("3D wall skin omits horizontal sill and head edges inside hosted openings",
   assert.match(source, /ws\.lo>=o\.offset-1e-4&&ws\.hi<=o\.offset\+o\.width\+1e-4/);
   assert.match(source, /Math\.abs\(edgeZ-\(\(o\.sill\|\|0\)\+o\.height\)\)<\.001/);
 });
+
+test("3D wall top-face visibility uses a model-space spatial index", () => {
+  assert.match(source, /const topFaceGridSize=4,topFaceSpatialBuckets=new Map\(\)/);
+  assert.match(source, /const topFaceCellKey=\(elevation,x,y\)=>elevation\+":"\+x\+":"\+y/);
+  assert.match(source, /const candidates=new Set\(\)/);
+  assert.match(source, /topFaceSpatialBuckets\.get\(topFaceCellKey\(elevation,ix,iy\)\)/);
+  assert.doesNotMatch(source, /for\(const other of topFacesByElevation\.get/);
+});
