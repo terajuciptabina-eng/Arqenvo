@@ -1,6 +1,6 @@
 /* Optional Local Teamwork client. Connect by opening the host PC's LAN URL in this browser. */
 (() => {
-  const state = { token:"", user:null, revision:0, syncedProject:null, dirty:false, syncing:false, timer:0, polling:0, reservations:{} };
+  const state = { token:"", user:null, revision:0, syncedProject:null, dirty:false, conflictRevision:null, syncing:false, timer:0, polling:0, reservations:{} };
   const api = async (route, options={}) => {
     const response = await fetch("/api/teamwork/"+route, {...options, headers:{"content-type":"application/json",...(state.token?{authorization:"Bearer "+state.token}:{}),...(options.headers||{})},cache:"no-store"});
     const data = await response.json().catch(()=>({error:"Host returned an unreadable response"}));
