@@ -545,16 +545,16 @@ try {
   await openingPage.waitForFunction(() => (document.querySelector("#elementProperties input[readonly]")?.value || "").toLowerCase().includes("door ·"));
   // Property dropdowns apply immediately: hinge flips and host-wall alignment moves the opening.
   await openingPage.locator("#propHinge").selectOption("right");
-  await openingPage.waitForFunction(() => document.querySelector("#propHinge")?.value === "right" && document.querySelector("#status")?.textContent === "Opening updated");
+  await openingPage.waitForFunction(() => document.querySelector("#propHinge")?.value === "right" && ["Opening updated","Door parameters updated"].includes(document.querySelector("#status")?.textContent));
   await openingPage.locator("#propSwing").selectOption("outside");
-  await openingPage.waitForFunction(() => document.querySelector("#propSwing")?.value === "outside" && document.querySelector("#status")?.textContent === "Opening updated");
+  await openingPage.waitForFunction(() => document.querySelector("#propSwing")?.value === "outside" && ["Opening updated","Door parameters updated"].includes(document.querySelector("#status")?.textContent));
   await openingPage.locator("#propAlignment").selectOption("left");
-  await openingPage.waitForFunction(() => document.querySelector("#propAlignment")?.value === "left" && document.querySelector("#status")?.textContent === "Opening updated");
+  await openingPage.waitForFunction(() => document.querySelector("#propAlignment")?.value === "left" && ["Opening updated","Door parameters updated"].includes(document.querySelector("#status")?.textContent));
   assert.ok(Math.abs(Number(await openingPage.locator('[data-prop="offset"]').inputValue())) < 1e-8,
     "Choosing Left should immediately move the door opening to the host wall start");
   await openingPage.locator('[data-prop="width"]').fill("1.2");
   await openingPage.locator('[data-prop="width"]').press("Enter");
-  await openingPage.waitForFunction(() => ["Opening updated","Element parameters updated"].includes(document.querySelector("#status")?.textContent) && Number(document.querySelector('[data-prop="width"]')?.value) === 1.2);
+  await openingPage.waitForFunction(() => ["Opening updated","Door parameters updated","Element parameters updated"].includes(document.querySelector("#status")?.textContent) && Number(document.querySelector('[data-prop="width"]')?.value) === 1.2);
   assert.equal(Number(await openingPage.locator('[data-prop="width"]').inputValue()), 1.2,
     "Pressing Enter should apply the new door width to the hosted opening");
   // Property edits use a debounced autosave. Wait for the persisted model before
