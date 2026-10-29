@@ -1415,7 +1415,7 @@ window.addEventListener("pointerup",e=>{
  window.__arqenvoPendingTextEditorId=element.id;
  requestAnimationFrame(()=>{if(!els().some(item=>item.id===element.id))return;const opened=startInlineTextEditor(element);if(!opened)$("status").textContent="Text box created, but editor could not open. Double-click the box to edit.";if(window.__arqenvoPendingTextEditorId===element.id)window.__arqenvoPendingTextEditorId=null;});
  return;
-},false);
+},true);
 c.addEventListener("pointerup",e=>{if(genericNodeMoveGesture&&genericNodeMoveGesture.pointerId===e.pointerId){
  const g=genericNodeMoveGesture,touch=e.pointerType==="touch";
  if(g.didMove){scheduleAutoSave();renderProperties();$("status").textContent="Connected node edit committed"}
