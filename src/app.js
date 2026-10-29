@@ -2250,8 +2250,9 @@ setTool("select");refreshStories();renderProperties();for(const sheet of p.layou
  function applyGrid(){
   for(const c of [...work.classList])if(/^dock-(toolbox|navigator)-(left|right|top|bottom)$/.test(c))work.classList.remove(c);
   work.classList.toggle('toolbox-floating',state.toolbox.mode==='float');work.classList.toggle('navigator-floating',state.navigator.mode==='float');
-  work.style.setProperty('--toolbox-width',dims.toolbox.w+'px');work.style.setProperty('--navigator-width',dims.navigator.w+'px');work.style.setProperty('--inspector-width',dims.inspector.w+'px');
-  work.style.setProperty('--palette-toolbox-w',dims.toolbox.w+'px');work.style.setProperty('--palette-nav-w',dims.navigator.w+'px');work.style.setProperty('--palette-inspector-w',dims.inspector.w+'px');work.style.setProperty('--palette-toolbox-h',dims.toolbox.h+'px');work.style.setProperty('--palette-nav-h',dims.navigator.h+'px');
+  const dockedNavMax=Math.max(220,work.clientWidth-dims.toolbox.w-220),responsiveNavMax=work.clientWidth<640?260:work.clientWidth<760?280:work.clientWidth<1000?320:520,effectiveNavW=state.navigator.mode==='dock'?clamp(dims.navigator.w,220,Math.min(responsiveNavMax,dockedNavMax)):dims.navigator.w;
+  work.style.setProperty('--toolbox-width',dims.toolbox.w+'px');work.style.setProperty('--navigator-width',effectiveNavW+'px');work.style.setProperty('--inspector-width',dims.inspector.w+'px');
+  work.style.setProperty('--palette-toolbox-w',dims.toolbox.w+'px');work.style.setProperty('--palette-nav-w',effectiveNavW+'px');work.style.setProperty('--palette-inspector-w',dims.inspector.w+'px');work.style.setProperty('--palette-toolbox-h',dims.toolbox.h+'px');work.style.setProperty('--palette-nav-h',dims.navigator.h+'px');
   for(const key of Object.keys(panels)){const s=state[key],p=panels[key];if(s.mode==='float'){p.classList.add('arq-palette-floating');applyFloatBounds(key)}else{clearFloatStyles(p);if(s.side!==(key==='toolbox'?'left':'right'))work.classList.add('dock-'+key+'-'+s.side)}positionDockGrip(key)}
   work.classList.toggle('toolbox-expanded',coarse()&&(dims.toolbox.w>72||state.toolbox.mode==='float'));
  }
