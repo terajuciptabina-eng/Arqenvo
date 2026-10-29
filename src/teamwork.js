@@ -60,7 +60,7 @@
     }finally{state.syncing=false;}
   }
   function startPolling(){clearInterval(state.polling);state.polling=setInterval(()=>{if(state.token){api("reservation-heartbeat",{method:"POST",body:"{}"}).catch(()=>{});refresh();}},3000);}
-  function renderAuth(){const signed=!!state.token;loginBox.hidden=signed;authControls.hidden=!signed;if(signed){who.textContent="Signed in as "+state.user.username+" ("+state.user.role+")";memberBox.hidden=state.user.role!=="admin";}else{who.textContent="";memberBox.hidden=true;}publish.disabled=send.disabled=load.disabled=!signed;}
+  function renderAuth(){const signed=!!state.token;loginBox.hidden=signed;authControls.hidden=!signed;if(signed){who.textContent="Signed in as "+state.user.username+" ("+state.user.role+")";memberBox.hidden=state.user.role!=="admin";}else{who.textContent="";memberBox.hidden=true;}const viewer=signed&&state.user.role==="viewer";document.querySelector(".app")?.classList.toggle("arqenvo-teamwork-viewer",viewer);publish.disabled=send.disabled=load.disabled=!signed;reserve.disabled=release.disabled=viewer;}
   async function signIn(){
     try{
       const result=await api("login",{method:"POST",body:JSON.stringify({username:user.value.trim(),password:pass.value})});
