@@ -32,6 +32,21 @@ try{
       return{coarse:matchMedia("(pointer:coarse)").matches,toolbox:rect("#toolbox"),nav:rect(".navigator"),inspector:rect(".inspector"),workspace:rect(".workspace"),toolToggleHidden:document.querySelector("#toolboxToggle").hidden,navToggleHidden:document.querySelector("#navigatorToggle").hidden,bodyWidth:document.documentElement.clientWidth,scrollWidth:document.documentElement.scrollWidth};
     });
     assert.equal(initial.coarse,true,"Touch layout must be detected");
+    // Regression: application menus must open through real touch/click activation.
+    for (const label of ["File","Edit","View","Design","Document","Window","Help"]) {
+      const summary=page.locator(".app-menu-details > summary").filter({hasText:label});
+      await summary.click({force:true});
+      await page.waitForFunction(text=>[...document.querySelectorAll(".app-menu-details")].some(g=>g.open&&g.querySelector("summary")?.textContent.trim()===text),label);
+      const state=await page.evaluate(text=>{
+        const group=[...document.querySelectorAll(".app-menu-details")].find(g=>g.querySelector("summary")?.textContent.trim()===text);
+        const pop=group?.querySelector(".menu-pop")||document.querySelector("body > .menu-pop");
+        return {open:!!group?.open,popVisible:!!pop&&getComputedStyle(pop).display!=="none"&&pop.getBoundingClientRect().width>0};
+      },label);
+      assert.equal(state.open,true,label+" menu should open");
+      assert.equal(state.popVisible,true,label+" menu popover should be visible");
+      await summary.click({force:true});
+      await page.waitForFunction(text=>![...document.querySelectorAll(".app-menu-details")].some(g=>g.open&&g.querySelector("summary")?.textContent.trim()===text),label);
+    }
     assert.ok(initial.workspace.width>120,"Drawing workspace must remain usable when panels are closed");
     assert.equal(initial.nav.display,"none","Navigator must be hidden by default on touch devices");
     assert.equal(initial.inspector.display,"none","Properties must be hidden by default on touch devices");
