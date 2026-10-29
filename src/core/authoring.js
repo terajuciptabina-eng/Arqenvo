@@ -112,15 +112,16 @@ export function doorSwingGeometry(p1, p2, { hingeSide = "left", swingDirection =
  * The plan swing arc is an annotation; it must not rotate the physical leaf
  * out of the wall plane in the 3D model unless an explicit open angle exists.
  */
-export function hostedDoorLeaf3dGeometry(wall, opening, { leafThickness = 0.035, frameWidth = 0.065 } = {}) {
+export function hostedDoorLeaf3dGeometry(wall, opening, { leafThickness = 0.035, frameWidth = 0.065, startInset = frameWidth, endInset = frameWidth } = {}) {
   // Reuse host/opening validation and the canonical along-wall placement.
   const hosted = hostedOpening3dGeometry(wall, { ...opening, type: "door" }, { leafThickness });
   if (!Number.isFinite(frameWidth) || frameWidth < 0) throw new RangeError("Door frame width must be non-negative");
   const dx = wall.end.x - wall.start.x, dy = wall.end.y - wall.start.y;
   const length = Math.hypot(dx, dy), ux = dx / length, uy = dy / length;
   const nx = -uy, ny = ux;
-  const inset = Math.min(frameWidth, Math.max(0, (opening.width - 0.02) / 2));
-  const startDistance = opening.offset + inset, endDistance = opening.offset + opening.width - inset;
+  const maxInset = Math.max(0, (opening.width - 0.002) / 2);
+  const safeStartInset = Math.min(startInset, maxInset), safeEndInset = Math.min(endInset, maxInset);
+  const startDistance = opening.offset + safeStartInset, endDistance = opening.offset + opening.width - safeEndInset;
   const start = { x: wall.start.x + ux * startDistance, y: wall.start.y + uy * startDistance };
   const finish = { x: wall.start.x + ux * endDistance, y: wall.start.y + uy * endDistance };
   const depth = Math.max(0.02, Math.min(leafThickness, (wall.thickness || 0.15) * 0.45));
