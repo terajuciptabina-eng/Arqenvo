@@ -26,9 +26,9 @@ try {
  const errors=[];
  page.on("pageerror",error=>errors.push(error.message));
  await page.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
- await page.locator("#teamworkMenuToggle").click();
+ await page.locator("#teamworkMenuGroup > summary").click();
  await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")&&!document.querySelector("#arqenvoTeamworkPanel").hidden);
- await page.locator("#teamworkMenuToggle").click();
+ await page.locator("#teamworkMenuGroup > summary").click();
  await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")?.hidden===true);
  await page.waitForFunction(()=>{const c=document.querySelector("#canvas");return c&&c.clientWidth>100&&c.clientHeight>100});
  await page.locator('[data-tool="text"]').click();
