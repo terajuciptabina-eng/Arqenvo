@@ -807,6 +807,28 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
  .work>.navigator>.nav-tabs>.nav-tab svg{width:25px;height:25px;flex-basis:25px}
 }
 
+
+/* Reversible Toolbox compact mode + mobile tool popover */
+#toolbox{position:relative;transition:width .16s ease,min-width .16s ease,max-width .16s ease}
+#toolbox .toolbox-title{display:flex;align-items:center;justify-content:space-between;gap:4px}
+#toolboxCollapseToggle{display:inline-flex;align-items:center;justify-content:center;flex:0 0 26px;width:26px;height:24px;padding:0;border:1px solid #c5cbd1;border-radius:4px;background:#f8fafb;color:#3c4a55;font-size:16px;line-height:1;cursor:pointer}
+#toolbox.toolbox-is-minimized .toolbox-title{justify-content:center;padding-left:2px;padding-right:2px}
+#toolbox.toolbox-is-minimized .toolbox-title .toolbox-title-text{display:none}
+#toolbox.toolbox-is-minimized .tool-group-label,#toolbox.toolbox-is-minimized .tool-note{display:none!important}
+#toolbox.toolbox-is-minimized .tool{width:42px;min-width:42px;max-width:42px;justify-content:center;gap:0;padding:4px;margin:2px auto}
+#toolbox.toolbox-is-minimized .tool span{display:none!important}
+#toolbox .toolbox-mobile-popover{display:none;position:absolute;z-index:3000;top:34px;left:calc(100% + 6px);width:min(310px,calc(100vw - 68px));max-height:min(72dvh,620px);overflow:auto;padding:6px;background:#f4f5f6;border:1px solid #bfc8ce;border-radius:6px;box-shadow:0 8px 28px #17212b35;color:#26313b}
+#toolbox .toolbox-mobile-popover.is-open{display:block}
+#toolbox .toolbox-mobile-popover .toolbox-popover-heading{position:sticky;top:-6px;z-index:1;display:flex;align-items:center;justify-content:space-between;padding:7px 8px;margin:-6px -6px 5px;background:#eef1f3;border-bottom:1px solid #cbd2d8;font-size:11px;font-weight:700;letter-spacing:.06em}
+#toolbox .toolbox-mobile-popover .toolbox-popover-close{border:1px solid #c5cbd1;border-radius:4px;background:#fff;color:#34434e;padding:2px 7px;font-size:16px}
+#toolbox .toolbox-popover-item{display:grid;grid-template-columns:minmax(100px,132px) minmax(0,1fr);gap:8px;align-items:center;padding:3px 0;border-bottom:1px solid #e0e4e7}
+#toolbox .toolbox-popover-item .tool{width:100%;max-width:none;min-width:0;min-height:40px;margin:0;padding:5px 7px;font-size:12px;white-space:normal}
+#toolbox .toolbox-popover-item .tool span{display:inline!important;visibility:visible!important}
+#toolbox .toolbox-popover-description{font-size:11px;line-height:1.35;color:#596773}
+#toolbox .toolbox-tool-info{display:none;position:fixed;z-index:3100;max-width:min(280px,calc(100vw - 24px));padding:9px 11px;border:1px solid #bfc8ce;border-radius:5px;background:#f4f5f6;color:#26313b;box-shadow:0 5px 20px #17212b30;font-size:12px;line-height:1.4;pointer-events:none}
+#toolbox .toolbox-tool-info.is-visible{display:block}
+@media(max-width:760px){#toolbox .toolbox-title{min-height:30px;padding:4px 5px}#toolboxCollapseToggle{width:28px;height:28px;flex-basis:28px;font-size:18px;touch-action:manipulation}#toolbox .toolbox-mobile-popover{position:fixed;top:auto;left:calc(var(--toolbox-width,48px) + 8px);bottom:38px;width:min(340px,calc(100vw - 64px));max-height:72dvh}#toolbox .toolbox-popover-item{grid-template-columns:minmax(108px,42%) minmax(0,1fr)}#toolbox .toolbox-popover-item .tool{min-height:44px}}
+@media(prefers-reduced-motion:reduce){#toolbox{transition:none}}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
