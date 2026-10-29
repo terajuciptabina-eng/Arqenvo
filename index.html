@@ -860,6 +860,29 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 #toolbox .toolbox-tool-info.is-visible{display:block}
 @media(max-width:760px){#toolbox .toolbox-title{min-height:30px;padding:4px 5px}#toolboxCollapseToggle{width:28px;height:28px;flex-basis:28px;font-size:18px;touch-action:manipulation}#toolbox .toolbox-mobile-popover{position:fixed;top:auto;left:calc(var(--toolbox-width,48px) + 8px);bottom:38px;width:min(340px,calc(100vw - 64px));max-height:72dvh}#toolbox .toolbox-popover-item{grid-template-columns:minmax(108px,42%) minmax(0,1fr)}#toolbox .toolbox-popover-item .tool{min-height:44px}}
 @media(prefers-reduced-motion:reduce){#toolbox{transition:none}}
+
+/* Touch workspace: temporary overlay panels keep the drawing canvas full-size. */
+@media (pointer:coarse){
+ .work.mobile-panels{position:relative!important;display:grid!important;grid-template-columns:minmax(0,1fr)!important;grid-template-rows:minmax(0,1fr)!important;overflow:hidden!important}
+ .work.mobile-panels>.workspace{grid-column:1!important;grid-row:1!important;min-width:0!important;min-height:0!important}
+ .work.mobile-panels>.tools,.work.mobile-panels>.navigator,.work.mobile-panels>.inspector{display:none!important;position:absolute!important;top:0!important;bottom:0!important;height:auto!important;min-height:0!important;max-height:none!important;z-index:1300!important;box-sizing:border-box!important;overflow:auto!important;background:#f4f5f6!important;color:#26313b!important;box-shadow:0 8px 26px #17212b38!important;overscroll-behavior:contain!important}
+ .work.mobile-panels.toolbox-open>.tools{display:flex!important;left:0!important;right:auto!important;width:min(230px,82vw)!important;max-width:82vw!important;min-width:0!important;border-right:1px solid #aeb8c0!important}
+ .work.mobile-panels.navigator-open>.navigator{display:block!important;left:0!important;right:auto!important;width:min(330px,88vw)!important;max-width:88vw!important;min-width:0!important;border-right:1px solid #aeb8c0!important}
+ .work.mobile-panels.inspector-open>.inspector{display:block!important;left:auto!important;right:0!important;width:min(340px,88vw)!important;max-width:88vw!important;min-width:0!important;border-left:1px solid #aeb8c0!important}
+ .work.mobile-panels.toolbox-open:after,.work.mobile-panels.navigator-open:after,.work.mobile-panels.inspector-open:after{content:"";position:absolute;inset:0;background:#18232b30;z-index:1250;pointer-events:none}
+ .work.mobile-panels.toolbox-open>.tools,.work.mobile-panels.navigator-open>.navigator,.work.mobile-panels.inspector-open>.inspector{z-index:1301!important}
+ .work.mobile-panels .tabs{display:flex!important;flex-wrap:nowrap!important;overflow-x:auto!important;overflow-y:hidden!important;gap:3px!important;padding:3px 4px!important;scrollbar-width:none!important;white-space:nowrap!important}
+ .work.mobile-panels .tabs::-webkit-scrollbar{display:none!important}
+ .work.mobile-panels .tabs>#floorTab,.work.mobile-panels .tabs>#threeTab{flex:0 0 auto!important;min-width:0!important;padding:5px 7px!important;font-size:11px!important;white-space:nowrap!important}
+ .work.mobile-panels .tabs>#storySelect{flex:0 0 86px!important;width:86px!important;max-width:86px!important;min-width:0!important;font-size:11px!important}
+ .work.mobile-panels .tabs>#addStory{flex:0 0 30px!important;width:30px!important;min-width:30px!important;padding:3px!important;font-size:14px!important;overflow:hidden!important}
+ .work.mobile-panels .tabs>#propsToggle,.work.mobile-panels .tabs>.panel-toggle{display:inline-flex!important;align-items:center!important;justify-content:center!important;flex:0 0 30px!important;width:30px!important;min-width:30px!important;max-width:30px!important;height:28px!important;min-height:28px!important;padding:2px!important;margin:0!important;border:1px solid #aeb8c0!important;border-radius:4px!important;background:#f8fafb!important;color:#35414a!important;box-shadow:none!important;font-size:15px!important;font-weight:700!important;line-height:1!important;white-space:nowrap!important}
+ .work.mobile-panels .tabs>#propsToggle[aria-expanded="true"],.work.mobile-panels .tabs>.panel-toggle[aria-expanded="true"]{background:#d9eef0!important;border-color:#087e8b!important;color:#075c65!important}
+ .work.mobile-panels .tabs>#viewLabel{display:none!important}
+ .work.mobile-panels .tabs>span[style*="flex:1"]{display:none!important}
+ .work.mobile-panels>.tools .toolbox-title{display:flex!important;align-items:center;justify-content:space-between!important}
+ .work.mobile-panels>.tools .tool-group-label,.work.mobile-panels>.tools .tool-note{display:block!important}
+}
 </style></head>
 <body><div class="app">
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
@@ -993,48 +1016,63 @@ document.addEventListener("keydown",event=>{
 <script>
 (function(){
  function initWorkspacePanels(){
-  var work=document.querySelector('.work'),nav=document.querySelector('.navigator');
-  if(!work||!nav)return;
+  var work=document.querySelector('.work'),nav=document.querySelector('.navigator'),tools=document.getElementById('toolbox'),inspector=document.querySelector('.inspector'),tabs=document.querySelector('.workspace .tabs');
+  if(!work||!nav||!tools||!inspector||!tabs)return;
   nav.id='navigator-panel';
-  var toggle=document.getElementById('navigatorToggle');
-  if(!toggle){toggle=document.createElement('button');toggle.id='navigatorToggle';toggle.type='button';toggle.className='navigator-toggle';}
+  var navToggle=document.getElementById('navigatorToggle');
+  if(!navToggle){navToggle=document.createElement('button');navToggle.id='navigatorToggle';navToggle.type='button';navToggle.className='navigator-toggle';}
+  var toolboxToggle=document.getElementById('toolboxToggle');
+  if(!toolboxToggle){toolboxToggle=document.createElement('button');toolboxToggle.id='toolboxToggle';toolboxToggle.type='button';toolboxToggle.className='panel-toggle';toolboxToggle.textContent='▦';}
+  var propsToggle=document.getElementById('propsToggle');
+  [toolboxToggle,propsToggle,navToggle].forEach(function(b){if(b&&b.parentNode!==tabs)tabs.appendChild(b);});
+  toolboxToggle.classList.add('panel-toggle');
+  function isTouch(){return window.matchMedia('(pointer:coarse)').matches;}
   function isMobile(){return window.matchMedia('(max-width:600px)').matches;}
-  function isTouchTablet(){return window.matchMedia('(pointer:coarse) and (min-width:601px)').matches;}
-  function sync(){
-   var mobile=isMobile(),open=work.classList.contains('navigator-open'),hidden=work.classList.contains('navigator-hidden');
-   var touchTablet=isTouchTablet(),heading=nav.querySelector('.section');
-   if(mobile){
-    if(open){
-     if(heading&&toggle.parentNode!==heading)heading.appendChild(toggle);
-    }else if(toggle.parentNode!==work.querySelector('.workspace .tabs')){work.querySelector('.workspace .tabs')?.appendChild(toggle);}
-   }else if(touchTablet){
-    if(hidden){
-     if(toggle.parentNode!==work.querySelector('.workspace .tabs'))work.querySelector('.workspace .tabs')?.appendChild(toggle);
-    }else if(heading&&toggle.parentNode!==heading){heading.appendChild(toggle);}
-   }else if(toggle.parentNode!==work){work.appendChild(toggle);}
-   toggle.textContent=(mobile||touchTablet)?((mobile?open:!hidden)?'×':'☰'):(hidden?'Show Navigator':'Hide Navigator');
-   toggle.setAttribute('aria-controls','navigator-panel');
-   toggle.setAttribute('aria-expanded',mobile?(open?'true':'false'):(hidden?'false':'true'));
-   toggle.setAttribute('aria-label',mobile?(open?'Close Navigator panel':'Open Navigator panel'):(hidden?'Show Navigator':'Hide Navigator'));
-   toggle.title=mobile?(open?'Close Navigator':'Open Navigator'):(hidden?'Show Navigator':'Hide Navigator');
-   toggle.hidden=!mobile&&!touchTablet;
+  function closePanels(except){
+   ['toolbox-open','navigator-open','inspector-open'].forEach(function(cls){if(cls!==except)work.classList.remove(cls);});
+   sync();
   }
-  function restoreMobileOverlay(){if(!nav.dataset.mobileOverlayOriginal)return;try{for(const [k,v,p] of JSON.parse(nav.dataset.mobileOverlayOriginal)){if(v)nav.style.setProperty(k,v,p);else nav.style.removeProperty(k)}}catch{}delete nav.dataset.mobileOverlayOriginal}
-  toggle.addEventListener('click',function(){
-   if(isMobile())work.classList.toggle('navigator-open');
-   else work.classList.toggle('navigator-hidden');
-   sync();window.dispatchEvent(new Event('resize'));
-   /* Force the phone Navigator into an overlay after layout recalculation, then restore its previous inline geometry on close. */
-   if(isMobile()&&work.classList.contains('navigator-open')){
-    if(!nav.dataset.mobileOverlayOriginal){const props=['position','left','right','top','bottom','width','height','min-width','max-width','min-height','max-height','z-index','overflow'];nav.dataset.mobileOverlayOriginal=JSON.stringify(props.map(k=>[k,nav.style.getPropertyValue(k),nav.style.getPropertyPriority(k)]))}
-    nav.style.setProperty('position','absolute','important');nav.style.setProperty('left','48px','important');nav.style.setProperty('right','0','important');nav.style.setProperty('top','0','important');nav.style.setProperty('bottom','0','important');nav.style.setProperty('width','auto','important');nav.style.setProperty('height','auto','important');nav.style.setProperty('min-width','0','important');nav.style.setProperty('max-width','none','important');nav.style.setProperty('min-height','0','important');nav.style.setProperty('max-height','none','important');nav.style.setProperty('z-index','1201','important');nav.style.setProperty('overflow','auto','important');
-   }else if(isMobile())restoreMobileOverlay();
-   /* A docked tablet panel changes the available drawing viewport; refit the model after that geometry settles. */
-   if(isTouchTablet()&&!document.getElementById('layoutControls')?.classList.contains('active'))requestAnimationFrame(function(){document.getElementById('zoomFit')?.click()});
+  function sync(){
+   var touch=isTouch(),mobile=isMobile(),toolOpen=work.classList.contains('toolbox-open'),navOpen=work.classList.contains('navigator-open'),propsOpen=work.classList.contains('inspector-open'),hidden=work.classList.contains('navigator-hidden');
+   work.classList.toggle('mobile-panels',touch);
+   if(touch){
+    if(navToggle.parentNode!==tabs)tabs.appendChild(navToggle);
+    if(toolboxToggle.parentNode!==tabs)tabs.appendChild(toolboxToggle);
+    if(propsToggle&&propsToggle.parentNode!==tabs)tabs.appendChild(propsToggle);
+    navToggle.textContent=navOpen?'×':'☰';
+    toolboxToggle.textContent=toolOpen?'×':'▦';
+    if(propsToggle)propsToggle.textContent=propsOpen?'×':'⚙';
+    navToggle.hidden=false;toolboxToggle.hidden=false;if(propsToggle)propsToggle.hidden=false;
+    navToggle.setAttribute('aria-expanded',String(navOpen));navToggle.setAttribute('aria-label',navOpen?'Close Navigator panel':'Open Navigator panel');navToggle.title=navOpen?'Close Navigator':'Open Navigator';
+    toolboxToggle.setAttribute('aria-expanded',String(toolOpen));toolboxToggle.setAttribute('aria-controls','toolbox');toolboxToggle.setAttribute('aria-label',toolOpen?'Close Toolbox panel':'Open Toolbox panel');toolboxToggle.title=toolOpen?'Close Toolbox':'Open Toolbox';
+    if(propsToggle){propsToggle.setAttribute('aria-expanded',String(propsOpen));propsToggle.setAttribute('aria-controls','inspector-panel');propsToggle.setAttribute('aria-label',propsOpen?'Close Properties panel':'Open Properties panel');propsToggle.title=propsOpen?'Close Properties':'Open Properties';}
+   }else{
+    navToggle.textContent=hidden?'Show Navigator':'Hide Navigator';
+    navToggle.hidden=false;toolboxToggle.hidden=true;if(propsToggle)propsToggle.hidden=true;
+    navToggle.setAttribute('aria-expanded',String(!hidden));navToggle.setAttribute('aria-label',hidden?'Show Navigator':'Hide Navigator');
+    work.classList.remove('toolbox-open','inspector-open');
+   }
+   inspector.id='inspector-panel';
+  }
+  function togglePanel(name){
+   if(!isTouch()){if(name==='navigator')work.classList.toggle('navigator-hidden');return;}
+   var cls=name==='toolbox'?'toolbox-open':name==='navigator'?'navigator-open':'inspector-open';
+   var wasOpen=work.classList.contains(cls);
+   closePanels(cls);
+   work.classList.toggle(cls,!wasOpen);
+   sync();
+  }
+  navToggle.addEventListener('click',function(){togglePanel('navigator');});
+  toolboxToggle.addEventListener('click',function(){togglePanel('toolbox');});
+  if(propsToggle)propsToggle.addEventListener('click',function(){togglePanel('inspector');});
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&isTouch()){closePanels(null);}});
+  document.addEventListener('pointerdown',function(e){
+   if(!isTouch())return;
+   if(e.target.closest('#toolboxToggle,#navigatorToggle,#propsToggle'))return;
+   if(e.target.closest('.work.mobile-panels.toolbox-open>.tools,.work.mobile-panels.navigator-open>.navigator,.work.mobile-panels.inspector-open>.inspector'))return;
+   if(work.classList.contains('toolbox-open')||work.classList.contains('navigator-open')||work.classList.contains('inspector-open'))closePanels(null);
   });
   window.addEventListener('resize',sync);
-  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&work.classList.contains('navigator-open')){work.classList.remove('navigator-open');restoreMobileOverlay();sync();}});
-  document.addEventListener('pointerdown',function(e){if(!isMobile()||!work.classList.contains('navigator-open'))return;if(e.target===toggle||toggle.contains(e.target)||nav.contains(e.target))return;work.classList.remove('navigator-open');sync();});
   sync();
  }
  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',initWorkspacePanels);else initWorkspacePanels();
