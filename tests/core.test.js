@@ -160,3 +160,15 @@ test("validation rejects hosted opening dimension/story mismatch and duplicates"
  const p=makeFixture(); p.elements.find(e=>e.type==="wall").openings.push({...p.elements.find(e=>e.type==="door")});
  assert.ok(validateProject(p).errors.some(error=>error.includes("duplicate hosted opening id")));
 });
+
+test("text annotation is a valid serializable project element", () => {
+ const p=createProject("Text Annotation");
+ p.elements.push({id:"text-1",type:"text",position:{x:1.25,y:2.5},text:"Ground Floor\\nRevision A",textSizeMm:2.5,storyId:p.stories[0].id});
+ assert.deepEqual(validateProject(p),[]);
+ const restored=deserializeProject(serializeProject(p));
+ assert.equal(restored.elements[0].type,"text");
+ assert.equal(restored.elements[0].text,"Ground Floor\\nRevision A");
+ assert.deepEqual(restored.elements[0].position,{x:1.25,y:2.5});
+ const invalid=structuredClone(p);invalid.elements[0].position.x=NaN;
+ assert.ok(validateProject(invalid).some(error=>error.includes("Text text-1 has invalid position")));
+});
