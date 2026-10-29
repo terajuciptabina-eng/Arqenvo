@@ -9,6 +9,7 @@ on:
       - "src/app.js"
       - "index.html"
       - "tests/teamwork-host.test.js"
+      - "tests/teamwork-text-browser-smoke.mjs"
       - "package.json"
       - ".github/workflows/local-teamwork.yml"
   pull_request:
@@ -18,6 +19,7 @@ on:
       - "src/app.js"
       - "index.html"
       - "tests/teamwork-host.test.js"
+      - "tests/teamwork-text-browser-smoke.mjs"
       - "package.json"
       - ".github/workflows/local-teamwork.yml"
 
@@ -27,7 +29,7 @@ permissions:
 jobs:
   local-teamwork:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -38,3 +40,9 @@ jobs:
       - run: node --check server/teamwork-host.js
       - run: node --check tests/teamwork-host.test.js
       - run: node --test tests/teamwork-host.test.js
+      - name: Install Playwright and Chromium
+        run: |
+          npm install --no-save --package-lock=false playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run isolated Teamwork Text Tool browser regression
+        run: node tests/teamwork-text-browser-smoke.mjs
