@@ -9,6 +9,7 @@
     "check": "node --check src/app.js && node --check src/core/model.js && node --check src/core/rooms.js && node --check src/core/transactions.js && node --check src/core/geometry.js && node --check src/core/csv.js && node --check src/core/section.js && node --check src/core/dxf.js && node --check src/core/authoring.js && node --check src/core/units.js && node --check tests/units.test.js && node --check tests/browser-smoke.mjs && node --check server/teamwork-host.js && node --check tests/teamwork-host.test.js",
     "test:browser": "node tests/browser-smoke.mjs",
     "test:layout": "node tests/tablet-layout-smoke.mjs",
-    "teamwork:host": "node server/teamwork-host.js"
+    "teamwork:host": "node server/teamwork-host.js",
+    "test:teamwork-text": "node tests/teamwork-text-browser-smoke.mjs"
   }
 }
