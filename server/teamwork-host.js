@@ -163,6 +163,7 @@ const server = http.createServer(async (req, res) => {
       }
       if (req.method === "PUT" && route === "/api/teamwork/project") {
         const session = auth(req, res); if (!session) return;
+        if (session.user.role === "viewer") return json(res, 403, { error:"Viewer accounts cannot modify the shared project" });
         const body = await readBody(req), record = currentProject();
         if (!Number.isInteger(body.expectedRevision)) return json(res, 400, { error:"expectedRevision is required" });
         if (body.expectedRevision !== record.revision) return json(res, 409, { error:"Project revision conflict", revision:record.revision, updatedBy:record.updatedBy, updatedAt:record.updatedAt });
