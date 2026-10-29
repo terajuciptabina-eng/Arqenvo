@@ -2631,10 +2631,10 @@ arqenvoSyncMultiOpeningLibrary();
 // Element Settings: Geometry, Display, Additional, Identification, Classification.
 // Reorder only existing field slots so action buttons and non-field controls stay put.
 const arqenvoPropertyOrder = [
- {rank:0,match:l=>/^(?!.*position on host wall).*?(height|thickness|width|depth|length|elevation|offset|pitch|sill|rotation|position|start point|end point|\\b[xy]\\b|vertical grid intervals|horizontal grid intervals|area|base level|top level)/i.test(l)},
+ {rank:0,match:l=>/^(?!.*position on host wall).*?(height|thickness|width|depth|length|elevation|offset|pitch|sill|rotation|position|start point|end point|\b[xy]\b|vertical grid intervals|horizontal grid intervals|area|base level|top level)/i.test(l)},
  {rank:1,match:l=>/hinge|opening direction|position on host wall|text size|line type|pen|display|symbol|dimension text|line weight|annotation/i.test(l)},
  {rank:2,match:()=>true},
- {rank:3,match:l=>/element type|zone number|room name|grid axis label|element id|identifier|\\bid\\b/i.test(l)},
+ {rank:3,match:l=>/element type|zone number|room name|grid axis label|element id|identifier|\bid\b/i.test(l)},
  {rank:4,match:l=>/classification|building material|category|structure|composite|surface|layer|property/i.test(l)}
 ];
 const arqenvoCanonicalizeSelectedProperties=()=>{
@@ -2643,7 +2643,7 @@ const arqenvoCanonicalizeSelectedProperties=()=>{
  const children=[...host.children],fields=children.filter(node=>node.classList.contains("field"));
  if(fields.length<2)return;
  const rank=node=>{
-  const label=(node.querySelector("label")?.textContent||node.textContent||"").replace(/\\s+/g," ").trim();
+  const label=(node.querySelector("label")?.textContent||node.textContent||"").replace(/\s+/g," ").trim();
   const group=arqenvoPropertyOrder.find(g=>g.rank!==2&&g.match(label))||arqenvoPropertyOrder[2];
   return group.rank;
  };
