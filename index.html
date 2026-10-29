@@ -942,12 +942,14 @@ document.querySelectorAll(".menu-group").forEach(group=>{
   if(group.open)document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
  });
  group.querySelector("summary")?.addEventListener("click",event=>{
-  // Teamwork owns visibility in src/teamwork.js. Avoid a competing native
-  // <details> toggle, which caused the Teamwork panel to need two taps to close.
+  // Teamwork owns visibility in src/teamwork.js; do not toggle its native
+  // <details> state here. For every other menu, toggle explicitly rather than
+  // relying on Safari's native <summary> default action on touch.
   if(group.id==="teamworkMenuGroup"){event.preventDefault();return;}
+  event.preventDefault();
   const wasOpen=group.open;
   document.querySelectorAll(".menu-group").forEach(other=>{if(other!==group)other.open=false});
-  if(wasOpen){event.preventDefault();group.open=false}
+  group.open=!wasOpen;
  });
 });
 document.getElementById("resetWorkspaceLayout")?.addEventListener("click",()=>{
