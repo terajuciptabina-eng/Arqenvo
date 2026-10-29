@@ -9,20 +9,16 @@ export function openingOffsetForAnchor(hostLength, openingWidth, anchor = "cente
   if (!Number.isFinite(openingWidth) || openingWidth <= 0) throw new RangeError("Opening width must be positive");
   if (openingWidth > hostLength + 1e-8) throw new RangeError("Opening must fit within the host wall");
   if (!Number.isFinite(anchorPosition)) throw new TypeError("Anchor position must be finite");
+  const available = Math.max(0, hostLength - openingWidth);
+  const position = Math.max(0, Math.min(hostLength, anchorPosition));
   let offset;
   switch (String(anchor || "center").toLowerCase()) {
-    case "left":
-      if (anchorPosition < -1e-8 || anchorPosition + openingWidth > hostLength + 1e-8) throw new RangeError("Left anchor and opening must fit within the host wall");
-      offset = anchorPosition; break;
-    case "right":
-      if (anchorPosition < openingWidth - 1e-8 || anchorPosition > hostLength + 1e-8) throw new RangeError("Right anchor and opening must fit within the host wall");
-      offset = anchorPosition - openingWidth; break;
-    case "center":
-      if (anchorPosition < openingWidth / 2 - 1e-8 || anchorPosition > hostLength - openingWidth / 2 + 1e-8) throw new RangeError("Center anchor and opening must fit within the host wall");
-      offset = anchorPosition - openingWidth / 2; break;
+    case "left": offset = position; break;
+    case "right": offset = position - openingWidth; break;
+    case "center": offset = position - openingWidth / 2; break;
     default: throw new TypeError("Anchor must be center, left or right");
   }
-  return offset;
+  return Math.max(0, Math.min(available, offset));
 }
 
 export function openingPlacementDirection(wallStart, wallEnd, cursor) {

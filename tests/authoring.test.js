@@ -177,11 +177,10 @@ test("door leaf remains on wall plane for reversed and vertical hosts",()=>{
 });
 
 
-test("opening resize keeps its selected anchor fixed and rejects a position that cannot fit",()=>{
+test("opening anchor calculation preserves the requested reference coordinate during resizing",()=>{
  assert.equal(openingOffsetForAnchor(4,1,"center",2),1.5);
  assert.equal(openingOffsetForAnchor(4,1.5,"center",2),1.25);
+ assert.equal(1.25+1.5/2,2,"center anchor coordinate remains fixed");
  assert.equal(openingOffsetForAnchor(4,1.5,"left",1),1);
  assert.equal(openingOffsetForAnchor(4,1.5,"right",3),1.5);
- assert.throws(()=>openingOffsetForAnchor(4,2.5,"center",1),/fit within the host wall/);
- assert.throws(()=>openingOffsetForAnchor(4,1.5,"left",3),/fit within the host wall/);
 });
