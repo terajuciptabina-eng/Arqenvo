@@ -63,8 +63,8 @@ body{background:#cbd0d5;font-family:Inter,"Segoe UI",Arial,sans-serif;font-size:
 .menu-group summary{list-style:none;cursor:pointer;height:100%;display:flex;align-items:center;padding:0 12px;user-select:none}
 .menu-group summary::-webkit-details-marker{display:none}
 .menu-trigger{appearance:none;-webkit-appearance:none;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer;height:100%;display:flex;align-items:center;padding:0 12px;white-space:nowrap;touch-action:manipulation}
-.menu-group.is-open>.menu-pop{display:flex}
-.menu-group:not(.is-open)>.menu-pop{display:none}
+.menu-group[open]>.menu-pop{display:flex}
+.menu-group:not([open])>.menu-pop{display:none}
 .menu-trigger:focus-visible{outline:2px solid #087e8b;outline-offset:-2px}
 .menu-group[open] summary,.menu-group summary:hover{background:#e3edf0;color:#26313b}
 .menu-pop{position:absolute;left:0;top:100%;min-width:220px;padding:5px;background:#f8f9fa;color:#27313a;border:1px solid #9ca6ae;box-shadow:0 8px 22px #18232d30;display:flex;flex-direction:column;gap:2px;z-index:100}
@@ -930,64 +930,47 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 <div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
 
 <nav class="menu" aria-label="Application menu">
-<div class="menu-group"><button type="button" class="menu-trigger">File</button><div class="menu-pop"><button data-command="new">New Project</button><button data-command="open">Open Project…</button><button data-command="save">Save Project</button><button data-command="exportDxf">Export Floor Plan DXF</button><button data-command="exportSchedule">Export Schedule CSV</button></div></div>
-<div class="menu-group"><button type="button" class="menu-trigger">Edit</button><div class="menu-pop"><button data-command="undo">Undo</button><button data-command="redo">Redo</button><button data-command="delete">Delete Selected</button><button data-command="groupSelection">Group (Cmd/Ctrl+G)</button><button data-command="ungroupSelection">Ungroup (Shift+Cmd/Ctrl+G)</button><button data-command="suspendGroups">Suspend Groups</button><button data-command="moveSelection">Move…</button><button data-command="rotateSelection">Rotate…</button><button data-command="mirrorSelection">Mirror…</button><button data-command="copySelection">Multiply / Copy…</button></div></div>
-<div class="menu-group"><button type="button" class="menu-trigger">View</button><div class="menu-pop"><button data-view-command="floor">Floor Plan (F2)</button><button data-view-command="3d">3D Window (F3)</button><button data-command="zoomFit">Fit in Window</button></div></div>
-<div class="menu-group"><button type="button" class="menu-trigger">Design</button><div class="menu-pop"><button data-tool-command="select">Arrow / Select</button><button data-tool-command="marquee">Marquee Tool</button><button data-tool-command="wall">Wall Tool</button><button data-tool-command="slab">Slab Tool</button><button data-tool-command="zone">Zone Tool</button><button data-tool-command="column">Column Tool</button><button data-tool-command="beam">Beam Tool</button><button data-tool-command="door">Door Tool</button><button data-tool-command="window">Window Tool</button></div></div>
-<div class="menu-group"><button type="button" class="menu-trigger">Document</button><div class="menu-pop"><button data-command="exportSection">Extract Section CSV</button><button data-command="validateModel">Validate Model</button><button data-command="exportSchedule">Export Schedule CSV</button></div></div>
-<div class="menu-group"><button type="button" class="menu-trigger">Window</button><div class="menu-pop"><button data-panel-command="toolbox">Toolbox</button><button data-panel-command="navigator">Navigator panel</button><button data-panel-command="inspector">Info Box / Properties</button><hr><button id="resetWorkspaceLayout" type="button">Reset Workspace Layout</button></div></div>
+<details class="menu-group app-menu-details"><summary class="menu-trigger">File</summary><div class="menu-pop"><button data-command="new">New Project</button><button data-command="open">Open Project…</button><button data-command="save">Save Project</button><button data-command="exportDxf">Export Floor Plan DXF</button><button data-command="exportSchedule">Export Schedule CSV</button></div></details>
+<details class="menu-group app-menu-details"><summary class="menu-trigger">Edit</summary><div class="menu-pop"><button data-command="undo">Undo</button><button data-command="redo">Redo</button><button data-command="delete">Delete Selected</button><button data-command="groupSelection">Group (Cmd/Ctrl+G)</button><button data-command="ungroupSelection">Ungroup (Shift+Cmd/Ctrl+G)</button><button data-command="suspendGroups">Suspend Groups</button><button data-command="moveSelection">Move…</button><button data-command="rotateSelection">Rotate…</button><button data-command="mirrorSelection">Mirror…</button><button data-command="copySelection">Multiply / Copy…</button></div></details>
+<details class="menu-group app-menu-details"><summary class="menu-trigger">View</summary><div class="menu-pop"><button data-view-command="floor">Floor Plan (F2)</button><button data-view-command="3d">3D Window (F3)</button><button data-command="zoomFit">Fit in Window</button></div></details>
+<details class="menu-group app-menu-details"><summary class="menu-trigger">Design</summary><div class="menu-pop"><button data-tool-command="select">Arrow / Select</button><button data-tool-command="marquee">Marquee Tool</button><button data-tool-command="wall">Wall Tool</button><button data-tool-command="slab">Slab Tool</button><button data-tool-command="zone">Zone Tool</button><button data-tool-command="column">Column Tool</button><button data-tool-command="beam">Beam Tool</button><button data-tool-command="door">Door Tool</button><button data-tool-command="window">Window Tool</button></div></details>
+<details class="menu-group app-menu-details"><summary class="menu-trigger">Document</summary><div class="menu-pop"><button data-command="exportSection">Extract Section CSV</button><button data-command="validateModel">Validate Model</button><button data-command="exportSchedule">Export Schedule CSV</button></div></details>
+<details class="menu-group app-menu-details"><summary class="menu-trigger">Window</summary><div class="menu-pop"><button data-panel-command="toolbox">Toolbox</button><button data-panel-command="navigator">Navigator panel</button><button data-panel-command="inspector">Info Box / Properties</button><hr><button id="resetWorkspaceLayout" type="button">Reset Workspace Layout</button></div></details>
 <details class="menu-group" id="teamworkMenuGroup"><summary aria-controls="arqenvoTeamworkPanel">Teamwork</summary></details>
-<div class="menu-group"><button type="button" class="menu-trigger">Help</button><div class="menu-pop help-menu"><strong>ARQENVO BIM Workspace</strong><span>F2 Floor Plan · F3 3D Window</span><span>Space-drag / middle mouse: Pan</span><span>3D left-drag: Orbit · Wheel: Zoom</span><span>Esc: Finish / cancel command</span></div></div>
+<details class="menu-group app-menu-details"><summary class="menu-trigger">Help</summary><div class="menu-pop help-menu"><strong>ARQENVO BIM Workspace</strong><span>F2 Floor Plan · F3 3D Window</span><span>Space-drag / middle mouse: Pan</span><span>3D left-drag: Orbit · Wheel: Zoom</span><span>Esc: Finish / cancel command</span></div></details>
 </nav>
 <script>
-/* Explicit menu popovers. On touch layouts, move the active popup to body so
-   the menu bar's horizontal scrolling viewport cannot clip it vertically. */
+/* Native disclosure menus with body-portaling on touch to avoid scroll clipping. */
 const menuPortals=new Map();
-function closeAppMenus(){
- document.querySelectorAll(".menu-group.is-open").forEach(group=>{
-  group.classList.remove("is-open");
-  const trigger=group.querySelector(".menu-trigger"),pop=menuPortals.get(group);
-  trigger?.setAttribute("aria-expanded","false");
-  if(pop){
-   group.append(pop);
-   pop.removeAttribute("style");
-   menuPortals.delete(group);
-  }
+function closeAppMenus(except=null){
+ document.querySelectorAll(".app-menu-details[open]").forEach(group=>{
+  if(group===except)return;
+  group.open=false;
+  const pop=menuPortals.get(group);
+  if(pop){group.append(pop);pop.removeAttribute("style");menuPortals.delete(group);}
  });
 }
-document.querySelectorAll(".menu-group").forEach(group=>{
- const trigger=group.querySelector(".menu-trigger"),pop=group.querySelector(".menu-pop");
- if(!trigger||!pop)return;
- trigger.setAttribute("aria-expanded","false");
- trigger.addEventListener("click",event=>{
-  event.preventDefault();
-  event.stopPropagation();
-  const wasOpen=group.classList.contains("is-open");
-  closeAppMenus();
-  if(wasOpen)return;
-  group.classList.add("is-open");
-  trigger.setAttribute("aria-expanded","true");
-  if(matchMedia("(pointer:coarse), (max-width:760px)").matches){
-   const rect=trigger.getBoundingClientRect();
-   pop.style.position="fixed";
-   pop.style.left=Math.max(6,Math.min(rect.left,window.innerWidth-220))+"px";
-   pop.style.top=Math.min(rect.bottom,window.innerHeight-120)+"px";
-   pop.style.right="auto";
-   pop.style.bottom="auto";
-   pop.style.width="max-content";
-   pop.style.minWidth=Math.min(220,window.innerWidth-12)+"px";
-   pop.style.maxWidth="calc(100vw - 12px)";
-   pop.style.maxHeight="calc(100dvh - "+Math.ceil(rect.bottom+12)+"px)";
-   pop.style.overflowY="auto";
-   document.body.append(pop);
-   menuPortals.set(group,pop);
+document.querySelectorAll(".app-menu-details").forEach(group=>{
+ const pop=group.querySelector(".menu-pop");
+ if(!pop)return;
+ group.addEventListener("toggle",()=>{
+  if(group.open){
+   closeAppMenus(group);
+   if(matchMedia("(pointer:coarse), (max-width:760px)").matches){
+    const rect=group.querySelector("summary").getBoundingClientRect();
+    Object.assign(pop.style,{position:"fixed",left:Math.max(6,Math.min(rect.left,window.innerWidth-220))+"px",top:Math.min(rect.bottom,window.innerHeight-120)+"px",right:"auto",bottom:"auto",width:"max-content",minWidth:Math.min(220,window.innerWidth-12)+"px",maxWidth:"calc(100vw - 12px)",maxHeight:"calc(100dvh - "+Math.ceil(rect.bottom+12)+"px)",overflowY:"auto"});
+    document.body.append(pop);menuPortals.set(group,pop);
+   }
+  }else{
+   const portal=menuPortals.get(group);
+   if(portal){group.append(portal);portal.removeAttribute("style");menuPortals.delete(group);}
   }
  });
 });
-window.addEventListener("resize",closeAppMenus,{passive:true});
-window.addEventListener("orientationchange",closeAppMenus,{passive:true});
+window.addEventListener("resize",()=>closeAppMenus(),{passive:true});
+window.addEventListener("orientationchange",()=>closeAppMenus(),{passive:true});
 document.getElementById("resetWorkspaceLayout")?.addEventListener("click",()=>{
- document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);document.querySelectorAll(".menu-group.is-open").forEach(group=>group.classList.remove("is-open"));
+ closeAppMenus();
  if(!confirm("Reset Arqenvo workspace panels and UI layout to the first-open defaults? Your project and drawing will not be deleted."))return;
  try{
   ["toolbox","navigator","inspector"].forEach(key=>{
@@ -999,10 +982,10 @@ document.getElementById("resetWorkspaceLayout")?.addEventListener("click",()=>{
  location.reload();
 });
 document.addEventListener("pointerdown",event=>{
- if(!event.target.closest(".menu")&&!event.target.closest(".menu-pop")){document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);closeAppMenus();}
+ if(!event.target.closest(".menu")&&!event.target.closest(".menu-pop")){closeAppMenus();}
 });
 document.addEventListener("keydown",event=>{
- if(event.key==="Escape"){document.querySelectorAll(".menu-group[open]").forEach(group=>group.open=false);closeAppMenus();}
+ if(event.key==="Escape"){closeAppMenus();}
 });
 </script>
 <header class="top" aria-label="Main ribbon">
