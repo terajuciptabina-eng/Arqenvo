@@ -1055,7 +1055,7 @@ document.addEventListener("keydown",event=>{
    inspector.id='inspector-panel';
   }
   function togglePanel(name){
-   if(!isTouch()){if(name==='navigator')work.classList.toggle('navigator-hidden');return;}
+   if(!isTouch()){if(name==='navigator')work.classList.toggle('navigator-hidden');sync();return;}
    var cls=name==='toolbox'?'toolbox-open':name==='navigator'?'navigator-open':'inspector-open';
    var wasOpen=work.classList.contains(cls);
    closePanels(cls);
