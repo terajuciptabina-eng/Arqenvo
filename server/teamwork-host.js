@@ -48,7 +48,7 @@ function loadUsers() {
   const data = readJson(USERS_FILE, null);
   if (data) return data;
   let password = process.env.ARQENVO_TEAMWORK_ADMIN_PASSWORD;
-  if (!password || password.length < 12) {
+  if (!password || password.length < 4) {
     password = crypto.randomBytes(18).toString("base64url");
     console.warn("\nARQENVO TEAMWORK FIRST-START ADMIN CREDENTIALS");
     console.warn("Username: admin");
