@@ -7,7 +7,7 @@
     if(!response.ok)throw Object.assign(new Error(data.error||("HTTP "+response.status)),{status:response.status,data});
     return data;
   };
-  const el=(tag,attrs={},text="")=>{const node=document.createElement(tag);for(const [key,value] of Object.entries(attrs)){if(key==="class")node.className=value;else if(["type","placeholder","autocomplete","title","href","download"].includes(key))node.setAttribute(key,value);else if(key==="hidden")node.hidden=value;}if(text)node.textContent=text;return node;};
+  const el=(tag,attrs={},text="")=>{const node=document.createElement(tag);for(const [key,value] of Object.entries(attrs)){if(key==="class")node.className=value;else if(["id","type","placeholder","autocomplete","title","href","download"].includes(key))node.setAttribute(key,value);else if(key==="hidden")node.hidden=value;}if(text)node.textContent=text;return node;};
   const style=el("style");
   style.textContent="#arqenvoTeamworkToggle{position:fixed;right:14px;bottom:14px;z-index:1400;border:1px solid #087e8b;background:#087e8b;color:#fff;border-radius:7px;padding:10px 14px;font:600 13px/1.2 Inter,Arial,sans-serif;box-shadow:0 3px 12px #0002}"+
   "#arqenvoTeamworkPanel{position:fixed;right:14px;bottom:62px;z-index:1401;width:min(360px,calc(100vw - 20px));max-height:min(76dvh,620px);overflow:auto;background:#f8fafb;color:#26313b;border:1px solid #bcc6ce;border-radius:10px;box-shadow:0 12px 36px #0003;padding:14px;font:13px/1.4 Inter,Arial,sans-serif}"+
