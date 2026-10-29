@@ -444,7 +444,7 @@ for(const e of items){if(!isLayerVisible(e)||!["wall","beam","column","slab","do
   prism(e,wallRect(right,frameWidth,wallDepth),baseZ,Math.max(.04,g.height),"frame");
   prism(e,wallRect(at(offset+width/2),Math.max(.04,width-frameWidth),wallDepth),headZ,frameWidth,"frame");
   if((e.libraryType||"single-leaf")==="double-leaf"){
-   const half=width/2,first=hostedDoorLeaf3dGeometry(host,{...e,width:half,hingeSide:"left"}),second=hostedDoorLeaf3dGeometry(host,{...e,offset:e.offset+half,width:half,hingeSide:"right"});
+   const half=width/2,meetingGap=.003,first=hostedDoorLeaf3dGeometry(host,{...e,width:half,hingeSide:"left"},{startInset:frameWidth,endInset:meetingGap/2}),second=hostedDoorLeaf3dGeometry(host,{...e,offset:e.offset+half,width:half,hingeSide:"right"},{startInset:meetingGap/2,endInset:frameWidth});
    prism(e,first.boundary,baseZ,first.height,"door");prism(e,second.boundary,baseZ,second.height,"door");
   }else{
    const leaf=hostedDoorLeaf3dGeometry(host,e,{frameWidth});
