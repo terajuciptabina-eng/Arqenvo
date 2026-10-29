@@ -11,6 +11,19 @@ This host service stores the shared project on one Windows PC or Mac. Other team
 
 ## Start the host
 
+### macOS — automatic latest-source setup
+
+Download the launcher from the repository's `main` branch, then run it from Terminal:
+
+~~~sh
+curl -fsSL https://raw.githubusercontent.com/terajuciptabina-eng/Arqenvo/main/scripts/start-teamwork-host.sh -o ~/Downloads/start-teamwork-host.sh
+bash ~/Downloads/start-teamwork-host.sh
+~~~
+
+The launcher fetches current `main` into `~/Library/Application Support/Arqenvo/teamwork-source` and updates that runtime checkout each time it starts. It does not modify the GitHub repository or any separate development checkout. Shared project data and backups stay separately under `~/.arqenvo/teamwork`. Keep Terminal open while the team is working. Review the launcher source [here](../scripts/start-teamwork-host.sh). If Git is unavailable, follow the macOS Command Line Tools prompt and rerun the launcher. On first setup, enter a unique admin password of at least 12 characters and save it securely.
+
+### Windows PowerShell
+
 Clone or download the Arqenvo repository onto the host computer, open a terminal in the repository root, then run:
 
 ### Windows PowerShell
