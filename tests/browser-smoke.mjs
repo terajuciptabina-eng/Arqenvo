@@ -331,6 +331,8 @@ try {
     const c=document.querySelector("#canvas"),r=c.getBoundingClientRect(),t=window.__arqenvoViewport;
     return {x:r.left+c.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+c.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)};
   },{wx,wy});
+  await touchPage.locator("#toolboxToggle").click({force:true});
+  await touchPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
   await touchPage.locator('[data-tool="gridline"]').click();
   let tp=await touchPoint(-2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
   tp=await touchPoint(2,0); await touchPage.touchscreen.tap(tp.x,tp.y);
