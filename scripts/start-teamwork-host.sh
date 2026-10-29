@@ -36,11 +36,11 @@ echo "Arqenvo source revision: $(git rev-parse --short HEAD)"
 echo "Project files and backups will be stored separately under ~/.arqenvo/teamwork."
 echo
 if [ ! -f "$HOME/.arqenvo/teamwork/users.json" ]; then
-  echo "First run: enter a unique admin password of at least 12 characters."
+  echo "First run: enter an admin password of at least 4 characters. Use this only on a trusted private Wi-Fi network."
   read -r -s -p "Teamwork admin password: " ADMIN_PASSWORD
   echo
-  if [ "${#ADMIN_PASSWORD}" -lt 12 ]; then
-    echo "Password must be at least 12 characters. Run the launcher again."
+  if [ "${#ADMIN_PASSWORD}" -lt 4 ]; then
+    echo "Password must be at least 4 characters. Run the launcher again."
     exit 1
   fi
   export ARQENVO_TEAMWORK_ADMIN_PASSWORD="$ADMIN_PASSWORD"
