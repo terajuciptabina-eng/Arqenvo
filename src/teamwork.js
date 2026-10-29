@@ -39,7 +39,8 @@
     state.syncing=true;
     try{
       const data=await api("project");state.reservations=data.reservations||{};
-      if(data.revision!==state.revision){
+      if(state.conflictRevision!==null){showStatus("Sync paused: host revision "+state.conflictRevision+" conflicts with local edits. Download the local copy, then choose Receive host project to discard local edits and resume syncing.","error");}
+      else if(data.revision!==state.revision){
         if(!data.project){state.revision=data.revision;showStatus("Signed in. No shared project exists yet. Create one from the current model.","ok");}
         else if(!state.syncedProject||!state.dirty){applyRemote(data.project);state.revision=data.revision;showStatus("Connected · revision "+state.revision+" · host changes received.","ok");}
         else showStatus("Conflict detected: host is now revision "+data.revision+" while this browser has unsent edits. Local model is preserved. Download it or use Receive host project after reviewing.","error");
@@ -48,6 +49,7 @@
   }
   async function sendProject(){
     if(!state.token)return showStatus("Sign in to the host first.","error");
+    if(state.conflictRevision!==null)return showStatus("Sync is paused because of a revision conflict. Download the local copy if needed, then explicitly choose Receive host project before editing further.","error");
     if(state.syncing)return;
     const project=model();if(!project)return showStatus("Arqenvo model adapter is unavailable. Reload the host URL.","error");
     state.syncing=true;
@@ -55,7 +57,7 @@
       const data=await api("project",{method:"PUT",body:JSON.stringify({expectedRevision:state.revision,project,changedElementIds:changedIds(state.syncedProject,project)})});
       state.revision=data.revision;state.syncedProject=structuredClone(project);state.dirty=false;showStatus("Changes saved to host · revision "+state.revision+".","ok");
     }catch(error){
-      if(error.status===409){showStatus("Revision conflict: host advanced to revision "+error.data.revision+". Local changes remain here and were not uploaded. Sending again is blocked until you explicitly resolve the conflict by receiving the host project or saving a local copy.","error");}
+      if(error.status===409){state.conflictRevision=error.data.revision;showStatus("Revision conflict: host advanced to revision "+error.data.revision+". Local changes remain here and were not uploaded. Sync is paused. Download a local copy first if needed, then choose Receive host project to resume.","error");}
       else showStatus("Could not send changes: "+error.message,"error");
     }finally{state.syncing=false;}
   }
@@ -64,7 +66,7 @@
   async function signIn(){
     try{
       const result=await api("login",{method:"POST",body:JSON.stringify({username:user.value.trim(),password:pass.value})});
-      state.token=result.token;state.user=result.user;pass.value="";state.revision=0;state.syncedProject=null;state.dirty=false;renderAuth();
+      state.token=result.token;state.user=result.user;pass.value="";state.revision=0;state.syncedProject=null;state.dirty=false;state.conflictRevision=null;renderAuth();
       const data=await api("project");state.revision=data.revision;state.reservations=data.reservations||{};
       if(data.project){applyRemote(data.project);showStatus("Connected · loaded host project revision "+state.revision+".","ok");}
       else showStatus("Signed in. No shared project exists yet. Click “Create shared project from this model”.","ok");
@@ -72,14 +74,14 @@
     }catch(error){showStatus("Sign in failed: "+error.message+" If this page is on GitHub Pages, open the host PC's http://LAN-IP:8080 address instead.","error");}
   }
   login.addEventListener("click",signIn);pass.addEventListener("keydown",event=>{if(event.key==="Enter")signIn()});toggle.addEventListener("click",()=>{panel.hidden=!panel.hidden;});
-  load.addEventListener("click",async()=>{if(state.dirty&&!confirm("Discard this browser's unsent edits and replace them with the host project? Download a local copy first if needed."))return;try{const data=await api("project");if(!data.project)return showStatus("No shared project exists on host yet.","error");applyRemote(data.project);state.revision=data.revision;state.reservations=data.reservations||{};showStatus("Host project received · revision "+state.revision+".","ok");}catch(error){showStatus("Receive failed: "+error.message,"error");}});
+  load.addEventListener("click",async()=>{if(state.dirty&&!confirm("Discard this browser's unsent edits and replace them with the host project? Download a local copy first if needed."))return;try{const data=await api("project");if(!data.project)return showStatus("No shared project exists on host yet.","error");applyRemote(data.project);state.revision=data.revision;state.conflictRevision=null;state.reservations=data.reservations||{};showStatus("Host project received · revision "+state.revision+". Sync resumed.","ok");}catch(error){showStatus("Receive failed: "+error.message,"error");}});
   publish.addEventListener("click",async()=>{if(state.revision!==0||state.syncedProject)return showStatus("The host already has a project. Use Receive host project or Send changes.","error");if(!confirm("Create the host's shared project from the model currently open in this browser? This becomes the authoritative project for the team."))return;await sendProject();});
   send.addEventListener("click",sendProject);
   download.addEventListener("click",()=>{try{const project=model();if(!project)throw new Error("Arqenvo model adapter is unavailable");const blob=new Blob([JSON.stringify(project,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const link=el("a",{href:url,download:(project.project?.name||"arqenvo-project").replace(/[^a-z0-9_-]+/gi,"-")+".arq"});link.style.display="none";document.body.append(link);link.click();link.remove();URL.revokeObjectURL(url);showStatus("Local project copy downloaded. Keep it safe before resolving a sync conflict.","ok");}catch(error){showStatus("Could not download local copy: "+error.message,"error");}});
   reserve.addEventListener("click",async()=>{try{const ids=window.arqenvoTeamworkAdapter?.getSelectedElementIds?.()||[];if(!ids.length)return showStatus("Select one or more elements in the drawing first.","error");const data=await api("reserve",{method:"POST",body:JSON.stringify({elementIds:ids})});state.reservations=data.reservations;showStatus("Reserved "+ids.length+" selected element(s).","ok");}catch(error){showStatus("Reservation failed: "+error.message,"error");}});
   release.addEventListener("click",async()=>{try{const ids=window.arqenvoTeamworkAdapter?.getSelectedElementIds?.()||[];if(!ids.length)return showStatus("Select one or more elements first.","error");const data=await api("release",{method:"POST",body:JSON.stringify({elementIds:ids})});state.reservations=data.reservations;showStatus("Released selected element reservations.","ok");}catch(error){showStatus("Release failed: "+error.message,"error");}});
   addMember.addEventListener("click",async()=>{try{const result=await api("members",{method:"POST",body:JSON.stringify({username:memberName.value.trim(),password:memberPassword.value,role:memberRole.value})});memberPassword.value="";showStatus("Created member "+result.user.username+" ("+result.user.role+"). Share credentials securely.","ok");}catch(error){showStatus("Could not add member: "+error.message,"error");}});
-  logout.addEventListener("click",async()=>{try{await api("logout",{method:"POST",body:"{}"});}catch{}clearInterval(state.polling);state.token="";state.user=null;state.syncedProject=null;state.dirty=false;renderAuth();showStatus("Signed out. Local autosave remains on this browser.");});
+  logout.addEventListener("click",async()=>{try{await api("logout",{method:"POST",body:"{}"});}catch{}clearInterval(state.polling);state.token="";state.user=null;state.syncedProject=null;state.dirty=false;state.conflictRevision=null;renderAuth();showStatus("Signed out. Local autosave remains on this browser.");});
   window.arqenvoTeamwork={markDirty(){if(!state.token||!state.syncedProject)return;state.dirty=true;clearTimeout(state.timer);state.timer=setTimeout(()=>{if(state.dirty)sendProject();},1400);}};
   renderAuth();
   api("health").then(data=>showStatus("Local host detected · "+data.host+" · revision "+data.projectRevision+". Sign in to connect.","ok")).catch(()=>showStatus("No Local Teamwork host detected at this address. Run the host service and open its LAN URL on this device.","info"));
