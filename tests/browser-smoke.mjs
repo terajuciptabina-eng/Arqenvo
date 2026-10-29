@@ -46,6 +46,38 @@ try {
     const canvas = document.querySelector("#canvas");
     return canvas && canvas.clientWidth > 100 && canvas.clientHeight > 100;
   });
+  // Text Tool regression: verify the real drag/release path creates one element and opens the inline editor.
+  // This runs with src/teamwork.js loaded, so the shared model adapter is present as it is on the LAN host.
+  await page.locator('[data-tool="text"]').click();
+  await page.waitForTimeout(80);
+  let textRect = await canvas.boundingBox();
+  assert.ok(textRect, "Canvas must be visible for Text Tool");
+  const textStart = { x: textRect.x + textRect.width * 0.36, y: textRect.y + textRect.height * 0.38 };
+  const textEnd = { x: textStart.x + 150, y: textStart.y + 60 };
+  await page.mouse.move(textStart.x, textStart.y);
+  await page.mouse.down();
+  await page.mouse.move(textEnd.x, textEnd.y, { steps: 6 });
+  await page.mouse.up();
+  await page.waitForFunction(() => !!document.querySelector("#arqInlineTextEditor"), null, { timeout: 3000 }).catch(async error => {
+    const diagnostic = await page.evaluate(() => ({
+      status: document.querySelector("#status")?.textContent || "",
+      gesture: window.__arqenvoTextGestureDebug || null,
+      lastTextDiagnostic: window.__arqenvoLastTextDiagnostic || null,
+      editor: !!document.querySelector("#arqInlineTextEditor"),
+      elements: JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.map(e => ({ type: e.type, id: e.id })) || []
+    }));
+    throw new Error("Text Tool drag did not open its inline editor: " + JSON.stringify(diagnostic) + "; " + error.message);
+  });
+  assert.equal(await page.locator("#arqInlineTextEditor").count(), 1, "Text box release must open one inline editor");
+  const textDiagnostic = await page.evaluate(() => ({
+    gesture: window.__arqenvoTextGestureDebug,
+    textCount: JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.filter(e => e.type === "text").length || 0
+  }));
+  assert.equal(textDiagnostic.textCount, 1, "Text Tool must persist exactly one text element on release");
+  await page.locator("#arqInlineTextValue").fill("Teamwork text regression");
+  await page.locator("#arqInlineTextEditor button").filter({ hasText: "Finish" }).click();
+  await page.waitForFunction(() => JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.some(e => e.type === "text" && e.text === "Teamwork text regression"));
+  await page.locator('[data-tool="select"]').click();
   const canvas = page.locator("#canvas");
   await page.locator('[data-tool="wall"]').click();
   await page.locator("#wallGeometryMethod").selectOption("single");
