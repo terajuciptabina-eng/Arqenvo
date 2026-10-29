@@ -2672,5 +2672,6 @@ window.arqenvoTeamworkAdapter={
   try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch{}
   redraw();renderProperties();window.dispatchEvent(new Event("resize"));
  },
- getSelectedElementIds:()=>[...selected]
+ getSelectedElementIds:()=>[...selected],
+ hasActiveEdit:()=>hasActiveDrawing()||!!activeEditGesture()||!!floorDrawGesture||!!selectionBoxGesture||!!textBoxGesture||!!pendingOpeningPlacement||!!wallChainStart||wallChainHasSegment
 };
