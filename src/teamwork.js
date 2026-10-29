@@ -42,7 +42,7 @@
       if(state.conflictRevision!==null){showStatus("Sync paused: host revision "+state.conflictRevision+" conflicts with local edits. Download the local copy, then choose Receive host project to discard local edits and resume syncing.","error");}
       else if(data.revision!==state.revision){
         if(!data.project){state.revision=data.revision;showStatus("Signed in. No shared project exists yet. Create one from the current model.","ok");}
-        else if(!state.syncedProject||!state.dirty){applyRemote(data.project);state.revision=data.revision;showStatus("Connected · revision "+state.revision+" · host changes received.","ok");}
+        else if(!state.syncedProject||!state.dirty){if(window.arqenvoTeamworkAdapter?.hasActiveEdit?.()){showStatus("Host update received, but sync is waiting for your active CAD edit to finish. Complete or cancel the current drawing/edit, then send changes.","info");}else{applyRemote(data.project);state.revision=data.revision;showStatus("Connected · revision "+state.revision+" · host changes received.","ok");}}
         else showStatus("Conflict detected: host is now revision "+data.revision+" while this browser has unsent edits. Local model is preserved. Download it or use Receive host project after reviewing.","error");
       }else if(state.syncedProject)showStatus("Connected · revision "+state.revision+" · "+Object.keys(state.reservations).length+" reserved element(s).","ok");
     }catch(error){showStatus("Teamwork sync failed: "+error.message,"error");}finally{state.syncing=false;}
