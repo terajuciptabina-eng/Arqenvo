@@ -1,0 +1,40 @@
+name: Local Teamwork Checks
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "server/teamwork-host.js"
+      - "src/teamwork.js"
+      - "src/app.js"
+      - "index.html"
+      - "tests/teamwork-host.test.js"
+      - "package.json"
+      - ".github/workflows/local-teamwork.yml"
+  pull_request:
+    paths:
+      - "server/teamwork-host.js"
+      - "src/teamwork.js"
+      - "src/app.js"
+      - "index.html"
+      - "tests/teamwork-host.test.js"
+      - "package.json"
+      - ".github/workflows/local-teamwork.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  local-teamwork:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node --check src/app.js
+      - run: node --check src/teamwork.js
+      - run: node --check server/teamwork-host.js
+      - run: node --check tests/teamwork-host.test.js
+      - run: node --test tests/teamwork-host.test.js
