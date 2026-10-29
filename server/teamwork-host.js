@@ -186,7 +186,7 @@ const handler = async (req, res) => {
         return json(res, 200, { reservations:cleanReservations() });
       }
       if (req.method === "POST" && route === "/api/teamwork/reserve") {
-        const session = auth(req, res); if (!session) return;
+        const session = auth(req, res, ["admin","member"]); if (!session) return;
         const body = await readBody(req);
         if (!Array.isArray(body.elementIds) || !body.elementIds.length || body.elementIds.length > 5000 || body.elementIds.some(id => typeof id !== "string" || !id)) return json(res, 400, { error:"elementIds must be a non-empty array of element IDs" });
         const reservations = cleanReservations();
@@ -197,7 +197,7 @@ const handler = async (req, res) => {
         return json(res, 200, { ok:true, reservations });
       }
       if (req.method === "POST" && route === "/api/teamwork/release") {
-        const session = auth(req, res); if (!session) return;
+        const session = auth(req, res, ["admin","member"]); if (!session) return;
         const body = await readBody(req);
         if (!Array.isArray(body.elementIds) || !body.elementIds.length) return json(res, 400, { error:"elementIds must be a non-empty array" });
         const reservations = cleanReservations();
