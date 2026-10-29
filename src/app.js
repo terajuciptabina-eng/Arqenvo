@@ -2673,5 +2673,5 @@ window.arqenvoTeamworkAdapter={
   redraw();renderProperties();window.dispatchEvent(new Event("resize"));
  },
  getSelectedElementIds:()=>[...selected],
- hasActiveEdit:()=>hasActiveDrawing()||!!activeEditGesture()||!!floorDrawGesture||!!selectionBoxGesture||!!textBoxGesture||!!pendingOpeningPlacement||!!wallChainStart||wallChainHasSegment
+ hasActiveEdit:()=>hasActiveDrawing()||!!activeEditGesture()||!!floorDrawGesture||!!selectionBoxGesture||!!textBoxGesture||!!pendingOpeningPlacement||!!wallChainStart||wallChainHasSegment||!!window.__arqInlineTextEditingId||!!document.getElementById("arqInlineTextEditor")
 };
