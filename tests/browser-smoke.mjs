@@ -74,7 +74,7 @@ try {
     gesture: window.__arqenvoTextGestureDebug,
     textCount: JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.filter(e => e.type === "text").length || 0
   }));
-  assert.equal(textDiagnostic.textCount, 1, "Text Tool must persist exactly one text element on release");
+  assert.equal(textDiagnostic.textCount, 1, "Text Tool must persist exactly one text element on release; diagnostics=" + JSON.stringify(textDiagnostic));
   await page.locator("#arqInlineTextValue").fill("Teamwork text regression");
   await page.locator("#arqInlineTextEditor button").filter({ hasText: "Finish" }).click();
   await page.waitForFunction(() => JSON.parse(localStorage.getItem("arqenvo.autosave.v2") || "{}").elements?.some(e => e.type === "text" && e.text === "Teamwork text regression"));
