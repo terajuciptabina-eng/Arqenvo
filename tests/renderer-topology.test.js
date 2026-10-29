@@ -30,7 +30,7 @@ test("3D edge renderer delegates complete coplanar coverage to the geometric pre
 });
 
 test("3D wall top-face renderer suppresses only fully covered coplanar cap edges", () => {
-  assert.match(source, /const topFacesByElevation=new Map\(\)/);
+  assert.match(source, /const topFaceGridSize=4,topFaceSpatialBuckets=new Map\(\)/);
   assert.match(source, /const topFaceEdgeCovered=\(face,a,b\)=>/);
   assert.match(source, /Math\.abs\(other\.poly\[0\]\.worldZ-a\.worldZ\)>.001/);
   assert.match(source, /if\(topFaceEdgeCovered\(face,a,b\)\)continue/);
