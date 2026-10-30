@@ -272,16 +272,19 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .canvaswrap{min-width:0;min-height:0}
 
 /* Contextual edit commit controls for touch devices and precision tablets */
-.edit-actions{position:absolute;z-index:2147483647;top:10px;right:10px;isolation:isolate;display:flex;align-items:center;gap:7px;padding:6px 8px;border:1px solid #c5cbd1;border-radius:8px;background:#fffffffa;color:#26313b;box-shadow:0 5px 18px #0002;touch-action:manipulation;pointer-events:auto;opacity:1;visibility:visible}
+.edit-actions{position:absolute;z-index:2147483647;top:10px;right:10px;isolation:isolate;display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:8px;border:1px solid #c5cbd1;border-radius:10px;background:#fffffffa;color:#26313b;box-shadow:0 5px 18px #0002;touch-action:manipulation;pointer-events:auto;opacity:1;visibility:visible;min-width:430px}
 .edit-actions[hidden]{display:none}
-.edit-actions>span{font-size:9px;letter-spacing:.1em;font-weight:700;color:#c3cbd2;padding:0 4px}
-.edit-actions button{min-height:40px;min-width:82px;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 12px;border:1px solid #c5cbd1;border-radius:5px;background:#f8fafb;color:#26313b;font-size:17px;line-height:1}
-.edit-actions button b{font-size:12px}
-.edit-actions #editCommit{background:#116a66;border-color:#4ba49c}
-.edit-actions #editCancel{background:#f8eeee;border-color:#d9b6b6;color:#7b2929}
+.edit-actions>span{font-size:9px;letter-spacing:.1em;font-weight:700;color:#87939d;padding:0 4px}
+.edit-primary{display:flex;flex:1 1 100%;align-items:center;gap:7px}
+.edit-primary button{flex:1 1 0;min-width:0;min-height:48px;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border:1px solid #c5cbd1;border-radius:6px;background:#f8fafb;color:#26313b;font-size:17px;line-height:1}
+.edit-primary button b{font-size:12px}
+.edit-primary #editCommit{background:#116a66;border-color:#4ba49c;color:#fff}
+.edit-primary #editCancel{background:#f8eeee;border-color:#d9b6b6;color:#7b2929}
+.edit-modifiers{display:flex;flex:1 1 100%;gap:7px}
+.edit-modifiers button{flex:1 1 0;min-width:0;min-height:38px;padding:6px 10px;border:1px solid #c5cbd1;border-radius:6px;background:#f1f4f6;color:#35414a;font-size:14px;font-weight:700;touch-action:none;user-select:none;-webkit-user-select:none}
+.edit-modifiers button.active{background:#d9eef0;border-color:#087e8b;color:#145f66;box-shadow:inset 0 0 0 1px #087e8b}
 .edit-actions button:active{transform:scale(.98)}
-@media(max-width:900px){.canvaswrap{overflow:visible}.edit-actions{position:fixed;top:auto;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 82px);left:auto;z-index:2147483000;isolation:isolate;gap:8px;padding:8px;border-radius:10px;box-shadow:0 5px 22px #0002;background:#fffffffa;pointer-events:auto;touch-action:manipulation}.edit-actions button{min-width:94px;min-height:48px;font-size:18px;pointer-events:auto;touch-action:manipulation}.edit-actions button b{font-size:13px}.edit-actions>span{display:none}}
-@media(min-width:901px){.edit-actions{top:10px;right:10px}}
+@media(max-width:900px){.canvaswrap{overflow:visible}.edit-actions{position:fixed;top:auto;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 82px);left:12px;width:auto;min-width:0;z-index:2147483000;isolation:isolate;gap:7px;padding:8px;border-radius:10px;box-shadow:0 5px 22px #0002;background:#fffffffa;pointer-events:auto;touch-action:manipulation}.edit-actions button{pointer-events:auto;touch-action:manipulation}.edit-primary button{min-width:0;min-height:46px;font-size:16px}.edit-primary button b{font-size:12px}.edit-modifiers button{min-height:38px;font-size:13px}.edit-actions>span{display:none}}
 
 /* Tablet and touch drafting ergonomics */
 @media(max-width:900px){
@@ -961,7 +964,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 }
 </style></head>
 <body><div class="app">
-<div class="edit-actions" id="editActions" aria-label="Finish element edit" hidden aria-hidden="true"><span>EDIT ELEMENT</span><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div>
+<div class="edit-actions" id="editActions" aria-label="Touch command controls" hidden aria-hidden="true"><span>EDIT / DRAW</span><div class="edit-primary"><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div><div class="edit-modifiers" aria-label="Keyboard modifiers"><button type="button" id="editEsc" aria-label="Escape key">Esc</button><button type="button" id="editShift" aria-label="Toggle Shift modifier" aria-pressed="false">⇧ Shift</button><button type="button" id="editSpace" aria-label="Hold Space modifier" aria-pressed="false">Space</button></div></div>
 
 <nav class="menu" aria-label="Application menu">
 <details class="menu-group app-menu-details"><summary class="menu-trigger">File</summary><div class="menu-pop"><button data-command="new">New Project</button><button data-command="open">Open Project…</button><button data-command="save">Save Project</button><button data-command="exportDxf">Export Floor Plan DXF</button><button data-command="exportSchedule">Export Schedule CSV</button></div></details>
