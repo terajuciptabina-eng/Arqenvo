@@ -272,19 +272,8 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
 .canvaswrap{min-width:0;min-height:0}
 
 /* Contextual edit commit controls for touch devices and precision tablets */
-.edit-actions{position:absolute;z-index:2147483647;top:10px;right:10px;isolation:isolate;display:flex;flex-wrap:wrap;align-items:center;gap:7px;padding:8px;border:1px solid #c5cbd1;border-radius:10px;background:#fffffffa;color:#26313b;box-shadow:0 5px 18px #0002;touch-action:manipulation;pointer-events:auto;opacity:1;visibility:visible;min-width:430px}
-.edit-actions[hidden]{display:none}
-.edit-actions>span{font-size:9px;letter-spacing:.1em;font-weight:700;color:#87939d;padding:0 4px}
-.edit-primary{display:flex;flex:1 1 100%;align-items:center;gap:7px}
-.edit-primary button{flex:1 1 0;min-width:0;min-height:48px;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 10px;border:1px solid #c5cbd1;border-radius:6px;background:#f8fafb;color:#26313b;font-size:17px;line-height:1}
-.edit-primary button b{font-size:12px}
-.edit-primary #editCommit{background:#116a66;border-color:#4ba49c;color:#fff}
-.edit-primary #editCancel{background:#f8eeee;border-color:#d9b6b6;color:#7b2929}
-.edit-modifiers{display:flex;flex:1 1 100%;gap:7px}
-.edit-modifiers button{flex:1 1 0;min-width:0;min-height:38px;padding:6px 10px;border:1px solid #c5cbd1;border-radius:6px;background:#f1f4f6;color:#35414a;font-size:14px;font-weight:700;touch-action:none;user-select:none;-webkit-user-select:none}
-.edit-modifiers button.active{background:#d9eef0;border-color:#087e8b;color:#145f66;box-shadow:inset 0 0 0 1px #087e8b}
-.edit-actions button:active{transform:scale(.98)}
-@media(max-width:900px){.canvaswrap{overflow:visible}.edit-actions{position:fixed;top:auto;right:12px;bottom:calc(env(safe-area-inset-bottom, 0px) + 82px);left:12px;width:auto;min-width:0;z-index:2147483000;isolation:isolate;gap:7px;padding:8px;border-radius:10px;box-shadow:0 5px 22px #0002;background:#fffffffa;pointer-events:auto;touch-action:manipulation}.edit-actions button{pointer-events:auto;touch-action:manipulation}.edit-primary button{min-width:0;min-height:46px;font-size:16px}.edit-primary button b{font-size:12px}.edit-modifiers button{min-height:38px;font-size:13px}.edit-actions>span{display:none}}
+.edit-actions{position:absolute;z-index:2147483647;top:10px;right:10px;display:flex;flex-direction:column;gap:5px;min-width:430px;padding:8px;border:1px solid #c5cbd1;border-radius:10px;background:#fffffffa;color:#26313b;box-shadow:0 5px 18px #0002;isolation:isolate;pointer-events:auto;touch-action:manipulation;user-select:none;-webkit-user-select:none}.edit-actions[hidden]{display:none}.edit-actions>span{font-size:9px;letter-spacing:.1em;font-weight:700;color:#87939d;padding:0 4px}.edit-primary,.edit-modifiers{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.edit-primary button,.edit-modifiers button{min-width:0;min-height:40px;display:flex;align-items:center;justify-content:center;gap:4px;padding:5px 4px;border:1px solid #c5cbd1;border-radius:6px;background:#f1f4f6;color:#35414a;font-size:13px;font-weight:700;line-height:1;touch-action:manipulation;user-select:none;-webkit-user-select:none}.edit-primary button b{font-size:10px}.edit-primary #editCommit{background:#116a66;border-color:#4ba49c;color:#fff}.edit-primary #editCancel{background:#f8eeee;border-color:#d9b6b6;color:#7b2929}.edit-modifiers button.active{background:#d9eef0;border-color:#087e8b;color:#145f66;box-shadow:inset 0 0 0 1px #087e8b}.edit-actions button:active{transform:scale(.98)}.edit-header{display:flex;align-items:center;justify-content:space-between;min-height:24px;gap:8px}.edit-header span{font-size:8px;letter-spacing:.1em;font-weight:700;color:#87939d;padding:0 4px}#editDragHandle{border:0;background:transparent;color:#71808b;padding:0 5px;min-width:28px;min-height:22px;font-size:18px;line-height:1;cursor:grab;touch-action:none}@media(max-width:900px){.canvaswrap{overflow:visible}.edit-actions{position:fixed;top:auto;right:10px;bottom:calc(env(safe-area-inset-bottom,0px) + 42px);left:auto;width:236px;min-width:0;max-width:calc(100vw - 20px);gap:4px;padding:6px;border-radius:9px;z-index:2147483647;box-shadow:0 4px 16px #0003;background:#fffffffa;touch-action:none}.edit-actions>span{display:none}.edit-header{min-height:18px}.edit-header span{display:block;font-size:7px}.edit-primary,.edit-modifiers{gap:4px}.edit-primary button,.edit-modifiers button{min-height:34px;padding:4px 2px;font-size:11px}.edit-primary button b{font-size:9px}#editDragHandle{min-height:18px;font-size:16px}}
+
 
 /* Tablet and touch drafting ergonomics */
 @media(max-width:900px){
@@ -377,9 +366,6 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .status .right{display:none}
  .hint{left:6px;right:6px;bottom:6px;width:auto;max-width:none;padding:5px 7px;font-size:9px;line-height:1.3}
  .dynamic-tracker{max-width:calc(100vw - 100px)}
- .app>.edit-actions{position:fixed;right:12px;left:auto;top:auto;bottom:calc(env(safe-area-inset-bottom,0px) + 42px);z-index:2147483647;max-width:calc(100vw - 24px);padding:7px;gap:7px}
- .app>.edit-actions button{min-width:88px;min-height:44px;padding:7px 10px;font-size:17px;touch-action:manipulation}
- .app>.edit-actions button b{font-size:12px}
 }
 @media (max-width:390px){
  .app{grid-template-rows:26px 60px 40px minmax(0,1fr) 22px}
@@ -397,8 +383,6 @@ button:focus-visible,summary:focus-visible,select:focus-visible{outline:2px soli
  .tool b{flex-basis:19px;width:19px;font-size:16px}
  .workspace{grid-template-rows:32px minmax(0,1fr) 28px}
  .quick-options{height:28px;min-height:28px}
- .app>.edit-actions{right:8px;bottom:calc(env(safe-area-inset-bottom,0px) + 34px);padding:6px;gap:5px}
- .app>.edit-actions button{min-width:78px;min-height:42px;padding:6px 8px}
 }
 /* Layout Book: native sheet controls and print-friendly Publisher */
 #layoutControls{display:none;align-items:center;gap:5px;min-width:0;overflow-x:auto;padding:4px 7px;background:#f4f5f6;border-bottom:1px solid #c5cbd1;color:#26313b}
@@ -964,7 +948,7 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 }
 </style></head>
 <body><div class="app">
-<div class="edit-actions" id="editActions" aria-label="Touch command controls" hidden aria-hidden="true"><span>EDIT / DRAW</span><div class="edit-primary"><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div><div class="edit-modifiers" aria-label="Keyboard modifiers"><button type="button" id="editEsc" aria-label="Escape key">Esc</button><button type="button" id="editShift" aria-label="Toggle Shift modifier" aria-pressed="false">⇧ Shift</button><button type="button" id="editSpace" aria-label="Hold Space modifier" aria-pressed="false">Space</button></div></div>
+<div class="edit-actions" id="editActions" aria-label="Touch command controls" hidden aria-hidden="true"><div class="edit-header"><span>EDIT / DRAW</span><button type="button" id="editDragHandle" aria-label="Drag command palette" title="Hold and drag anywhere on this panel">⠿</button></div><div class="edit-primary"><button type="button" id="editCommit" aria-label="Finish editing">✓ <b>Finish</b></button><button type="button" id="editBackspace" aria-label="Backspace: remove last point or delete selected element">⌫ <b>Backspace</b></button><button type="button" id="editCancel" aria-label="Cancel editing">✕ <b>Cancel</b></button></div><div class="edit-modifiers" aria-label="Keyboard modifiers"><button type="button" id="editEsc" aria-label="Escape key">Esc</button><button type="button" id="editShift" aria-label="Toggle Shift modifier" aria-pressed="false">⇧ Shift</button><button type="button" id="editSpace" aria-label="Hold Space modifier" aria-pressed="false">Space</button></div></div></div>
 
 <nav class="menu" aria-label="Application menu">
 <details class="menu-group app-menu-details"><summary class="menu-trigger">File</summary><div class="menu-pop"><button data-command="new">New Project</button><button data-command="open">Open Project…</button><button data-command="save">Save Project</button><button data-command="exportDxf">Export Floor Plan DXF</button><button data-command="exportSchedule">Export Schedule CSV</button></div></details>
