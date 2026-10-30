@@ -101,7 +101,10 @@ try{
     assert.notEqual(propsOpen.display,"none","Properties must open from its tab button");
     if(phone)assert.notEqual(propsOpen.toolbox,"none","Phone keeps the fixed Toolbox icon rail beside Properties");else assert.equal(propsOpen.toolbox,"none");assert.equal(propsOpen.nav,"none");assert.equal(propsOpen.grips,0);
     await page.locator("#propsToggle").click({force:true});
-    await page.waitForFunction(()=>!document.querySelector(".work")?.classList.contains("inspector-open"));
+    await page.waitForFunction(()=>!document.querySelector(".work")?.classList.contains("inspector-open")).catch(async error=>{
+      const diag=await page.evaluate(()=>({classes:document.querySelector(".work")?.className,button:{text:document.querySelector("#propsToggle")?.textContent,expanded:document.querySelector("#propsToggle")?.getAttribute("aria-expanded"),parent:document.querySelector("#propsToggle")?.parentElement?.className,hidden:document.querySelector("#propsToggle")?.hidden},inspector:{display:getComputedStyle(document.querySelector(".inspector")).display,inline:document.querySelector(".inspector")?.style.display},errors:window.__arqenvoDebug?.lastError||null}));
+      throw new Error("Properties panel close diagnostic: "+JSON.stringify(diag)+"; "+error.message);
+    });
     await page.close();
   }
 
