@@ -1149,8 +1149,10 @@ document.addEventListener("keydown",event=>{
    if(!isTouch()){if(name==='navigator')work.classList.toggle('navigator-hidden');sync();return;}
    var cls=name==='toolbox'?'toolbox-open':name==='navigator'?'navigator-open':'inspector-open';
    var wasOpen=work.classList.contains(cls);
-   closePanels(cls);
-   work.classList.toggle(cls,!wasOpen);
+   // Change panel state in one pass; do not sync while the old panel is
+   // still open because touch controls and panel visibility share this state.
+   ['toolbox-open','navigator-open','inspector-open'].forEach(function(other){work.classList.remove(other);});
+   if(!wasOpen)work.classList.add(cls);
    sync();
   }
   navToggle.addEventListener('click',function(){togglePanel('navigator');});
