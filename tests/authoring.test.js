@@ -191,8 +191,12 @@ test("existing hosted opening edits preserve anchor geometry and apply height an
  const resized=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:1,width:1.4,height:2.1,sill:.2,alignment:"center"},changedKey:"width"});
  assert.equal(resized.width,1.4);assert.equal(resized.height,2.1);assert.equal(resized.sill,.2);
  assert.ok(Math.abs(resized.anchorPosition-1.5)<1e-9,"resizing preserves the old centre anchor");
- const aligned=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:1,width:1,height:2,sill:0,alignment:"left"},changedKey:"propAlignment"});
- assert.equal(aligned.offset,1.5,"switching anchor mode keeps the previous physical reference coordinate");assert.equal(aligned.alignment,"left");
+ const alignedLeft=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:1,width:1,height:2,sill:0,alignment:"left"},changedKey:"propAlignment"});
+ assert.equal(alignedLeft.offset,0,"Left positions the opening at the host wall start");assert.equal(alignedLeft.alignment,"left");
+ const alignedCenter=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:1,width:1,height:2,sill:0,alignment:"center"},changedKey:"propAlignment"});
+ assert.equal(alignedCenter.offset,2,"Center positions the opening at the host wall centre");
+ const alignedRight=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:1,width:1,height:2,sill:0,alignment:"right"},changedKey:"propAlignment"});
+ assert.equal(alignedRight.offset,4,"Right positions the opening at the host wall end");
  const moved=resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:2,width:1,height:2.2,sill:.3,alignment:"center"},changedKey:"offset"});
  assert.equal(moved.offset,2);assert.equal(moved.height,2.2);assert.equal(moved.sill,.3);
  assert.throws(()=>resolveHostedOpeningEdit({hostLength:5,hostHeight:3,current,changes:{offset:4.5,width:1,height:2,sill:0,alignment:"center"},changedKey:"offset"}),/fit/);
