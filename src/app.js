@@ -1818,7 +1818,7 @@ $("clear").onclick=()=>{if(confirm("Clear all elements?")){hist();p.elements=[];
 $("new").onclick=()=>{if(confirm("Start new project?")){hist();p=createProject();updateUnitButton();activeStoryId=p.stories[0].id;activeLayoutId=null;activeLayoutDrawingId=null;layoutMode=false;$("layoutControls")?.classList.remove("active");$("layoutInspector")?.classList.remove("active");selected.clear();refreshStories();renderLayoutList();redraw();renderProperties()}};
 $("save").onclick=()=>{try{const a=document.createElement("a"),u=URL.createObjectURL(new Blob([serializeProject(p)],{type:"application/json"}));a.href=u;a.download=(p.project.name||"arqenvo-project").replace(/[^a-z0-9-_]+/gi,"-")+".arq";a.click();setTimeout(()=>URL.revokeObjectURL(u),1000);$("status").textContent="Project exported"}catch(err){$("status").textContent=err.message}};
 $("open").onclick=()=>$("file").click();$("file").onchange=async e=>{const f=e.target.files?.[0];if(!f)return;try{const next=deserializeProject(await f.text());hist();p=next;updateUnitButton();activeStoryId=p.stories[0].id;activeLayoutId=p.layouts?.[0]?.id||null;activeLayoutDrawingId=null;layoutMode=false;$("layoutControls")?.classList.remove("active");$("layoutInspector")?.classList.remove("active");selected.clear();refreshStories();renderLayoutList();redraw();renderProperties();scheduleAutoSave();$("status").textContent="Project opened: "+f.name}catch(err){alert(err.message)}finally{e.target.value=""}};
-$("propsToggle").onclick=()=>{$("inspector").style.display=$("inspector").style.display==="block"?"none":"block"};
+// Workspace panel visibility is owned by initWorkspacePanels in index.html.
 function commitAndDeselect(reason="Enter"){
  let committed=false;
  if(releasedTouchEditPending){
