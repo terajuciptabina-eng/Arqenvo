@@ -24,5 +24,5 @@ jobs:
       - name: Run tablet layout smoke test
         run: npm run test:layout
       - name: Run browser smoke test
-        if: always()
+        if: success()
         run: npm run test:browser
