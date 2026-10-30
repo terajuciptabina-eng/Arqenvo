@@ -42,7 +42,13 @@ export function resolveHostedOpeningEdit({hostLength, hostHeight, current, chang
   const anchorPosition = oldOffset + (oldAlignment === "left" ? 0 : oldAlignment === "right" ? oldWidth : oldWidth / 2);
   let offset;
   if (changedKey === "offset") offset = offsetInput;
-  else if (changedKey === "width" || changedKey === "propAlignment") offset = openingOffsetForAnchor(hostLength, width, alignment, anchorPosition);
+  else if (changedKey === "propAlignment") {
+    // The selected anchor mode is a wall-position preset: Left = wall start,
+    // Center = wall centre, Right = wall end. Width edits still preserve
+    // the existing physical anchor coordinate in the branch below.
+    const wallAnchor = alignment === "left" ? 0 : alignment === "right" ? hostLength : hostLength / 2;
+    offset = openingOffsetForAnchor(hostLength, width, alignment, wallAnchor);
+  } else if (changedKey === "width") offset = openingOffsetForAnchor(hostLength, width, alignment, anchorPosition);
   else offset = oldOffset;
   if (!Number.isFinite(offset) || offset < -1e-8 || offset + width > hostLength + 1e-8) throw new RangeError("Opening cannot fit on the host wall at this position");
   offset = Math.max(0, Math.min(hostLength - width, offset));
