@@ -748,6 +748,35 @@ try {
   assert.notDeepEqual(afterSingle.find(w=>w.id===selectedBefore.id),selectedBefore,"Single-wall edge editing must update the selected wall");
   await edgePage.close();
 
+  // Regression: touch Shift must constrain a selected node edit, not suppress node hit-testing.
+  const axisPage=await browser.newPage({viewport:{width:820,height:1180},hasTouch:true,isMobile:true});
+  axisPage.setDefaultTimeout(8000);axisPage.on("pageerror",error=>pageErrors.push(error.message));
+  await axisPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
+  await axisPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  await axisPage.locator("#snapToggle").click();
+  await axisPage.locator("#gridQuick").selectOption("0.1");
+  await axisPage.locator('[data-tool="wall"]').click();
+  await axisPage.locator("#wallGeometryMethod").selectOption("single");
+  const axisPoint=async(wx,wy)=>{const pt=await axisPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await axisPage.mouse.click(pt.x,pt.y)};
+  await axisPoint(-2,0);await axisPoint(2,0);await axisPage.keyboard.press("Enter");
+  await axisPage.waitForTimeout(850);
+  await axisPage.locator('[data-tool="select"]').click();
+  await axisPoint(0,0);
+  await axisPage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent.includes("selected"));
+  const wallBeforeAxis=await axisPage.evaluate(()=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.type==="wall"));
+  assert.ok(wallBeforeAxis,"Touch Shift regression fixture must create a wall");
+  await axisPage.locator("#mobileShiftToggle").click();
+  assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"true","Touch Shift modifier should be active before node drag");
+  const nodePoint=await axisPage.evaluate(({point})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+point.x*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-point.y*(t?.scale||36)}},{point:wallBeforeAxis.start});
+  await axisPage.evaluate(({x,y})=>{const cv=document.querySelector("#canvas");cv.dispatchEvent(new PointerEvent("pointerdown",{pointerId:71,pointerType:"touch",isPrimary:true,button:0,buttons:1,clientX:x,clientY:y,bubbles:true,cancelable:true}));cv.dispatchEvent(new PointerEvent("pointermove",{pointerId:71,pointerType:"touch",isPrimary:true,button:0,buttons:1,clientX:x,clientY:y+40,bubbles:true,cancelable:true}));cv.dispatchEvent(new PointerEvent("pointerup",{pointerId:71,pointerType:"touch",isPrimary:true,button:0,buttons:0,clientX:x,clientY:y+40,bubbles:true,cancelable:true}))},nodePoint);
+  await axisPage.waitForTimeout(850);
+  const wallAfterAxis=await axisPage.evaluate(id=>JSON.parse(localStorage.getItem("arqenvo.autosave.v2")||"{}").elements.find(e=>e.id===id),wallBeforeAxis.id);
+  assert.ok(wallAfterAxis,"Touch Shift regression wall should remain in the model");
+  assert.ok(Math.abs(wallAfterAxis.start.y-wallBeforeAxis.start.y)>0.1,"Holding touch Shift and dragging a selected node must move the node");
+  assert.ok(Math.abs(wallAfterAxis.start.x-wallBeforeAxis.start.x)<1e-6,"Touch Shift node drag must lock the node to the Y axis");
+  assert.deepEqual(wallAfterAxis.end,wallBeforeAxis.end,"Touch Shift node drag must not translate the whole wall");
+  await axisPage.close();
+
   // Space temporarily activates Magic Wand and restores the prior tool on release.
   const spacePage=await browser.newPage({viewport:{width:1100,height:800}});
   spacePage.setDefaultTimeout(8000);
