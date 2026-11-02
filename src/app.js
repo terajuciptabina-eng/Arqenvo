@@ -2241,7 +2241,7 @@ function continueActiveDrawingAtCursor(){
  // completeWallGeometry clears the drawing gesture while creating the segment.
  // Re-arm it with the ORIGINAL pointer id; never transfer ownership to the button.
  floorDrawGesture={pointerId:gesture.pointerId,tool:"wall",startScreen:pointerScreen,anchor:{x:endpoint.x,y:endpoint.y},isStart:true,pointerWorld:{x:endpoint.x,y:endpoint.y},continueChain:true};
- try{if(c.setPointerCapture&&(!c.hasPointerCapture||c.hasPointerCapture(gesture.pointerId)))c.setPointerCapture(gesture.pointerId)}catch{}
+ try{if(c.setPointerCapture&&(!c.hasPointerCapture||!c.hasPointerCapture(gesture.pointerId)))c.setPointerCapture(gesture.pointerId)}catch{}
  $("status").textContent="Wall segment confirmed · keep the first finger held and drag to the next point";
  updateEditActions();redraw();return true;
 }
