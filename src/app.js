@@ -2204,6 +2204,21 @@ $("mobile3dZoomIn")?.addEventListener("click",()=>{camera3d.zoom=Math.min(5,came
 try{Object.defineProperty(window,"__arqenvoDebug",{configurable:true,value:{getView:()=>view,getTool:()=>tool,getZoom:()=>camera3d.zoom,getCamera:()=>({...camera3d}),getOpeningAlignment:()=>openingAlignment,getOpeningPlacement:()=>pendingOpeningPlacement?{...pendingOpeningPlacement}:null,getSettings:()=>({...p.settings}),getViewport:()=>({scale,origin:{...origin},width:c.clientWidth,height:c.clientHeight}),getLastFloorSelectionDebug:()=>lastFloorSelectionDebug?structuredClone(lastFloorSelectionDebug):null}})}catch{}
 $("scaleSelect").value=String(drawingScaleDenominator);syncGridOptions();updateZoomReadout();
 window.addEventListener("beforeunload",()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch{}});
+function isMobileDrawingPointer(event){
+ return (event.pointerType==="touch"||event.pointerType==="pen")&&
+  (window.matchMedia?.("(pointer: coarse)").matches||/iPhone|iPad|iPod|Android/i.test(navigator.userAgent));
+}
+// On iPhone/iPad Safari, keep the drawing pointer's coordinates independent of
+// the second pointer used to press the floating Continue/Finish control.
+window.addEventListener("pointermove",event=>{
+ const gesture=floorDrawGesture;
+ if(!isMobileDrawingPointer(event)||view!=="floor"||tool!=="wall"||
+    !gesture||gesture.tool!=="wall"||gesture.pointerId!==event.pointerId)return;
+ const rect=c.getBoundingClientRect();
+ mouse={x:event.clientX-rect.left,y:event.clientY-rect.top};
+ $("coords").textContent="X "+wpos(mouse).x.toFixed(2)+" · Y "+wpos(mouse).y.toFixed(2);
+ redraw();
+},true);
 function continueActiveDrawingAtCursor(){
  if(!hasActiveDrawing()||view!=="floor")return false;
  if(tool!=="wall"||wallGeometryMethod!=="continuous"){
@@ -2211,25 +2226,47 @@ function continueActiveDrawingAtCursor(){
  }
  const gesture=floorDrawGesture;
  if(!gesture||gesture.tool!=="wall"||gesture.pointerId===undefined){
-  $("status").textContent="Hold and drag on the canvas to start the next wall segment";return false;
+  $("status").textContent="Keep the first finger held on the canvas while using Continue/Finish";return false;
  }
  if(!mouse||!Number.isFinite(mouse.x)||!Number.isFinite(mouse.y)){
   $("status").textContent="Drag to the next endpoint before pressing Continue/Finish";return false;
  }
  const anchor=draft.length?draft[draft.length-1]:null;
  if(!anchor){$("status").textContent="Set the first drawing point on the canvas";return false}
+ const rect=c.getBoundingClientRect();
+ const pointerScreen={x:mouse.x+rect.left,y:mouse.y+rect.top};
  const endpoint=constrain(anchor,snapPoint(wpos(mouse)),{shiftKey:shiftHeld});
- const rect=c.getBoundingClientRect(),nextScreen={x:mouse.x,y:mouse.y};
  const committed=completeWallGeometry(anchor,endpoint,{shiftKey:shiftHeld});
  if(!committed)return false;
- floorDrawGesture={pointerId:gesture.pointerId,tool:"wall",startScreen:{x:nextScreen.x+rect.left,y:nextScreen.y+rect.top},anchor:{x:endpoint.x,y:endpoint.y},isStart:true,pointerWorld:{x:endpoint.x,y:endpoint.y},continueChain:true};
- try{if(c.setPointerCapture&&(!c.hasPointerCapture||!c.hasPointerCapture(gesture.pointerId)))c.setPointerCapture(gesture.pointerId)}catch{}
- $("status").textContent="Wall segment confirmed · keep holding and drag to the next point, then Continue/Finish";
+ // completeWallGeometry clears the drawing gesture while creating the segment.
+ // Re-arm it with the ORIGINAL pointer id; never transfer ownership to the button.
+ floorDrawGesture={pointerId:gesture.pointerId,tool:"wall",startScreen:pointerScreen,anchor:{x:endpoint.x,y:endpoint.y},isStart:true,pointerWorld:{x:endpoint.x,y:endpoint.y},continueChain:true};
+ try{if(c.setPointerCapture&&(!c.hasPointerCapture||c.hasPointerCapture(gesture.pointerId)))c.setPointerCapture(gesture.pointerId)}catch{}
+ $("status").textContent="Wall segment confirmed · keep the first finger held and drag to the next point";
  updateEditActions();redraw();return true;
 }
 let drawingCommitTapTimer=null;
 let drawingCommitTapCount=0;
+let mobileDrawingCommitClickSuppressed=false;
+$("editCommit")?.addEventListener("pointerdown",event=>{
+ if(!isMobileDrawingPointer(event)||!hasActiveDrawing()||view!=="floor"||tool!=="wall"||wallGeometryMethod!=="continuous")return;
+ event.preventDefault();event.stopImmediatePropagation();
+ mobileDrawingCommitClickSuppressed=true;
+ const now=Date.now();
+ if(drawingCommitTapTimer!==null&&now-drawingCommitTapStartedAt<=360){
+  clearTimeout(drawingCommitTapTimer);drawingCommitTapTimer=null;drawingCommitTapCount=0;
+  if(commitAndDeselect("Finish"))$("status").textContent="Wall chain finished";
+  else $("status").textContent="No active wall chain to finish";
+  return;
+ }
+ if(drawingCommitTapTimer!==null)clearTimeout(drawingCommitTapTimer);
+ drawingCommitTapStartedAt=now;drawingCommitTapCount=1;
+ if(!continueActiveDrawingAtCursor())return;
+ drawingCommitTapTimer=setTimeout(()=>{drawingCommitTapTimer=null;drawingCommitTapCount=0},380);
+},true);
+let drawingCommitTapStartedAt=0;
 $("editCommit")?.addEventListener("click",event=>{
+ if(mobileDrawingCommitClickSuppressed){mobileDrawingCommitClickSuppressed=false;event.preventDefault();event.stopImmediatePropagation();return}
  if(!hasActiveDrawing()){
   if(drawingCommitTapTimer!==null){clearTimeout(drawingCommitTapTimer);drawingCommitTapTimer=null;drawingCommitTapCount=0}
   if(commitAndDeselect("Finish")){if(!$("status").textContent.includes("committed"))$("status").textContent="Edit committed"}
