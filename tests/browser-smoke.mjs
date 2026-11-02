@@ -753,6 +753,11 @@ try {
   axisPage.setDefaultTimeout(8000);axisPage.on("pageerror",error=>pageErrors.push(error.message));
   await axisPage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
   await axisPage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
+  // Mobile Shift is a true second-finger hold: active on touch pointerdown, released on pointerup.
+  await axisPage.evaluate(()=>document.querySelector("#mobileShiftToggle").dispatchEvent(new PointerEvent("pointerdown",{pointerId:99,pointerType:"touch",isPrimary:false,button:0,buttons:1,bubbles:true,cancelable:true})));
+  assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"true","Touch Shift must activate while the second finger is held");
+  await axisPage.evaluate(()=>window.dispatchEvent(new PointerEvent("pointerup",{pointerId:99,pointerType:"touch",isPrimary:false,button:0,buttons:0,bubbles:true,cancelable:true})));
+  assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"false","Touch Shift must release when the second finger lifts");
   await axisPage.locator("#snapToggle").click();
   await axisPage.locator("#gridQuick").selectOption("0.1");
   await axisPage.locator('[data-tool="wall"]').click();
