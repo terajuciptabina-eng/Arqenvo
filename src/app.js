@@ -2204,6 +2204,21 @@ $("mobile3dZoomIn")?.addEventListener("click",()=>{camera3d.zoom=Math.min(5,came
 try{Object.defineProperty(window,"__arqenvoDebug",{configurable:true,value:{getView:()=>view,getTool:()=>tool,getZoom:()=>camera3d.zoom,getCamera:()=>({...camera3d}),getOpeningAlignment:()=>openingAlignment,getOpeningPlacement:()=>pendingOpeningPlacement?{...pendingOpeningPlacement}:null,getSettings:()=>({...p.settings}),getViewport:()=>({scale,origin:{...origin},width:c.clientWidth,height:c.clientHeight}),getLastFloorSelectionDebug:()=>lastFloorSelectionDebug?structuredClone(lastFloorSelectionDebug):null}})}catch{}
 $("scaleSelect").value=String(drawingScaleDenominator);syncGridOptions();updateZoomReadout();
 window.addEventListener("beforeunload",()=>{try{localStorage.setItem(AUTOSAVE_KEY,serializeProject(p))}catch{}});
+function continueActiveDrawingAtCursor(){
+ if(!hasActiveDrawing()||view!=="floor")return false;
+ if(tool!=="wall"||wallGeometryMethod!=="continuous"){
+  $("status").textContent="Continue endpoint confirmation is currently supported for continuous wall drawing";
+  return false;
+ }
+ if(!mouse||!Number.isFinite(mouse.x)||!Number.isFinite(mouse.y)){
+  $("status").textContent="Move the cursor to the next point, then tap Continue/Finish";
+  return false;
+ }
+ const anchor=draft.length?draft[draft.length-1]:null;
+ if(!anchor){$("status").textContent="Set the first drawing point on the canvas";return false}
+ const endpoint=constrain(anchor,snapPoint(wpos(mouse)),{shiftKey:shiftHeld});
+ return completeWallGeometry(anchor,endpoint,{shiftKey:shiftHeld});
+}
 let drawingCommitTapTimer=null;
 let drawingCommitTapCount=0;
 $("editCommit")?.addEventListener("click",event=>{
@@ -2216,7 +2231,7 @@ $("editCommit")?.addEventListener("click",event=>{
  event.preventDefault();event.stopImmediatePropagation();
  drawingCommitTapCount++;
  if(drawingCommitTapCount===1){
-  drawingCommitTapTimer=setTimeout(()=>{drawingCommitTapTimer=null;drawingCommitTapCount=0;if(hasActiveDrawing())$("status").textContent="Continue drawing · tap Continue/Finish twice to finish"},320);
+  drawingCommitTapTimer=setTimeout(()=>{drawingCommitTapTimer=null;drawingCommitTapCount=0;if(hasActiveDrawing())continueActiveDrawingAtCursor()},320);
   return;
  }
  if(drawingCommitTapTimer!==null)clearTimeout(drawingCommitTapTimer);
