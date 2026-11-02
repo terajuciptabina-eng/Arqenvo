@@ -1450,7 +1450,7 @@ if(transformInteraction&&e.button===0){
  * is accepted. A lone selected node edits only its owner. Shared nodes join
  * only explicitly selected elements when selection has more than one member.
  */
-if(tool==="select"&&view==="floor"&&!(e.shiftKey||shiftHeld)){
+if(tool==="select"&&view==="floor"&&(!e.shiftKey||mobileShiftToggleActive)){
  const selectedElements=els().filter(v=>selected.has(v.id)&&isLayerVisible(v)&&v.storyId===story().id);
  const nodeHits=[];
  for(const el of selectedElements){
