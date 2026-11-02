@@ -2248,12 +2248,15 @@ function continueActiveDrawingAtCursor(){
 let drawingCommitTapTimer=null;
 let drawingCommitTapCount=0;
 let mobileDrawingCommitClickSuppressed=false;
-$("editCommit")?.addEventListener("pointerdown",event=>{
+$("editCommit")?.addEventListener("pointerup",event=>{
  if(!isMobileDrawingPointer(event)||!hasActiveDrawing()||view!=="floor"||tool!=="wall"||wallGeometryMethod!=="continuous")return;
+ // Commit on the second finger's release. iOS Safari may suppress the
+ // synthetic click when another touch remains active on the canvas.
  event.preventDefault();event.stopImmediatePropagation();
  mobileDrawingCommitClickSuppressed=true;
+ setTimeout(()=>{mobileDrawingCommitClickSuppressed=false},500);
  const now=Date.now();
- if(drawingCommitTapTimer!==null&&now-drawingCommitTapStartedAt<=360){
+ if(drawingCommitTapTimer!==null&&now-drawingCommitTapStartedAt<=420){
   clearTimeout(drawingCommitTapTimer);drawingCommitTapTimer=null;drawingCommitTapCount=0;
   if(commitAndDeselect("Finish"))$("status").textContent="Wall chain finished";
   else $("status").textContent="No active wall chain to finish";
@@ -2262,7 +2265,7 @@ $("editCommit")?.addEventListener("pointerdown",event=>{
  if(drawingCommitTapTimer!==null)clearTimeout(drawingCommitTapTimer);
  drawingCommitTapStartedAt=now;drawingCommitTapCount=1;
  if(!continueActiveDrawingAtCursor())return;
- drawingCommitTapTimer=setTimeout(()=>{drawingCommitTapTimer=null;drawingCommitTapCount=0},380);
+ drawingCommitTapTimer=setTimeout(()=>{drawingCommitTapTimer=null;drawingCommitTapCount=0},460);
 },true);
 let drawingCommitTapStartedAt=0;
 $("editCommit")?.addEventListener("click",event=>{
