@@ -1199,7 +1199,7 @@ function initToolboxCompactMode(){
  originals.forEach(original=>{
   const key=original.dataset.tool,label=original.querySelector("span")?.textContent?.trim()||original.getAttribute("aria-label")||key;
   const item=document.createElement("div");item.className="toolbox-popover-item";
-  const clone=original.cloneNode(true);clone.removeAttribute("id");clone.removeAttribute("data-tool");clone.dataset.toolboxPopoverCopy="true";clone.dataset.toolboxKey=key;clone.setAttribute("aria-label",label);clone.title=label+" — double-click to activate";
+  const clone=original.cloneNode(true);clone.removeAttribute("id");clone.removeAttribute("data-tool");clone.dataset.toolboxPopoverCopy="true";clone.dataset.toolboxKey=key;clone.setAttribute("aria-label",label);clone.title=label+" — tap to activate";
   const description=document.createElement("div");description.className="toolbox-popover-description";description.textContent=original.title||descriptions[key]||("Activate the "+label+" tool.");
   item.append(clone,description);popover.append(item);
  });
