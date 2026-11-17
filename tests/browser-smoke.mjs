@@ -761,11 +761,12 @@ try {
   assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"true","Touch Shift must activate while the second finger is held");
   await axisPage.evaluate(()=>window.dispatchEvent(new PointerEvent("pointerup",{pointerId:99,pointerType:"touch",isPrimary:false,button:0,buttons:0,bubbles:true,cancelable:true})));
   assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"false","Touch Shift must release when the second finger lifts");
+  // Configure quick options before opening the touch toolbox: tapping outside an open panel closes it.
+  await axisPage.locator("#snapToggle").click();
+  await axisPage.locator("#gridQuick").selectOption("0.1");
   // Touch layouts keep the toolbox collapsed until its panel tab is opened.
   await axisPage.locator("#toolboxToggle").click();
   await axisPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
-  await axisPage.locator("#snapToggle").click();
-  await axisPage.locator("#gridQuick").selectOption("0.1");
   await axisPage.locator('[data-tool="wall"]').waitFor({state:"visible"});
   await axisPage.locator('[data-tool="wall"]').click();
   await axisPage.locator("#wallGeometryMethod").selectOption("single");
