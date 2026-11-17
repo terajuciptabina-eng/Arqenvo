@@ -140,6 +140,20 @@ const handler = async (req, res) => {
     const route = url.pathname;
     if (route.startsWith("/api/teamwork/")) {
       if (req.method === "GET" && route === "/api/teamwork/health") return json(res, 200, { ok:true, service:"ARQENVO Local Teamwork", ...clientInfo(req) });
+      if (req.method === "POST" && route === "/api/teamwork/admin-reset-local") {
+        const remote = String(req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+        const host = String(req.headers.host || "").split(":")[0].replace(/^\[/, "").replace(/\]$/, "");
+        const origin = String(req.headers.origin || "");
+        const localOrigin = origin === "http://127.0.0.1:" + PORT || origin === "http://localhost:" + PORT;
+        if (!["127.0.0.1", "::1", "localhost"].includes(remote) || !["127.0.0.1", "localhost"].includes(host) || !localOrigin) return json(res, 403, { error:"Password recovery is available only from the Host computer." });
+        const body = await readBody(req), password = String(body.password || ""), confirmPassword = String(body.confirmPassword || "");
+        if (password.length < 4) return json(res, 400, { error:"Password must contain at least 4 characters." });
+        if (password !== confirmPassword) return json(res, 400, { error:"The passwords do not match." });
+        const users = loadUsers(), admin = users.find(item => item.role === "admin");
+        if (!admin) return json(res, 404, { error:"Host admin account was not found." });
+        Object.assign(admin, hashPassword(password)); atomicJson(USERS_FILE, users); sessions.clear();
+        return json(res, 200, { ok:true, message:"Host admin password reset. Sign in using the new password." });
+      }
       if (req.method === "POST" && route === "/api/teamwork/login") {
         const body = await readBody(req), users = loadUsers();
         const user = users.find(item => item.username === body.username);
