@@ -54,6 +54,9 @@ try{
     assert.equal(initial.navToggleHidden,false,"Navigator toggle must be available");
     if(phone)assert.ok(initial.bodyWidth>=initial.scrollWidth-1,"Phone layout must not overflow horizontally");
     if(phone){
+      // Exercise a tool with several contextual controls so the Info Box must scroll on a narrow phone.
+      await page.locator('[data-tool="door"]').click({force:true});
+      await page.waitForFunction(()=>!document.querySelector("#openingHingeControl")?.hidden&&!document.querySelector("#openingAlignmentControl")?.hidden);
       const infoBox=await page.evaluate(()=>{
         const bar=document.querySelector("#contextToolbar");
         const controls=[...bar.querySelectorAll(":scope > .context-control")].filter(e=>getComputedStyle(e).display!=="none"&&!e.hidden);
