@@ -701,6 +701,9 @@ try {
   await mobilePage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
   await mobilePage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
   assert.equal(await mobilePage.locator("#mobileMagicWand").isVisible(),true,"Touch layout should show a visible Magic Wand shortcut");
+  // On touch layouts the toolbox is an overlay panel; open it through its visible tab control before choosing a tool.
+  await mobilePage.locator("#toolboxToggle").click();
+  await mobilePage.locator('[data-tool="wall"]').waitFor({state:"visible"});
   await mobilePage.locator('[data-tool="wall"]').click();
   await mobilePage.locator("#mobileMagicWand").click();
   assert.equal(await mobilePage.locator("#toolName").inputValue(),"magicwand","Touch Magic Wand button should activate the tool");
