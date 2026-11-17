@@ -701,6 +701,9 @@ try {
   await mobilePage.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
   await mobilePage.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100);
   assert.equal(await mobilePage.locator("#mobileMagicWand").isVisible(),true,"Touch layout should show a visible Magic Wand shortcut");
+  // On touch layouts the toolbox is an overlay panel; open it through its visible tab control before choosing a tool.
+  await mobilePage.locator("#toolboxToggle").click();
+  await mobilePage.locator('[data-tool="wall"]').waitFor({state:"visible"});
   await mobilePage.locator('[data-tool="wall"]').click();
   await mobilePage.locator("#mobileMagicWand").click();
   assert.equal(await mobilePage.locator("#toolName").inputValue(),"magicwand","Touch Magic Wand button should activate the tool");
@@ -758,13 +761,22 @@ try {
   assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"true","Touch Shift must activate while the second finger is held");
   await axisPage.evaluate(()=>window.dispatchEvent(new PointerEvent("pointerup",{pointerId:99,pointerType:"touch",isPrimary:false,button:0,buttons:0,bubbles:true,cancelable:true})));
   assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"false","Touch Shift must release when the second finger lifts");
+  // Configure quick options before opening the touch toolbox: tapping outside an open panel closes it.
   await axisPage.locator("#snapToggle").click();
   await axisPage.locator("#gridQuick").selectOption("0.1");
+  // Touch layouts keep the toolbox collapsed until its panel tab is opened.
+  await axisPage.locator("#toolboxToggle").click();
+  await axisPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
+  await axisPage.locator('[data-tool="wall"]').waitFor({state:"visible"});
   await axisPage.locator('[data-tool="wall"]').click();
   await axisPage.locator("#wallGeometryMethod").selectOption("single");
   const axisPoint=async(wx,wy)=>{const pt=await axisPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await axisPage.mouse.click(pt.x,pt.y)};
   await axisPoint(-2,0);await axisPoint(2,0);await axisPage.keyboard.press("Enter");
   await axisPage.waitForTimeout(850);
+  // Drawing on the canvas closes touch panels; reopen Toolbox before changing tools.
+  await axisPage.locator("#toolboxToggle").click();
+  await axisPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
+  await axisPage.locator('[data-tool="select"]').waitFor({state:"visible"});
   await axisPage.locator('[data-tool="select"]').click();
   await axisPoint(0,0);
   await axisPage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent.includes("selected"));

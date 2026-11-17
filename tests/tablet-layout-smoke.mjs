@@ -54,6 +54,9 @@ try{
     assert.equal(initial.navToggleHidden,false,"Navigator toggle must be available");
     if(phone)assert.ok(initial.bodyWidth>=initial.scrollWidth-1,"Phone layout must not overflow horizontally");
     if(phone){
+      // Exercise a tool with several contextual controls so the Info Box must scroll on a narrow phone.
+      await page.locator('[data-tool="door"]').click({force:true});
+      await page.waitForFunction(()=>!document.querySelector("#openingHingeControl")?.hidden&&!document.querySelector("#openingAlignmentControl")?.hidden);
       const infoBox=await page.evaluate(()=>{
         const bar=document.querySelector("#contextToolbar");
         const controls=[...bar.querySelectorAll(":scope > .context-control")].filter(e=>getComputedStyle(e).display!=="none"&&!e.hidden);
@@ -118,14 +121,14 @@ try{
   await desktop.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100&&document.querySelector("#navigatorToggle"));
   const desktopState=await desktop.evaluate(()=>({
     mobilePanels:document.querySelector(".work").classList.contains("mobile-panels"),
-    navToggleHidden:document.querySelector("#navigatorToggle").hidden,
+    navToggleDisplay:getComputedStyle(document.querySelector("#navigatorToggle")).display,
     toolbox:getComputedStyle(document.querySelector("#toolbox")).display,
     nav:getComputedStyle(document.querySelector(".navigator")).display,
     workspace:document.querySelector(".workspace").getBoundingClientRect().width,
     splitter:[...document.querySelectorAll(".arq-dock-resize")].some(e=>getComputedStyle(e).display!=="none")
   }));
   assert.equal(desktopState.mobilePanels,false,"Desktop must not use touch overlay mode");
-  assert.equal(desktopState.navToggleHidden,true,"Desktop must not show the mobile Navigator toggle");
+  assert.equal(desktopState.navToggleDisplay,"none","Desktop must not show the mobile Navigator toggle");
   assert.notEqual(desktopState.toolbox,"none");assert.notEqual(desktopState.nav,"none");
   assert.ok(desktopState.workspace>200);assert.equal(desktopState.splitter,true,"Desktop palette splitter remains available");
   assert.deepEqual(errors,[],"Responsive panel controls must not introduce browser errors");

@@ -10,6 +10,7 @@ const mime = { ".html":"text/html; charset=utf-8", ".js":"text/javascript; chars
 const server = createServer(async (req,res)=>{
   try {
     const pathname=decodeURIComponent(new URL(req.url,"http://127.0.0.1").pathname);
+    if(pathname==="/api/teamwork/health"){res.writeHead(200,{"content-type":"application/json"});res.end(JSON.stringify({ok:true,service:"ARQENVO Local Teamwork",host:"test-host",port:12345,lanAddresses:["192.168.1.10"],projectRevision:0}));return;}
     const requested=pathname==="/"?"/index.html":pathname;
     const file=path.resolve(root,"."+requested);
     if(file!==root&&!file.startsWith(root+path.sep)){res.writeHead(403).end("Forbidden");return}
@@ -26,10 +27,17 @@ try {
  const errors=[];
  page.on("pageerror",error=>errors.push(error.message));
  await page.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
- await page.locator("#teamworkMenuGroup > summary").click();
- await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")&&!document.querySelector("#arqenvoTeamworkPanel").hidden);
+ await page.waitForFunction(()=>{const p=document.querySelector("#arqenvoTeamworkPanel"),s=document.querySelector("#arqenvoTeamworkStatus");return p&&!p.hidden&&s?.textContent.includes("http://192.168.1.10:12345")});
+ const downloadLink=page.locator("#arqenvoTeamworkPanel .tw-download-link");
+ assert.equal(await downloadLink.textContent(),"Download Teamwork Host for Mac / Windows");
+ assert.equal(await downloadLink.getAttribute("href"),"https://github.com/terajuciptabina-eng/Arqenvo/actions/workflows/teamwork-desktop.yml");
+ assert.equal(await downloadLink.getAttribute("target"),"_blank");
+ const hostStatus=await page.locator("#arqenvoTeamworkStatus").textContent();
+ assert.ok(hostStatus.includes("Other devices can connect at:")&&hostStatus.includes("http://192.168.1.10:12345"),"Host mode must automatically show its LAN join address");
  await page.locator("#teamworkMenuGroup > summary").click();
  await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")?.hidden===true);
+ await page.locator("#teamworkMenuGroup > summary").click();
+ await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")&&!document.querySelector("#arqenvoTeamworkPanel").hidden);
  await page.waitForFunction(()=>{const c=document.querySelector("#canvas");return c&&c.clientWidth>100&&c.clientHeight>100});
  await page.locator('[data-tool="text"]').click();
  await page.waitForFunction(()=>document.querySelector("[data-tool].active")?.dataset.tool==="text");

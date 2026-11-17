@@ -4,12 +4,22 @@ This host service stores the shared project on one Windows PC or Mac. Other team
 
 ## Requirements
 
-- Node.js 20 or newer on the host computer.
+- **Desktop Host app:** no separate Node.js or Git installation is required.
+- **Manual Terminal/PowerShell host:** Node.js 20 or newer is required.
 - All team devices on the same trusted Wi-Fi/LAN.
 - The host computer must remain awake and running the service while the team collaborates.
 - Do not expose port 8080 through router port-forwarding or run this on an untrusted/public network.
 
 ## Start the host
+
+### Recommended — desktop Host app (no Terminal or PowerShell)
+
+Install **ARQENVO Teamwork Host** for Windows or macOS from the desktop-build artifact produced by the repository's **Teamwork Desktop Host** GitHub Actions workflow. Open the installed app; it starts the local server automatically and opens ARQENVO. No separate Node.js installation, Git command, Terminal, or PowerShell is required.
+
+The app uses the existing Teamwork server and preserves data under `~/.arqenvo/teamwork`. When the Host is detected, the Teamwork panel opens automatically and displays the LAN address for other devices. On first setup, the app creates an admin account, displays its one-time password and copies it to the clipboard; save that password securely. On the iPhone/iPad or another client, open the displayed LAN address in Safari or another modern browser while connected to the same Wi-Fi. Keep the app running and the computer awake while collaborating. On macOS, closing the window leaves the app and Host running; choose Quit ARQENVO Teamwork Host to stop it. On Windows, closing the app stops the Host.
+
+These first desktop builds are unsigned development builds. Windows SmartScreen or macOS Gatekeeper may display an unknown-developer warning until release signing and notarization are configured. Do not install builds from an untrusted source.
+
 
 ### macOS — automatic latest-source setup
 
@@ -20,15 +30,11 @@ curl -fsSL https://raw.githubusercontent.com/terajuciptabina-eng/Arqenvo/main/sc
 bash ~/Downloads/start-teamwork-host.sh
 ~~~
 
-The launcher fetches current `main` into `~/Library/Application Support/Arqenvo/teamwork-source` and updates that runtime checkout each time it starts. It does not modify the GitHub repository or any separate development checkout. Shared project data and backups stay separately under `~/.arqenvo/teamwork`. Keep Terminal open while the team is working. Review the launcher source [here](../scripts/start-teamwork-host.sh). If Git is unavailable, follow the macOS Command Line Tools prompt and rerun the launcher. On first setup, enter a unique admin password of at least 12 characters and save it securely.
+The launcher fetches current `main` into `~/Library/Application Support/Arqenvo/teamwork-source` and updates that runtime checkout each time it starts. It does not modify the GitHub repository or any separate development checkout. Shared project data and backups stay separately under `~/.arqenvo/teamwork`. Keep Terminal open while the team is working. Review the launcher source [here](../scripts/start-teamwork-host.sh). If Git is unavailable, follow the macOS Command Line Tools prompt and rerun the launcher. On first setup, enter a unique admin password of at least 4 characters and save it securely.
 
 ### Windows PowerShell
 
-Clone or download the Arqenvo repository onto the host computer, open a terminal in the repository root, then run:
-
-### Windows PowerShell
-
-Set a strong password before the first run (12+ characters):
+Set a strong password before the first run (4+ characters):
 
 ~~~powershell
 $env:ARQENVO_TEAMWORK_ADMIN_PASSWORD = "use-a-unique-long-password"

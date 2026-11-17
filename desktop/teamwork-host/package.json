@@ -1,0 +1,76 @@
+{
+  "name": "arqenvo-teamwork-host",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Desktop launcher for the ARQENVO Local Teamwork host",
+  "main": "main.cjs",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win nsis",
+    "build:mac": "electron-builder --mac dmg --x64"
+  },
+  "devDependencies": {
+    "electron": "^36.0.0",
+    "electron-builder": "^26.0.12"
+  },
+  "build": {
+    "appId": "com.terajuciptabina.arqenvo.teamwork",
+    "productName": "ARQENVO Teamwork Host",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.cjs",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../server",
+        "to": "arqenvo-app/server"
+      },
+      {
+        "from": "../../src",
+        "to": "arqenvo-app/src"
+      },
+      {
+        "from": "../../assets",
+        "to": "arqenvo-app/assets"
+      },
+      {
+        "from": "../../index.html",
+        "to": "arqenvo-app/index.html"
+      },
+      {
+        "from": "../../manifest.webmanifest",
+        "to": "arqenvo-app/manifest.webmanifest"
+      },
+      {
+        "from": "../../package.json",
+        "to": "arqenvo-app/package.json"
+      }
+    ],
+    "asar": false,
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": false
+    },
+    "electronFuses": {
+      "runAsNode": true,
+      "enableNodeOptionsEnvironmentVariable": false,
+      "enableNodeCliInspectArguments": false,
+      "grantFileProtocolExtraPrivileges": false
+    }
+  }
+}

@@ -1,0 +1,41 @@
+name: Teamwork Desktop Host Builds
+on:
+  push:
+    branches: [main]
+    paths: ["desktop/teamwork-host/**","server/teamwork-host.js","src/**","index.html","assets/**",".github/workflows/teamwork-desktop.yml"]
+  pull_request:
+    paths: ["desktop/teamwork-host/**","server/teamwork-host.js","src/**","index.html","assets/**",".github/workflows/teamwork-desktop.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  desktop-build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            command: build:win
+            artifact: windows
+          - os: macos-latest
+            command: build:mac
+            artifact: macos
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install desktop build dependencies
+        run: npm install --no-audit --no-fund
+        working-directory: desktop/teamwork-host
+      - name: Build desktop installer
+        run: npm run ${{ matrix.command }}
+        working-directory: desktop/teamwork-host
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arqenvo-teamwork-host-${{ matrix.artifact }}
+          path: desktop/teamwork-host/dist/*
+          if-no-files-found: error
+          retention-days: 14
