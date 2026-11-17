@@ -37,8 +37,13 @@ after(async()=>{
   if(child&&!child.killed)child.kill("SIGTERM");
   if(dataDir)fs.rmSync(dataDir,{recursive:true,force:true});
 });
-test("host health is public but project data requires authentication",async()=>{
-  const health=await request("/api/teamwork/health");assert.equal(health.status,200);assert.equal(health.data.ok,true);
+test("host health is public, identifies the LAN host, and project data requires authentication",async()=>{
+  const health=await request("/api/teamwork/health");
+  assert.equal(health.status,200);
+  assert.equal(health.data.ok,true);
+  assert.equal(health.data.service,"ARQENVO Local Teamwork");
+  assert.equal(health.data.port,port);
+  assert.ok(Array.isArray(health.data.lanAddresses));
   const project=await request("/api/teamwork/project");assert.equal(project.status,401);
 });
 test("authoritative project writes use revision checks and create backups",async()=>{
@@ -59,7 +64,6 @@ test("reservation prevents another team member from taking the same element",asy
   const write=await request("/api/teamwork/project",{token:memberToken,method:"PUT",body:{expectedRevision:2,project:{format:"ARQENVO-PROJECT",version:2,project:{id:"p1"},stories:[{id:"s1",name:"Ground",elevation:0,height:3}],elements:[{id:"wall-1",type:"wall"}]},changedElementIds:["wall-1"]}});
   assert.equal(write.status,423);
 });
-
 test("viewer accounts cannot publish changes",async()=>{
   const created=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"viewer1",password:"Viewer-Password-1234",role:"viewer"}});
   assert.equal(created.status,201);
@@ -68,11 +72,10 @@ test("viewer accounts cannot publish changes",async()=>{
   const denied=await request("/api/teamwork/project",{token:login.data.token,method:"PUT",body:{expectedRevision:2,project:{format:"ARQENVO-PROJECT",version:2,project:{id:"p1"},stories:[{id:"s1",name:"Ground",elevation:0,height:3}],elements:[]},changedElementIds:[]}});
   assert.equal(denied.status,403);
 });
-
-test("new member passwords must be at least 12 characters",async()=>{
-  const short=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"shortpass",password:"12345678",role:"member"}});
+test("new member passwords must be at least 4 characters",async()=>{
+  const short=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"shortpass",password:"123",role:"member"}});
   assert.equal(short.status,400);
-  assert.match(short.data.error,/12 characters/);
-  const valid=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"longpass",password:"Long-Password-123",role:"member"}});
+  assert.match(short.data.error,/4 characters/);
+  const valid=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"fourpass",password:"1234",role:"member"}});
   assert.equal(valid.status,201);
 });
