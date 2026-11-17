@@ -761,8 +761,12 @@ try {
   assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"true","Touch Shift must activate while the second finger is held");
   await axisPage.evaluate(()=>window.dispatchEvent(new PointerEvent("pointerup",{pointerId:99,pointerType:"touch",isPrimary:false,button:0,buttons:0,bubbles:true,cancelable:true})));
   assert.equal(await axisPage.locator("#mobileShiftToggle").getAttribute("aria-pressed"),"false","Touch Shift must release when the second finger lifts");
+  // Touch layouts keep the toolbox collapsed until its panel tab is opened.
+  await axisPage.locator("#toolboxToggle").click();
+  await axisPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
   await axisPage.locator("#snapToggle").click();
   await axisPage.locator("#gridQuick").selectOption("0.1");
+  await axisPage.locator('[data-tool="wall"]').waitFor({state:"visible"});
   await axisPage.locator('[data-tool="wall"]').click();
   await axisPage.locator("#wallGeometryMethod").selectOption("single");
   const axisPoint=async(wx,wy)=>{const pt=await axisPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await axisPage.mouse.click(pt.x,pt.y)};
