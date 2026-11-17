@@ -917,6 +917,8 @@ body.layout-print-mode #layoutPrintStage .print-page:last-child{break-after:auto
 @media (pointer:coarse){
  .work.mobile-panels .workspace>.tabs{
   display:flex!important;align-items:center!important;gap:6px!important;
+  /* Keep the panel controls above temporary overlays so an open panel can always be closed. */
+  position:relative!important;z-index:1302!important;
  }
  .work.mobile-panels .workspace>.tabs>#propsToggle,
  .work.mobile-panels .workspace>.tabs>#toolboxToggle,
