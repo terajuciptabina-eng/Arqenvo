@@ -11,6 +11,15 @@ This host service stores the shared project on one Windows PC or Mac. Other team
 
 ## Start the host
 
+### Recommended — desktop Host app (no Terminal or PowerShell)
+
+Install **ARQENVO Teamwork Host** for Windows or macOS from the desktop-build artifact produced by the repository's **Teamwork Desktop Host** GitHub Actions workflow. Open the installed app; it starts the local server automatically and opens ARQENVO. No separate Node.js installation, Git command, Terminal, or PowerShell is required.
+
+The app uses the same existing Teamwork server and preserves existing data under `~/.arqenvo/teamwork`. The app window shows the LAN address that other team devices should open. Keep the app running and the computer awake while collaborating. On macOS, closing the window leaves the app and Host running; choose Quit ARQENVO Teamwork Host to stop it. On Windows, closing the app stops the Host.
+
+These first desktop builds are unsigned development builds. Windows SmartScreen or macOS Gatekeeper may display an unknown-developer warning until release signing and notarization are configured. Do not install builds from an untrusted source.
+
+
 ### macOS — automatic latest-source setup
 
 Download the launcher from the repository's `main` branch, then run it from Terminal:
@@ -23,8 +32,6 @@ bash ~/Downloads/start-teamwork-host.sh
 The launcher fetches current `main` into `~/Library/Application Support/Arqenvo/teamwork-source` and updates that runtime checkout each time it starts. It does not modify the GitHub repository or any separate development checkout. Shared project data and backups stay separately under `~/.arqenvo/teamwork`. Keep Terminal open while the team is working. Review the launcher source [here](../scripts/start-teamwork-host.sh). If Git is unavailable, follow the macOS Command Line Tools prompt and rerun the launcher. On first setup, enter a unique admin password of at least 12 characters and save it securely.
 
 ### Windows PowerShell
-
-Clone or download the Arqenvo repository onto the host computer, open a terminal in the repository root, then run:
 
 ### Windows PowerShell
 

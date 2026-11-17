@@ -68,3 +68,11 @@ test("viewer accounts cannot publish changes",async()=>{
   const denied=await request("/api/teamwork/project",{token:login.data.token,method:"PUT",body:{expectedRevision:2,project:{format:"ARQENVO-PROJECT",version:2,project:{id:"p1"},stories:[{id:"s1",name:"Ground",elevation:0,height:3}],elements:[]},changedElementIds:[]}});
   assert.equal(denied.status,403);
 });
+
+test("new member passwords must be at least 12 characters",async()=>{
+  const short=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"shortpass",password:"12345678",role:"member"}});
+  assert.equal(short.status,400);
+  assert.match(short.data.error,/12 characters/);
+  const valid=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"longpass",password:"Long-Password-123",role:"member"}});
+  assert.equal(valid.status,201);
+});
