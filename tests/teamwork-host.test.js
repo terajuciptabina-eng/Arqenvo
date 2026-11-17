@@ -20,7 +20,7 @@ async function request(route,{token,method="GET",body}={}) {
 }
 before(async()=>{
   port=await freePort();base="http://127.0.0.1:"+port;dataDir=fs.mkdtempSync(path.join(os.tmpdir(),"arqenvo-teamwork-"));
-  child=spawn(process.execPath,["server/teamwork-host.js"],{cwd:process.cwd(),env:{...process.env,ARQENVO_TEAMWORK_HOST:"127.0.0.1",ARQENVO_TEAMWORK_PORT:String(port),ARQENVO_TEAMWORK_DATA:dataDir,ARQENVO_TEAMWORK_ADMIN_USER:"admin",ARQENVO_TEAMWORK_ADMIN_PASSWORD:"Correct-Horse-Battery-42"},stdio:["ignore","pipe","pipe"]});
+  child=spawn(process.execPath,["server/teamwork-host.js"],{cwd:process.cwd(),env:{...process.env,ARQENVO_TEAMWORK_HOST:"127.0.0.1",ARQENVO_TEAMWORK_PORT:String(port),ARQENVO_TEAMWORK_DATA:dataDir,ARQENVO_TEAMWORK_ADMIN_USER:"admin",ARQENVO_TEAMWORK_ADMIN_PASSWORD:"1234"},stdio:["ignore","pipe","pipe"]});
   let output="";
   child.stdout.on("data",chunk=>output+=chunk.toString());child.stderr.on("data",chunk=>output+=chunk.toString());
   let ready=false;
@@ -30,7 +30,7 @@ before(async()=>{
     await new Promise(resolve=>setTimeout(resolve,100));
   }
   assert.equal(ready,true,"Host should start and expose health endpoint");
-  const login=await request("/api/teamwork/login",{method:"POST",body:{username:"admin",password:"Correct-Horse-Battery-42"}});
+  const login=await request("/api/teamwork/login",{method:"POST",body:{username:"admin",password:"1234"}});
   assert.equal(login.status,200);adminToken=login.data.token;
 });
 after(async()=>{
