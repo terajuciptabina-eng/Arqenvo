@@ -30,11 +30,11 @@ curl -fsSL https://raw.githubusercontent.com/terajuciptabina-eng/Arqenvo/main/sc
 bash ~/Downloads/start-teamwork-host.sh
 ~~~
 
-The launcher fetches current `main` into `~/Library/Application Support/Arqenvo/teamwork-source` and updates that runtime checkout each time it starts. It does not modify the GitHub repository or any separate development checkout. Shared project data and backups stay separately under `~/.arqenvo/teamwork`. Keep Terminal open while the team is working. Review the launcher source [here](../scripts/start-teamwork-host.sh). If Git is unavailable, follow the macOS Command Line Tools prompt and rerun the launcher. On first setup, enter a unique admin password of at least 4 characters and save it securely.
+The launcher fetches current `main` into `~/Library/Application Support/Arqenvo/teamwork-source` and updates that runtime checkout each time it starts. It does not modify the GitHub repository or any separate development checkout. Shared project data and backups stay separately under `~/.arqenvo/teamwork`. Keep Terminal open while the team is working. Review the launcher source [here](../scripts/start-teamwork-host.sh). If Git is unavailable, follow the macOS Command Line Tools prompt and rerun the launcher. On first setup, enter a unique admin password of at least 12 characters and save it securely.
 
 ### Windows PowerShell
 
-Set a strong password before the first run (4+ characters):
+Set a strong password before the first run (12+ characters):
 
 ~~~powershell
 $env:ARQENVO_TEAMWORK_ADMIN_PASSWORD = "use-a-unique-long-password"
