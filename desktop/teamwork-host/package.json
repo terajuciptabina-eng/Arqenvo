@@ -7,7 +7,7 @@
   "scripts": {
     "start": "electron .",
     "build:win": "electron-builder --win nsis",
-    "build:mac": "electron-builder --mac dmg"
+    "build:mac": "electron-builder --mac dmg --x64"
   },
   "devDependencies": {
     "electron": "^36.0.0",
@@ -39,6 +39,10 @@
       {
         "from": "../../index.html",
         "to": "arqenvo-app/index.html"
+      },
+      {
+        "from": "../../manifest.webmanifest",
+        "to": "arqenvo-app/manifest.webmanifest"
       }
     ],
     "asar": false,

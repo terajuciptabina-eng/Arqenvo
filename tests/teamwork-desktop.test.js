@@ -10,6 +10,7 @@ test("desktop Host packages the existing ARQENVO client and Teamwork server",()=
  assert.ok(config.build.extraResources.some(x=>x.from==="../../server"&&x.to==="arqenvo-app/server"));
  assert.ok(config.build.extraResources.some(x=>x.from==="../../src"&&x.to==="arqenvo-app/src"));
  assert.ok(config.build.extraResources.some(x=>x.from==="../../index.html"&&x.to==="arqenvo-app/index.html"));
+ assert.ok(config.build.extraResources.some(x=>x.from==="../../manifest.webmanifest"&&x.to==="arqenvo-app/manifest.webmanifest"));
  assert.equal(config.build.asar,false);assert.equal(config.build.electronFuses.runAsNode,true);
 });
 test("desktop Host starts the bundled server without a terminal",()=>{
