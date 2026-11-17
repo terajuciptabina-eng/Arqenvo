@@ -73,7 +73,7 @@ test("viewer accounts cannot publish changes",async()=>{
   assert.equal(denied.status,403);
 });
 test("new member passwords must be at least 12 characters",async()=>{
-  const short=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"shortpass",password:"Too-Short",role:"member"}});
+  const short=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"shortpass",password:"short",role:"member"}});
   assert.equal(short.status,400);
   assert.match(short.data.error,/12 characters/);
   const valid=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"fourpass",password:"Correct-Horse-Battery-42",role:"member"}});
