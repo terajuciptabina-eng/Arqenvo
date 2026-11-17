@@ -5,7 +5,7 @@ const fs=require("node:fs");
 const net=require("node:net");
 const path=require("node:path");
 const PORT=8080, SERVICE="ARQENVO Local Teamwork";
-let child=null, port=PORT, stopping=false, ready=false, firstRunPassword="";
+let child=null, port=PORT, stopping=false, ready=false, firstRunPassword="", hostLog="";
 
 function root(){return app.isPackaged?path.join(process.resourcesPath,"arqenvo-app"):path.resolve(__dirname,"../..");}
 function dataDir(){return path.join(app.getPath("home"),".arqenvo","teamwork");}
@@ -15,13 +15,15 @@ function ephemeral(){return new Promise((resolve,reject)=>{const s=net.createSer
 function startProcess(){
  const env={...process.env,ELECTRON_RUN_AS_NODE:"1",ELECTRON_NO_ATTACH_CONSOLE:"1",ARQENVO_TEAMWORK_HOST:"0.0.0.0",ARQENVO_TEAMWORK_PORT:String(port),ARQENVO_TEAMWORK_DATA:dataDir()};
  if(firstRunPassword){env.ARQENVO_TEAMWORK_ADMIN_USER="admin";env.ARQENVO_TEAMWORK_ADMIN_PASSWORD=firstRunPassword;}
- child=spawn(process.execPath,[path.join(root(),"server","teamwork-host.js")],{cwd:root(),env,windowsHide:true,stdio:["ignore","ignore","ignore"]});
+ child=spawn(process.execPath,[path.join(root(),"server","teamwork-host.js")],{cwd:root(),env,windowsHide:true,stdio:["ignore","pipe","pipe"]});
+ const capture=stream=>stream.on("data",chunk=>{hostLog=(hostLog+chunk.toString()).slice(-5000);});
+ capture(child.stdout);capture(child.stderr);
  child.on("error",e=>{if(!stopping)fail(e);});
  child.on("exit",code=>{child=null;if(stopping)return;if(code===75){setTimeout(startProcess,400);return;}if(ready)fail(new Error("Teamwork Host stopped unexpectedly (exit "+code+")."));});
 }
 async function waitReady(){
  for(let i=0;i<80;i++){if(!child)throw new Error("Teamwork Host exited before starting.");const h=await health(port);if(h){ready=true;return;}await new Promise(r=>setTimeout(r,250));}
- throw new Error("Teamwork Host did not start within 20 seconds. Check firewall permissions.");
+ throw new Error("Teamwork Host did not start within 20 seconds. Check firewall permissions.\n\n"+hostLog.slice(-2500));
 }
 function fail(e){dialog.showErrorBox("ARQENVO Teamwork Host",e.message||String(e));app.quit();}
 async function showFirstRunPassword(){
