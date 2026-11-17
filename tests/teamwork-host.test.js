@@ -79,3 +79,19 @@ test("new member passwords must be at least 4 characters",async()=>{
   const valid=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"fourpass",password:"1234",role:"member"}});
   assert.equal(valid.status,201);
 });
+
+test("Host Admin can reset a forgotten password locally and all old sessions are revoked",async()=>{
+  const remote=await fetch(base+"/api/teamwork/admin-reset-local",{method:"POST",headers:{"content-type":"application/json",origin:"http://192.168.1.22:"+port},body:JSON.stringify({password:"NewPass1234",confirmPassword:"NewPass1234"})});
+  assert.equal(remote.status,403);
+  const mismatch=await fetch(base+"/api/teamwork/admin-reset-local",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({password:"NewPass1234",confirmPassword:"Different1234"})});
+  assert.equal(mismatch.status,400);
+  const reset=await fetch(base+"/api/teamwork/admin-reset-local",{method:"POST",headers:{"content-type":"application/json",origin:base},body:JSON.stringify({password:"4321",confirmPassword:"4321"})});
+  assert.equal(reset.status,200);
+  const stale=await request("/api/teamwork/project",{token:adminToken});
+  assert.equal(stale.status,401);
+  const oldLogin=await request("/api/teamwork/login",{method:"POST",body:{username:"admin",password:"Correct-Horse-Battery-42"}});
+  assert.equal(oldLogin.status,401);
+  const newLogin=await request("/api/teamwork/login",{method:"POST",body:{username:"admin",password:"4321"}});
+  assert.equal(newLogin.status,200);
+  adminToken=newLogin.data.token;
+});
