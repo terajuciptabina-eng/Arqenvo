@@ -28,6 +28,10 @@ try {
  page.on("pageerror",error=>errors.push(error.message));
  await page.goto(`http://127.0.0.1:${address.port}/`,{waitUntil:"domcontentloaded"});
  await page.waitForFunction(()=>{const p=document.querySelector("#arqenvoTeamworkPanel"),s=document.querySelector("#arqenvoTeamworkStatus");return p&&!p.hidden&&s?.textContent.includes("http://192.168.1.10:12345")});
+ const downloadLink=page.locator("#arqenvoTeamworkPanel .tw-download-link");
+ assert.equal(await downloadLink.textContent(),"Download Teamwork Host for Mac / Windows");
+ assert.equal(await downloadLink.getAttribute("href"),"https://github.com/terajuciptabina-eng/Arqenvo/actions/workflows/teamwork-desktop.yml");
+ assert.equal(await downloadLink.getAttribute("target"),"_blank");
  const hostStatus=await page.locator("#arqenvoTeamworkStatus").textContent();
  assert.ok(hostStatus.includes("Other devices can connect at:")&&hostStatus.includes("http://192.168.1.10:12345"),"Host mode must automatically show its LAN join address");
  await page.locator("#teamworkMenuGroup > summary").click();
