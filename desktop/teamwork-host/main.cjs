@@ -1,9 +1,11 @@
-const {app,BrowserWindow,dialog,shell}=require("electron");
+const {app,BrowserWindow,dialog,shell,clipboard}=require("electron");
 const {spawn}=require("node:child_process");
+const crypto=require("node:crypto");
+const fs=require("node:fs");
 const net=require("node:net");
 const path=require("node:path");
 const PORT=8080, SERVICE="ARQENVO Local Teamwork";
-let child=null, port=PORT, stopping=false, ready=false;
+let child=null, port=PORT, stopping=false, ready=false, firstRunPassword="";
 
 function root(){return app.isPackaged?path.join(process.resourcesPath,"arqenvo-app"):path.resolve(__dirname,"../..");}
 function dataDir(){return path.join(app.getPath("home"),".arqenvo","teamwork");}
@@ -12,6 +14,7 @@ function free(p){return new Promise(resolve=>{const s=net.createServer();s.once(
 function ephemeral(){return new Promise((resolve,reject)=>{const s=net.createServer();s.once("error",reject);s.listen(0,"0.0.0.0",()=>{const p=s.address().port;s.close(e=>e?reject(e):resolve(p));});});}
 function startProcess(){
  const env={...process.env,ELECTRON_RUN_AS_NODE:"1",ELECTRON_NO_ATTACH_CONSOLE:"1",ARQENVO_TEAMWORK_HOST:"0.0.0.0",ARQENVO_TEAMWORK_PORT:String(port),ARQENVO_TEAMWORK_DATA:dataDir()};
+ if(firstRunPassword){env.ARQENVO_TEAMWORK_ADMIN_USER="admin";env.ARQENVO_TEAMWORK_ADMIN_PASSWORD=firstRunPassword;}
  child=spawn(process.execPath,[path.join(root(),"server","teamwork-host.js")],{cwd:root(),env,windowsHide:true,stdio:["ignore","ignore","ignore"]});
  child.on("error",e=>{if(!stopping)fail(e);});
  child.on("exit",code=>{child=null;if(stopping)return;if(code===75){setTimeout(startProcess,400);return;}if(ready)fail(new Error("Teamwork Host stopped unexpectedly (exit "+code+")."));});
@@ -21,6 +24,12 @@ async function waitReady(){
  throw new Error("Teamwork Host did not start within 20 seconds. Check firewall permissions.");
 }
 function fail(e){dialog.showErrorBox("ARQENVO Teamwork Host",e.message||String(e));app.quit();}
+async function showFirstRunPassword(){
+ if(!firstRunPassword)return;
+ clipboard.writeText(firstRunPassword);
+ await dialog.showMessageBox({type:"info",title:"ARQENVO Teamwork Host is ready",message:"Your administrator account has been created.",detail:"Username: admin\nPassword: "+firstRunPassword+"\n\nThe password has also been copied to your clipboard. Save it securely; it will not be shown again after you close this message."});
+ firstRunPassword="";
+}
 function openApp(){
  const origin="http://127.0.0.1:"+port;
  const win=new BrowserWindow({width:1480,height:940,minWidth:980,minHeight:680,show:false,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
@@ -40,7 +49,13 @@ else{
   try{
    const existing=await health(PORT);
    if(existing){port=PORT;ready=true;}
-   else{port=await free(PORT)?PORT:await ephemeral();startProcess();await waitReady();}
+   else{
+    if(!fs.existsSync(path.join(dataDir(),"users.json")))firstRunPassword=crypto.randomBytes(24).toString("base64url");
+    port=await free(PORT)?PORT:await ephemeral();
+    startProcess();
+    await waitReady();
+    await showFirstRunPassword();
+   }
    openApp();
   }catch(e){fail(e);}
  });
