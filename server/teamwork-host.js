@@ -142,9 +142,10 @@ const handler = async (req, res) => {
       if (req.method === "GET" && route === "/api/teamwork/health") return json(res, 200, { ok:true, service:"ARQENVO Local Teamwork", ...clientInfo(req) });
       if (req.method === "POST" && route === "/api/teamwork/admin-reset-local") {
         const remote = String(req.socket.remoteAddress || "").replace(/^::ffff:/, "");
-        const host = String(req.headers.host || "").split(":")[0].replace(/^\[/, "").replace(/\]$/, "");
+        const hostHeader = String(req.headers.host || "");
+        const host = hostHeader.replace(/:\\d+$/, "").replace(/^\\[/, "").replace(/\\]$/, "");
         const origin = String(req.headers.origin || "");
-        const localOrigin = origin === "http://127.0.0.1:" + PORT || origin === "http://localhost:" + PORT;
+        const localOrigin = origin === "http://" + hostHeader && /^(127\\.0\\.0\\.1|localhost)(:\\d+)?$/.test(hostHeader);
         if (!["127.0.0.1", "::1", "localhost"].includes(remote) || !["127.0.0.1", "localhost"].includes(host) || !localOrigin) return json(res, 403, { error:"Password recovery is available only from the Host computer." });
         const body = await readBody(req), password = String(body.password || ""), confirmPassword = String(body.confirmPassword || "");
         if (password.length < 4) return json(res, 400, { error:"Password must contain at least 4 characters." });
