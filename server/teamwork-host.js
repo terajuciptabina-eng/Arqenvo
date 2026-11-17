@@ -141,12 +141,15 @@ const handler = async (req, res) => {
     if (route.startsWith("/api/teamwork/")) {
       if (req.method === "GET" && route === "/api/teamwork/health") return json(res, 200, { ok:true, service:"ARQENVO Local Teamwork", ...clientInfo(req) });
       if (req.method === "POST" && route === "/api/teamwork/admin-reset-local") {
-        const remote = String(req.socket.remoteAddress || "").replace(/^::ffff:/, "");
+        const remote = String(req.socket.remoteAddress || "").toLowerCase().replace(/^::ffff:/, "").split("%")[0];
         const hostHeader = String(req.headers.host || "");
-        const host = hostHeader.replace(/:\d+$/, "").replace(/^\[/, "").replace(/\]$/, "");
+        const host = hostHeader.replace(/:\d+$/, "").replace(/^\[/, "").replace(/\]$/, "").toLowerCase();
         const origin = String(req.headers.origin || "");
-        const localOrigin = origin === "http://" + hostHeader && /^(127\.0\.0\.1|localhost)(:\d+)?$/.test(hostHeader);
-        if (!["127.0.0.1", "::1", "localhost"].includes(remote) || !["127.0.0.1", "localhost"].includes(host) || !localOrigin) return json(res, 403, { error:"Password recovery is available only from the Host computer." });
+        let originHost = "";
+        try { originHost = new URL(origin).hostname.toLowerCase().replace(/^\[|\]$/g, ""); } catch {}
+        const loopbacks = new Set(["127.0.0.1", "::1", "localhost"]);
+        const localRequest = loopbacks.has(remote) && loopbacks.has(host) && (!origin || (origin.startsWith("http://") && loopbacks.has(originHost)));
+        if (!localRequest) return json(res, 403, { error:"Password recovery is available only from the Host computer." });
         const body = await readBody(req), password = String(body.password || ""), confirmPassword = String(body.confirmPassword || "");
         if (password.length < 4) return json(res, 400, { error:"Password must contain at least 4 characters." });
         if (password !== confirmPassword) return json(res, 400, { error:"The passwords do not match." });
