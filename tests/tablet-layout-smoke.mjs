@@ -121,14 +121,14 @@ try{
   await desktop.waitForFunction(()=>document.querySelector("#canvas")?.clientWidth>100&&document.querySelector("#navigatorToggle"));
   const desktopState=await desktop.evaluate(()=>({
     mobilePanels:document.querySelector(".work").classList.contains("mobile-panels"),
-    navToggleHidden:document.querySelector("#navigatorToggle").hidden,
+    navToggleDisplay:getComputedStyle(document.querySelector("#navigatorToggle")).display,
     toolbox:getComputedStyle(document.querySelector("#toolbox")).display,
     nav:getComputedStyle(document.querySelector(".navigator")).display,
     workspace:document.querySelector(".workspace").getBoundingClientRect().width,
     splitter:[...document.querySelectorAll(".arq-dock-resize")].some(e=>getComputedStyle(e).display!=="none")
   }));
   assert.equal(desktopState.mobilePanels,false,"Desktop must not use touch overlay mode");
-  assert.equal(desktopState.navToggleHidden,true,"Desktop must not show the mobile Navigator toggle");
+  assert.equal(desktopState.navToggleDisplay,"none","Desktop must not show the mobile Navigator toggle");
   assert.notEqual(desktopState.toolbox,"none");assert.notEqual(desktopState.nav,"none");
   assert.ok(desktopState.workspace>200);assert.equal(desktopState.splitter,true,"Desktop palette splitter remains available");
   assert.deepEqual(errors,[],"Responsive panel controls must not introduce browser errors");
