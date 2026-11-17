@@ -773,6 +773,10 @@ try {
   const axisPoint=async(wx,wy)=>{const pt=await axisPage.evaluate(({wx,wy})=>{const cv=document.querySelector("#canvas"),r=cv.getBoundingClientRect(),t=window.__arqenvoViewport;return{x:r.left+cv.clientWidth/2+(t?.origin.x||0)+wx*(t?.scale||36),y:r.top+cv.clientHeight/2+(t?.origin.y||0)-wy*(t?.scale||36)}},{wx,wy});await axisPage.mouse.click(pt.x,pt.y)};
   await axisPoint(-2,0);await axisPoint(2,0);await axisPage.keyboard.press("Enter");
   await axisPage.waitForTimeout(850);
+  // Drawing on the canvas closes touch panels; reopen Toolbox before changing tools.
+  await axisPage.locator("#toolboxToggle").click();
+  await axisPage.waitForFunction(() => document.querySelector(".work")?.classList.contains("toolbox-open"));
+  await axisPage.locator('[data-tool="select"]').waitFor({state:"visible"});
   await axisPage.locator('[data-tool="select"]').click();
   await axisPoint(0,0);
   await axisPage.waitForFunction(()=>document.querySelector("#selectionInfo")?.textContent.includes("selected"));
