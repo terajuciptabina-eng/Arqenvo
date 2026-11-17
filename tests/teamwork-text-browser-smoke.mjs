@@ -38,6 +38,13 @@ try {
  await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")?.hidden===true);
  await page.locator("#teamworkMenuGroup > summary").click();
  await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")&&!document.querySelector("#arqenvoTeamworkPanel").hidden);
+ const username=page.locator("#arqenvoTeamworkPanel input[autocomplete=\"username\"]");
+ const password=page.locator("#arqenvoTeamworkPanel input[autocomplete=\"current-password\"]");
+ await username.fill("host-admin-smoke");
+ await password.fill("test-password");
+ assert.equal(await username.inputValue(),"host-admin-smoke","Teamwork username field must accept keyboard input");
+ assert.equal(await password.inputValue(),"test-password","Teamwork password field must accept keyboard input");
+ await username.fill("");await password.fill("");
  await page.waitForFunction(()=>{const c=document.querySelector("#canvas");return c&&c.clientWidth>100&&c.clientHeight>100});
  await page.locator('[data-tool="text"]').click();
  await page.waitForFunction(()=>document.querySelector("[data-tool].active")?.dataset.tool==="text");
