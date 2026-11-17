@@ -41,15 +41,25 @@ jobs:
           else
             find desktop/teamwork-host/dist -maxdepth 1 -type f -iname '*.dmg' -exec cp "{}" desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-macOS.dmg \;
           fi
-          test -f desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-${{ matrix.artifact == 'windows' && 'Windows.exe' || 'macOS.dmg' }}
+          test -f "desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-${{ matrix.artifact == 'windows' && 'Windows.exe' || 'macOS.dmg' }}"
       - uses: actions/upload-artifact@v4
         with:
           name: arqenvo-teamwork-host-${{ matrix.artifact }}
           path: desktop/teamwork-host/dist/*
           if-no-files-found: error
           retention-days: 14
+  publish-release:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: desktop-build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Windows and macOS installers
+        uses: actions/download-artifact@v4
+        with:
+          pattern: arqenvo-teamwork-host-*
+          path: release-assets
+          merge-multiple: true
       - name: Publish stable installers to GitHub Releases
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: teamwork-host-latest
@@ -60,5 +70,5 @@ jobs:
           fail_on_unmatched_files: true
           overwrite_files: true
           files: |
-            desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-Windows.exe
-            desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-macOS.dmg
+            release-assets/ARQENVO-Teamwork-Host-Windows.exe
+            release-assets/ARQENVO-Teamwork-Host-macOS.dmg

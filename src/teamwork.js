@@ -14,7 +14,7 @@
   const panel=el("section",{id:"arqenvoTeamworkPanel",hidden:true});
   const title=el("h3",{},"Teamwork");const titlebar=el("div",{id:"arqenvoTeamworkTitlebar"});const dockLeft=el("button",{type:"button",title:"Dock palette left"},"◧←"),dockRight=el("button",{type:"button",title:"Dock palette right"},"→◨"),floatPanel=el("button",{type:"button",title:"Float palette"},"↗");titlebar.append(title,dockLeft,dockRight,floatPanel);
   const intro=el("p",{},"Host project files stay on this PC/Mac. Team members must open this host's LAN address, not the GitHub Pages URL.");
-  const hostDownload=el("a",{class:"tw-download-link",href:"https://github.com/terajuciptabina-eng/Arqenvo/actions/workflows/teamwork-desktop.yml",target:"_blank",rel:"noopener"},"Download Teamwork Host for Mac / Windows");
+  const hostDownload=el("a",{class:"tw-download-link",href:"https://terajuciptabina-eng.github.io/Arqenvo/download/",target:"_blank",rel:"noopener"},"Download Teamwork Host · Windows / macOS");
   const status=el("div",{id:"arqenvoTeamworkStatus","data-kind":"info"},"Checking whether this browser is connected to a local Teamwork host…");
   const loginBox=el("div"),user=el("input",{type:"text",placeholder:"Username",autocomplete:"username"}),pass=el("input",{type:"password",placeholder:"Password",autocomplete:"current-password"}),login=el("button",{type:"button",class:"tw-primary"},"Sign in");
   const loginRow=el("div",{class:"tw-row"});loginRow.append(login);
