@@ -13,7 +13,8 @@ test("desktop Host packages the existing ARQENVO client and Teamwork server",()=
   ["../../src","arqenvo-app/src"],
   ["../../assets","arqenvo-app/assets"],
   ["../../index.html","arqenvo-app/index.html"],
-  ["../../manifest.webmanifest","arqenvo-app/manifest.webmanifest"]
+  ["../../manifest.webmanifest","arqenvo-app/manifest.webmanifest"],
+  ["../../package.json","arqenvo-app/package.json"]
  ]) assert.ok(config.build.extraResources.some(item=>item.from===from&&item.to===to),`Missing packaged resource: ${from}`);
  assert.equal(config.build.asar,false);
  assert.equal(config.build.electronFuses.runAsNode,true);
