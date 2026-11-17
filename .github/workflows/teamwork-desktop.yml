@@ -2,12 +2,12 @@ name: Teamwork Desktop Host Builds
 on:
   push:
     branches: [main]
-    paths: ["desktop/teamwork-host/**","server/teamwork-host.js","src/**","index.html","assets/**",".github/workflows/teamwork-desktop.yml"]
+    paths: ["desktop/teamwork-host/**","server/teamwork-host.js","src/**","index.html","assets/**","download/**",".github/workflows/teamwork-desktop.yml"]
   pull_request:
-    paths: ["desktop/teamwork-host/**","server/teamwork-host.js","src/**","index.html","assets/**",".github/workflows/teamwork-desktop.yml"]
+    paths: ["desktop/teamwork-host/**","server/teamwork-host.js","src/**","index.html","assets/**","download/**",".github/workflows/teamwork-desktop.yml"]
   workflow_dispatch:
 permissions:
-  contents: read
+  contents: write
 jobs:
   desktop-build:
     strategy:
@@ -33,9 +33,32 @@ jobs:
       - name: Build desktop installer
         run: npm run ${{ matrix.command }}
         working-directory: desktop/teamwork-host
+      - name: Give installers stable download names
+        shell: bash
+        run: |
+          if [ "${{ matrix.artifact }}" = "windows" ]; then
+            find desktop/teamwork-host/dist -maxdepth 1 -type f -iname '*.exe' -exec cp "{}" desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-Windows.exe \;
+          else
+            find desktop/teamwork-host/dist -maxdepth 1 -type f -iname '*.dmg' -exec cp "{}" desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-macOS.dmg \;
+          fi
+          test -f desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-${{ matrix.artifact == 'windows' && 'Windows.exe' || 'macOS.dmg' }}
       - uses: actions/upload-artifact@v4
         with:
           name: arqenvo-teamwork-host-${{ matrix.artifact }}
           path: desktop/teamwork-host/dist/*
           if-no-files-found: error
           retention-days: 14
+      - name: Publish stable installers to GitHub Releases
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: teamwork-host-latest
+          name: ARQENVO Teamwork Host — Latest
+          target_commitish: ${{ github.sha }}
+          make_latest: true
+          prerelease: false
+          fail_on_unmatched_files: true
+          overwrite_files: true
+          files: |
+            desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-Windows.exe
+            desktop/teamwork-host/dist/ARQENVO-Teamwork-Host-macOS.dmg
