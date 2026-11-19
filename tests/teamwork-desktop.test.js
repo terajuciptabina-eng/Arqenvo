@@ -40,3 +40,16 @@ test("first-run setup shows admin credentials, LAN address, and local password r
  assert.match(main,/No reinstall or data deletion is required/);
  assert.match(main,/clipboard\.writeText\(firstRunPassword\)/);
 });
+
+test("desktop Host packages and exposes the in-app updater",()=>{
+ assert.ok(config.dependencies?.["electron-updater"],"electron-updater must be a runtime dependency");
+ assert.ok(config.build.files.includes("preload.cjs"),"secure updater preload must be packaged");
+ assert.equal(config.build.publish[0].provider,"github");
+ assert.equal(config.build.publish[0].owner,"terajuciptabina-eng");
+ assert.equal(config.build.publish[0].repo,"Arqenvo");
+ assert.ok(config.build.mac.target.includes("zip"),"macOS updater requires a ZIP update artifact");
+ assert.match(main,/autoUpdater\.checkForUpdates/);
+ assert.match(main,/autoUpdater\.quitAndInstall/);
+ assert.match(main,/arqenvo:check-updates/);
+ assert.match(main,/preload\.cjs/);
+});
