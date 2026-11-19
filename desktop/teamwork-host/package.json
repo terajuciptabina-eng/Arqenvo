@@ -11,7 +11,8 @@
   },
   "devDependencies": {
     "electron": "^36.0.0",
-    "electron-builder": "^26.0.12"
+    "electron-builder": "^26.0.12",
+    "electron-updater": "^6.6.2"
   },
   "build": {
     "appId": "com.terajuciptabina.arqenvo.teamwork",
@@ -57,7 +58,8 @@
     },
     "mac": {
       "target": [
-        "dmg"
+        "dmg",
+        "zip"
       ],
       "category": "public.app-category.productivity"
     },
@@ -71,6 +73,14 @@
       "enableNodeOptionsEnvironmentVariable": false,
       "enableNodeCliInspectArguments": false,
       "grantFileProtocolExtraPrivileges": false
-    }
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "terajucibina-eng",
+        "repo": "Arqenvo",
+        "releaseType": "release"
+      }
+    ]
   }
 }
