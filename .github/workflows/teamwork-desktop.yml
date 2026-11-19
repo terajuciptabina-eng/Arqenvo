@@ -72,3 +72,7 @@ jobs:
           files: |
             release-assets/ARQENVO-Teamwork-Host-Windows.exe
             release-assets/ARQENVO-Teamwork-Host-macOS.dmg
+            release-assets/latest.yml
+            release-assets/latest-mac.yml
+            release-assets/*.blockmap
+            release-assets/*.zip
