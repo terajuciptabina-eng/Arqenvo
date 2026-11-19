@@ -6,8 +6,8 @@
   "main": "main.cjs",
   "scripts": {
     "start": "electron .",
-    "build:win": "electron-builder --win nsis",
-    "build:mac": "electron-builder --mac dmg --x64"
+    "build:win": "electron-builder --win nsis --publish never",
+    "build:mac": "electron-builder --mac dmg zip --x64 --publish never"
   },
   "devDependencies": {
     "electron": "^36.0.0",
