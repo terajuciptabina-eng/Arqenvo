@@ -1,4 +1,4 @@
-const {app,BrowserWindow,dialog,shell,clipboard,Menu}=require("electron");
+const {app,BrowserWindow,dialog,shell,clipboard,Menu,ipcMain}=require("electron");
 const {autoUpdater}=require("electron-updater");
 const {spawn}=require("node:child_process");
 const crypto=require("node:crypto");
@@ -38,6 +38,7 @@ async function showFirstRunPassword(){
  firstRunPassword="";
 }
 function setupUpdater(){
+ ipcMain.handle("arqenvo:check-updates",async()=>{if(!app.isPackaged)return {state:"development"};try{const result=await autoUpdater.checkForUpdates();return {state:result?.updateInfo?.version?"checking":"current",version:result?.updateInfo?.version||""};}catch(error){return {state:"error",message:error.message};}});
  if(!app.isPackaged)return;
  autoUpdater.autoDownload=true;
  autoUpdater.autoInstallOnAppQuit=true;
@@ -53,7 +54,7 @@ function setupUpdater(){
 }
 function openApp(){
  const origin="http://127.0.0.1:"+port;
- const win=new BrowserWindow({width:1480,height:940,minWidth:980,minHeight:680,show:false,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
+ const win=new BrowserWindow({width:1480,height:940,minWidth:980,minHeight:680,show:false,webPreferences:{preload:path.join(__dirname,"preload.cjs"),nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
  win.webContents.setWindowOpenHandler(({url})=>{if(url.startsWith("https://"))shell.openExternal(url);return{action:"deny"};});
  win.webContents.on("will-navigate",(event,url)=>{if(!url.startsWith(origin))event.preventDefault();});
  win.once("ready-to-show",()=>win.show());
