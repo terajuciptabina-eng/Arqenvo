@@ -72,6 +72,27 @@ test("viewer accounts cannot publish changes",async()=>{
   const denied=await request("/api/teamwork/project",{token:login.data.token,method:"PUT",body:{expectedRevision:2,project:{format:"ARQENVO-PROJECT",version:2,project:{id:"p1"},stories:[{id:"s1",name:"Ground",elevation:0,height:3}],elements:[]},changedElementIds:[]}});
   assert.equal(denied.status,403);
 });
+
+test("Host Admin can issue a one-time member password reset code",async()=>{
+  const created=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"resetmember",password:"Old-Password-123",role:"member"}});
+  assert.equal(created.status,201);
+  const issued=await request("/api/teamwork/password-reset-codes",{token:adminToken,method:"POST",body:{username:"resetmember"}});
+  assert.equal(issued.status,201);
+  assert.match(issued.data.code,/^[A-F0-9]{10}$/);
+  const unauthorized=await request("/api/teamwork/password-reset-codes",{method:"POST",body:{username:"resetmember"}});
+  assert.equal(unauthorized.status,401);
+  const mismatch=await request("/api/teamwork/password-reset",{method:"POST",body:{username:"resetmember",code:issued.data.code,password:"New-Password-123",confirmPassword:"Different-Password"}});
+  assert.equal(mismatch.status,400);
+  const reset=await request("/api/teamwork/password-reset",{method:"POST",body:{username:"resetmember",code:issued.data.code,password:"New-Password-123",confirmPassword:"New-Password-123"}});
+  assert.equal(reset.status,200);
+  const oldLogin=await request("/api/teamwork/login",{method:"POST",body:{username:"resetmember",password:"Old-Password-123"}});
+  assert.equal(oldLogin.status,401);
+  const newLogin=await request("/api/teamwork/login",{method:"POST",body:{username:"resetmember",password:"New-Password-123"}});
+  assert.equal(newLogin.status,200);
+  const reused=await request("/api/teamwork/password-reset",{method:"POST",body:{username:"resetmember",code:issued.data.code,password:"Another-Password-123",confirmPassword:"Another-Password-123"}});
+  assert.equal(reused.status,400);
+});
+
 test("new member passwords must be at least 4 characters",async()=>{
   const short=await request("/api/teamwork/members",{token:adminToken,method:"POST",body:{username:"shortpass",password:"123",role:"member"}});
   assert.equal(short.status,400);
