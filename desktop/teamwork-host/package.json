@@ -65,7 +65,8 @@
       "identity": "-",
       "extendInfo": {
         "NSLocalNetworkUsageDescription": "ARQENVO Teamwork Host shares project data with authorized devices on your local network."
-      }
+      },
+      "artifactName": "ARQENVO-Teamwork-Host-${version}-${arch}.${ext}"
     },
     "nsis": {
       "oneClick": true,
