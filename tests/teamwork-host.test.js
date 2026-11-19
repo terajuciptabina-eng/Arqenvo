@@ -78,7 +78,7 @@ test("Host Admin can issue a one-time member password reset code",async()=>{
   assert.equal(created.status,201);
   const issued=await request("/api/teamwork/password-reset-codes",{token:adminToken,method:"POST",body:{username:"resetmember"}});
   assert.equal(issued.status,201);
-  assert.match(issued.data.code,/^[A-F0-9]{10}$/);
+  assert.match(issued.data.code,/^[A-F0-9]{16}$/);
   const unauthorized=await request("/api/teamwork/password-reset-codes",{method:"POST",body:{username:"resetmember"}});
   assert.equal(unauthorized.status,401);
   const mismatch=await request("/api/teamwork/password-reset",{method:"POST",body:{username:"resetmember",code:issued.data.code,password:"New-Password-123",confirmPassword:"Different-Password"}});
