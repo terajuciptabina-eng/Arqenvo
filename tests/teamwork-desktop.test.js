@@ -61,6 +61,7 @@ test("desktop Host packages and exposes the in-app updater",()=>{
  assert.equal(config.build.publish[0].owner,"terajuciptabina-eng");
  assert.equal(config.build.publish[0].repo,"Arqenvo");
  assert.ok(config.build.mac.target.includes("zip"),"macOS updater requires a ZIP update artifact");
+ assert.equal(config.build.mac.artifactName,"ARQENVO-Teamwork-Host-${version}-${arch}.${ext}","macOS ZIP filename must match electron-updater metadata and published asset");
  assert.match(main,/autoUpdater\.checkForUpdates/);
  assert.match(main,/autoUpdater\.quitAndInstall/);
  assert.match(main,/arqenvo:check-updates/);
