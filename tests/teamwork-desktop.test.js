@@ -41,6 +41,19 @@ test("first-run setup shows admin credentials, LAN address, and local password r
  assert.match(main,/clipboard\.writeText\(firstRunPassword\)/);
 });
 
+test("macOS Host declares local-network access and uses a stable app signature",()=>{
+ assert.equal(config.version,"1.0.2");
+ assert.equal(config.build.mac.identity,"-","macOS app must be ad-hoc signed for a stable app identity");
+ assert.match(config.build.mac.extendInfo.NSLocalNetworkUsageDescription,/local network/i);
+});
+
+test("Teamwork server listens on all network interfaces for LAN clients",()=>{
+ const server=fs.readFileSync(path.join(root,"server","teamwork-host.js"),"utf8");
+ assert.match(server,/process\.env\.ARQENVO_TEAMWORK_HOST\s*\|\|\s*"0\.0\.0\.0"/);
+ assert.match(server,/server\.listen\(PORT,\s*HOST/);
+ assert.match(main,/ARQENVO_TEAMWORK_HOST:"0\.0\.0\.0"/);
+});
+
 test("desktop Host packages and exposes the in-app updater",()=>{
  assert.ok(config.dependencies?.["electron-updater"],"electron-updater must be a runtime dependency");
  assert.ok(config.build.files.includes("preload.cjs"),"secure updater preload must be packaged");
