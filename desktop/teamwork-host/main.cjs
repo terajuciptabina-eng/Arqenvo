@@ -29,7 +29,11 @@ function fail(e){dialog.showErrorBox("ARQENVO Teamwork Host",e.message||String(e
 async function showFirstRunPassword(){
  if(!firstRunPassword)return;
  clipboard.writeText(firstRunPassword);
- await dialog.showMessageBox({type:"info",title:"ARQENVO Teamwork Host is ready",message:"Your administrator account has been created.",detail:"Username: admin\nPassword: "+firstRunPassword+"\n\nThe password has also been copied to your clipboard. Save it securely; it will not be shown again after you close this message."});
+ const info=await health(port);
+ const addresses=(info?.lanAddresses||[]).map(ip=>"http://"+ip+":"+port);
+ const addressText=addresses.length?addresses.join("\n"):"No LAN address detected yet. Open the Teamwork panel to check again.";
+ const detail="HOST ADMIN LOGIN\nUsername: admin\nPassword: "+firstRunPassword+"\n\nHOST ADDRESS — share with team members\n"+addressText+"\n\nSAVE THESE DETAILS NOW. The password is shown only once and copied to your clipboard.\n\nIF YOU FORGET THE PASSWORD\nOn this Host computer, open ARQENVO > Teamwork > Forgot Host Admin password? Set a new password there. No reinstall or data deletion is required. Projects and team accounts are preserved.";
+ await dialog.showMessageBox({type:"info",title:"ARQENVO Teamwork Host — First-time setup",message:"Your Host administrator account is ready.",detail,buttons:["Continue"],defaultId:0});
  firstRunPassword="";
 }
 function openApp(){
