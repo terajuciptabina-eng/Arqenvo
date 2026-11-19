@@ -32,7 +32,10 @@ try {
  assert.equal(await downloadLink.textContent(),"Download Teamwork Host · Windows / macOS");
  assert.equal(await downloadLink.getAttribute("href"),"https://terajuciptabina-eng.github.io/Arqenvo/download/");
  assert.equal(await downloadLink.getAttribute("target"),"_blank");
- const hostAddress=page.locator("#arqenvoTeamworkAddress");\n assert.equal(await hostAddress.isVisible(),true,"Host LAN address must have a dedicated visible panel");\n assert.ok((await page.locator("#arqenvoTeamworkAddressValue").textContent()).includes("http://192.168.1.10:12345"),"Dedicated Host LAN address must show the detected IP and port");\n const hostStatus=await page.locator("#arqenvoTeamworkStatus").textContent();
+  const hostAddress=page.locator("#arqenvoTeamworkAddress");
+  assert.equal(await hostAddress.isVisible(),true,"Host LAN address must have a dedicated visible panel");
+  assert.ok((await page.locator("#arqenvoTeamworkAddressValue").textContent()).includes("http://192.168.1.10:12345"),"Dedicated Host LAN address must show the detected IP and port");
+  const hostStatus=await page.locator("#arqenvoTeamworkStatus").textContent();
  assert.ok(hostStatus.includes("Other devices can connect at:")&&hostStatus.includes("http://192.168.1.10:12345"),"Host mode must automatically show its LAN join address");
  await page.locator("#teamworkMenuGroup > summary").click();
  await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")?.hidden===true);
