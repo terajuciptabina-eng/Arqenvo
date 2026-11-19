@@ -170,7 +170,7 @@ const handler = async (req, res) => {
         const body = await readBody(req), username = String(body.username || "").trim();
         const user = loadUsers().find(item => item.username.toLowerCase() === username.toLowerCase());
         if (!user) return json(res, 404, { error:"Registered member was not found." });
-        const code = crypto.randomBytes(5).toString("hex").toUpperCase();
+        const code = crypto.randomBytes(8).toString("hex").toUpperCase();
         const resets = readJson(PASSWORD_RESETS_FILE, {});
         resets[user.username] = { codeHash:crypto.createHash("sha256").update(code).digest("hex"), expiresAt:Date.now() + 10 * 60 * 1000, attempts:0, issuedBy:session.user.username };
         atomicJson(PASSWORD_RESETS_FILE, resets);
