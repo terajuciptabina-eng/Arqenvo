@@ -1,4 +1,5 @@
-const {app,BrowserWindow,dialog,shell,clipboard}=require("electron");
+const {app,BrowserWindow,dialog,shell,clipboard,Menu}=require("electron");
+const {autoUpdater}=require("electron-updater");
 const {spawn}=require("node:child_process");
 const crypto=require("node:crypto");
 const fs=require("node:fs");
@@ -36,6 +37,20 @@ async function showFirstRunPassword(){
  await dialog.showMessageBox({type:"info",title:"ARQENVO Teamwork Host — First-time setup",message:"Your Host administrator account is ready.",detail,buttons:["Continue"],defaultId:0});
  firstRunPassword="";
 }
+function setupUpdater(){
+ if(!app.isPackaged)return;
+ autoUpdater.autoDownload=true;
+ autoUpdater.autoInstallOnAppQuit=true;
+ autoUpdater.on("checking-for-update",()=>{const w=BrowserWindow.getAllWindows()[0];w?.webContents.send("arqenvo:update-status",{state:"checking"});});
+ autoUpdater.on("update-available",info=>{const w=BrowserWindow.getAllWindows()[0];w?.webContents.send("arqenvo:update-status",{state:"available",version:info.version});});
+ autoUpdater.on("update-not-available",()=>{const w=BrowserWindow.getAllWindows()[0];w?.webContents.send("arqenvo:update-status",{state:"current"});});
+ autoUpdater.on("download-progress",progress=>{const w=BrowserWindow.getAllWindows()[0];w?.webContents.send("arqenvo:update-status",{state:"downloading",percent:Math.round(progress.percent)});});
+ autoUpdater.on("update-downloaded",info=>{dialog.showMessageBox({type:"info",title:"ARQENVO update ready",message:"ARQENVO "+info.version+" has been downloaded.",detail:"The update will be installed when you restart ARQENVO Teamwork Host.",buttons:["Restart and Install","Later"],defaultId:0}).then(({response})=>{if(response===0){stopping=true;if(child&&!child.killed)child.kill();autoUpdater.quitAndInstall();}});});
+ autoUpdater.on("error",error=>{const w=BrowserWindow.getAllWindows()[0];w?.webContents.send("arqenvo:update-status",{state:"error",message:error.message});});
+ const template=[{label:"ARQENVO",submenu:[{label:"Check for Updates…",click:()=>autoUpdater.checkForUpdates().catch(error=>dialog.showErrorBox("Update check failed",error.message))},{type:"separator"},{role:"about"},{type:"quit"}]},{label:"Edit",submenu:[{role:"undo"},{role:"redo"},{type:"separator"},{role:"cut"},{role:"copy"},{role:"paste"},{role:"selectAll"}]},{label:"Window",submenu:[{role:"minimize"},{role:"close"}]}];
+ Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+ autoUpdater.checkForUpdates().catch(error=>{const w=BrowserWindow.getAllWindows()[0];w?.webContents.send("arqenvo:update-status",{state:"error",message:error.message});});
+}
 function openApp(){
  const origin="http://127.0.0.1:"+port;
  const win=new BrowserWindow({width:1480,height:940,minWidth:980,minHeight:680,show:false,webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true}});
@@ -63,6 +78,7 @@ else{
     await showFirstRunPassword();
    }
    openApp();
+   setupUpdater();
   }catch(e){fail(e);}
  });
 }
