@@ -41,7 +41,7 @@ try {
  await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")?.hidden===true);
  await page.locator("#teamworkMenuGroup > summary").click();
  await page.waitForFunction(()=>document.querySelector("#arqenvoTeamworkPanel")&&!document.querySelector("#arqenvoTeamworkPanel").hidden);
- const username=page.locator("#arqenvoTeamworkPanel input[autocomplete=\"username\"]");
+ const username=page.locator("#arqenvoTeamworkPanel input[placeholder=\"Username\"]");
  const password=page.locator("#arqenvoTeamworkPanel input[autocomplete=\"current-password\"]");
  await username.fill("host-admin-smoke");
  await password.fill("test-password");
