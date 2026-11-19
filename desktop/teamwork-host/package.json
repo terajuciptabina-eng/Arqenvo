@@ -77,7 +77,7 @@
     "publish": [
       {
         "provider": "github",
-        "owner": "terajucibina-eng",
+        "owner": "terajuciptabina-eng",
         "repo": "Arqenvo",
         "releaseType": "release"
       }
