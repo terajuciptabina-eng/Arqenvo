@@ -11,8 +11,7 @@
   },
   "devDependencies": {
     "electron": "^36.0.0",
-    "electron-builder": "^26.0.12",
-    "electron-updater": "^6.6.2"
+    "electron-builder": "^26.0.12"
   },
   "build": {
     "appId": "com.terajuciptabina.arqenvo.teamwork",
@@ -83,5 +82,8 @@
         "releaseType": "release"
       }
     ]
+  },
+  "dependencies": {
+    "electron-updater": "^6.6.2"
   }
 }
