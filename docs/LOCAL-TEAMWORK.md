@@ -59,10 +59,13 @@ The host prints its LAN addresses, such as http://192.168.1.10:8080. Open one of
 1. Open the host LAN URL and click Teamwork.
 2. Sign in as admin.
 3. If the host has no project, choose Create shared project from this model. This publishes the currently open model as the authoritative shared project.
-4. Use Add member to create accounts. Share each username and password through a secure channel.
-5. On another device, open the same host LAN URL, sign in, and receive the host project.
-6. Select elements in the drawing and use Reserve selected before editing them. Release the reservation when finished.
-7. Changes sync to the host automatically after edits, or use Send changes. Other clients poll for new revisions and receive them when they have no unsent edits.
+4. Use Add member to create accounts. Share each username and temporary password through a secure channel.
+5. If a member forgets a password, sign in as Host Admin, open View registered members, and choose Issue reset code beside that account. Share the one-time code privately with the member; it is displayed once and expires after 10 minutes.
+6. On the client sign-in panel, choose Forgot password?, enter the registered username, one-time code, and a new password (at least 8 characters). The code is single-use; five incorrect attempts invalidate it. A successful reset revokes that member's active sessions.
+7. The Host Admin account continues to use the Host-computer-only Forgot Host Admin password? recovery.
+8. On another device, open the same host LAN URL, sign in, and receive the host project.
+9. Select elements in the drawing and use Reserve selected before editing them. Release the reservation when finished.
+10. Changes sync to the host automatically after edits, or use Send changes. Other clients poll for new revisions and receive them when they have no unsent edits.
 
 ## Storage, recovery and limitations
 
