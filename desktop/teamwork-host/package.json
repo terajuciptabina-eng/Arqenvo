@@ -1,6 +1,6 @@
 {
   "name": "arqenvo-teamwork-host",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "private": true,
   "description": "Desktop launcher for the ARQENVO Local Teamwork host",
   "main": "main.cjs",
@@ -61,7 +61,11 @@
         "dmg",
         "zip"
       ],
-      "category": "public.app-category.productivity"
+      "category": "public.app-category.productivity",
+      "identity": "-",
+      "extendInfo": {
+        "NSLocalNetworkUsageDescription": "ARQENVO Teamwork Host shares project data with authorized devices on your local network."
+      }
     },
     "nsis": {
       "oneClick": true,
