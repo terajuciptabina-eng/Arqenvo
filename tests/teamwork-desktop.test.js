@@ -30,3 +30,13 @@ test("desktop Host starts the bundled server without a terminal",()=>{
  assert.match(main,/nodeIntegration:false/);
  assert.match(main,/sandbox:true/);
 });
+
+test("first-run setup shows admin credentials, LAN address, and local password recovery steps",()=>{
+ assert.match(main,/First-time setup/);
+ assert.match(main,/Username: admin/);
+ assert.match(main,/Password: \"\+firstRunPassword/);
+ assert.match(main,/HOST ADDRESS — share with team members/);
+ assert.match(main,/Forgot Host Admin password\?/);
+ assert.match(main,/No reinstall or data deletion is required/);
+ assert.match(main,/clipboard\.writeText\(firstRunPassword\)/);
+});
