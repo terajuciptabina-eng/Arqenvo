@@ -45,7 +45,7 @@ test("desktop Host packages and exposes the in-app updater",()=>{
  assert.ok(config.dependencies?.["electron-updater"],"electron-updater must be a runtime dependency");
  assert.ok(config.build.files.includes("preload.cjs"),"secure updater preload must be packaged");
  assert.equal(config.build.publish[0].provider,"github");
- assert.equal(config.build.publish[0].owner,"terajuciptabina-eng");
+ assert.equal(config.build.publish[0].owner,"terajucibina-eng");
  assert.equal(config.build.publish[0].repo,"Arqenvo");
  assert.ok(config.build.mac.target.includes("zip"),"macOS updater requires a ZIP update artifact");
  assert.match(main,/autoUpdater\.checkForUpdates/);
