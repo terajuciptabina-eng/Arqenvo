@@ -17,6 +17,7 @@ const MIME = { ".html":"text/html; charset=utf-8", ".js":"text/javascript; chars
 
 fs.mkdirSync(DATA_DIR, { recursive: true, mode: 0o700 });
 const USERS_FILE = path.join(DATA_DIR, "users.json");
+const PASSWORD_RESETS_FILE = path.join(DATA_DIR, "password-resets.json");
 const PROJECT_FILE = path.join(DATA_DIR, "project.json");
 const RESERVATIONS_FILE = path.join(DATA_DIR, "reservations.json");
 const BACKUP_DIR = path.join(DATA_DIR, "backups");
@@ -41,6 +42,12 @@ function verifyPassword(password, record) {
   if (typeof password !== "string" || !record?.salt || !record?.hash) return false;
   const expected = Buffer.from(record.hash, "hex");
   const actual = crypto.scryptSync(password, record.salt, 64);
+  return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
+}
+function verifyResetCode(code, record) {
+  if (typeof code !== "string" || !record?.codeHash) return false;
+  const actual = crypto.createHash("sha256").update(code).digest();
+  const expected = Buffer.from(record.codeHash, "hex");
   return expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
 function publicUser(user) { return { username: user.username, role: user.role, displayName: user.displayName || user.username }; }
@@ -157,6 +164,42 @@ const handler = async (req, res) => {
         if (!admin) return json(res, 404, { error:"Host admin account was not found." });
         Object.assign(admin, hashPassword(password)); atomicJson(USERS_FILE, users); sessions.clear();
         return json(res, 200, { ok:true, message:"Host admin password reset. Sign in using the new password." });
+      }
+      if (req.method === "POST" && route === "/api/teamwork/password-reset-codes") {
+        const session = auth(req, res, ["admin"]); if (!session) return;
+        const body = await readBody(req), username = String(body.username || "").trim();
+        const user = loadUsers().find(item => item.username.toLowerCase() === username.toLowerCase());
+        if (!user) return json(res, 404, { error:"Registered member was not found." });
+        const code = crypto.randomBytes(5).toString("hex").toUpperCase();
+        const resets = readJson(PASSWORD_RESETS_FILE, {});
+        resets[user.username] = { codeHash:crypto.createHash("sha256").update(code).digest("hex"), expiresAt:Date.now() + 10 * 60 * 1000, attempts:0, issuedBy:session.user.username };
+        atomicJson(PASSWORD_RESETS_FILE, resets);
+        return json(res, 201, { ok:true, username:user.username, code, expiresIn:600, message:"Share this one-time code with the member. It expires in 10 minutes and can be used once." });
+      }
+      if (req.method === "POST" && route === "/api/teamwork/password-reset") {
+        const body = await readBody(req), username = String(body.username || "").trim();
+        const password = String(body.password || ""), confirmPassword = String(body.confirmPassword || ""), code = String(body.code || "").trim().toUpperCase();
+        if (!/^[a-zA-Z0-9._-]{1,40}$/.test(username)) return json(res, 400, { error:"Enter the registered username." });
+        if (password.length < 8) return json(res, 400, { error:"New password must contain at least 8 characters." });
+        if (password !== confirmPassword) return json(res, 400, { error:"The passwords do not match." });
+        const users = loadUsers(), user = users.find(item => item.username.toLowerCase() === username.toLowerCase());
+        const resets = readJson(PASSWORD_RESETS_FILE, {});
+        const key = user?.username || username, reset = resets[key];
+        if (!user || !reset || reset.expiresAt < Date.now() || reset.attempts >= 5) {
+          if (reset && (reset.expiresAt < Date.now() || reset.attempts >= 5)) { delete resets[key]; atomicJson(PASSWORD_RESETS_FILE, resets); }
+          return json(res, 400, { error:"Reset code is invalid or expired. Ask the Host Admin for a new code." });
+        }
+        if (!verifyResetCode(code, reset)) {
+          reset.attempts = Number(reset.attempts || 0) + 1;
+          if (reset.attempts >= 5) delete resets[key];
+          atomicJson(PASSWORD_RESETS_FILE, resets);
+          return json(res, 400, { error:"Reset code is invalid or expired. Ask the Host Admin for a new code." });
+        }
+        Object.assign(user, hashPassword(password));
+        atomicJson(USERS_FILE, users);
+        delete resets[key]; atomicJson(PASSWORD_RESETS_FILE, resets);
+        for (const [token, active] of sessions) if (active.username.toLowerCase() === user.username.toLowerCase()) sessions.delete(token);
+        return json(res, 200, { ok:true, message:"Password reset successfully. Sign in with your new password." });
       }
       if (req.method === "POST" && route === "/api/teamwork/login") {
         const body = await readBody(req), users = loadUsers();
